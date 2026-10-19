@@ -1,19 +1,20 @@
 import type { ItemViewRow } from '@/backend/db/schema';
-import type { CategoryTypeEnum, ItemResponseType, StockStatusTypeEnum } from '@/backend/types/item';
-
-/** Columns of the `item_views` view (reserved / available / incoming / status are derived there). */
-export const ITEM_VIEW_COLUMNS =
-  'sku, name, category, unit, on_hand, reorder_level, location, reserved, available, incoming, status';
+import type { ItemKindTypeEnum, ItemResponseType, StockStatusTypeEnum } from '@/backend/types/item';
 
 export function ToItemResponse(r: ItemViewRow): ItemResponseType {
   return {
+    id: r.id,
     sku: r.sku,
     name: r.name,
-    category: r.category as CategoryTypeEnum,
+    category: r.category,
     unit: r.unit,
+    kind: r.kind as ItemKindTypeEnum,
     onHand: r.on_hand,
     reorderLevel: r.reorder_level,
+    cost: Number(r.cost),
+    price: Number(r.price),
     location: r.location,
+    supplierId: r.supplier_id,
     reserved: r.reserved,
     available: r.available,
     incoming: r.incoming,

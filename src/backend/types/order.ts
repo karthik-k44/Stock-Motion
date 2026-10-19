@@ -1,27 +1,31 @@
-export const OrderStatusTypeEnum = {
-  NEW: 'NEW',
-  PICKING: 'PICKING',
-  PACKED: 'PACKED',
-  SHIPPED: 'SHIPPED',
-} as const;
-export type OrderStatusTypeEnum = (typeof OrderStatusTypeEnum)[keyof typeof OrderStatusTypeEnum];
-
 export type OrderLineResponseType = {
   sku: string;
   name: string;
+  kind: string;
+  unit: string;
   location: string | null;
   qty: number;
-  picked: number;
+  /** Picked / used so far */
+  done: number;
+  unitPrice: number;
 };
 
 export type OrderResponseType = {
-  id: string;
-  customer: string;
-  requestedDate: string;
+  number: string;
+  customerId: string | null;
+  customerName: string;
+  status: string;
+  reserves: boolean;
+  closed: boolean;
+  cancelled: boolean;
+  dueAt: string | null;
+  assigneeId: string | null;
+  assigneeName: string | null;
+  notes: string;
   createdAt: string;
-  status: OrderStatusTypeEnum;
-  assignee: string;
+  closedAt: string | null;
   lines: OrderLineResponseType[];
   totalUnits: number;
-  pickedUnits: number;
+  doneUnits: number;
+  total: number;
 };

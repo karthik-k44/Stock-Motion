@@ -8,6 +8,8 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/backend/tests/**/*.test.ts'],
+    // Each file runs its own in-memory Postgres; running them all at once exhausts memory on Windows.
+    fileParallelism: false,
     testTimeout: 20000,
     hookTimeout: 30000,
   },

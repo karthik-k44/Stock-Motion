@@ -15,7 +15,8 @@ const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 async function main() {
   await ConnectDb({ url: env.DATABASE_URL, dataDir: env.PGLITE_DIR });
   await RunMigrations();
-  await SeedDatabase(); // only seeds an empty database
+  // Demo login on an empty development database; production starts empty and owners sign up.
+  if (env.NODE_ENV === 'development') await SeedDatabase();
 
   const app = CreateApp();
   const server = createServer(app);
