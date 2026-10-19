@@ -1,69 +1,40 @@
-import { createBrowserRouter, Navigate, Outlet, ScrollRestoration, useNavigation } from 'react-router';
-import { MotionToggle, AppLayout } from '@/frontend/components/layout';
-import { ConfirmHost } from '@/frontend/components/modal';
-import { Toaster } from '@/frontend/components/toast';
-import { dashboardService } from '@/frontend/features/dashboard/services';
-import { ItemDrawer } from '@/frontend/features/inventory/components/ItemDrawer';
+import { createBrowserRouter, Navigate } from 'react-router';
 import { NotFound, RouteError } from '@/frontend/features/not-found/NotFound';
-import { ConnectionStatus } from '@/frontend/features/system/components/ConnectionStatus';
-import { ResetDemoButton } from '@/frontend/features/system/components/ResetDemoButton';
-import { UserSwitcher } from '@/frontend/features/users/components/UserSwitcher';
-import { CrewDirector } from '@/frontend/features/warehouse/components/CrewDirector';
-import { TruckSequenceRunner } from '@/frontend/features/warehouse/components/TruckSequenceRunner';
-import { useRealtime } from '@/frontend/hooks/use-realtime';
-import { NAVIGATION } from './navigation';
+import { Shell } from '@/frontend/features/shell/Shell';
 import { paths } from './paths';
 
-/** App shell + everything that must live across screens (item drawer, dock sequence, crew, dialogs). */
-function Root() {
-  const { connected } = useRealtime();
-  const navigation = useNavigation();
-  const { data } = dashboardService.useDashboard();
-  const badges = {
-    inventory: data ? data.kpis.lowStock + data.kpis.outOfStock : undefined,
-    orders: data?.kpis.openOrders,
-    deliveries: data?.kpis.incomingDeliveries,
-  };
-  return (
-    <>
-      <AppLayout
-        nav={NAVIGATION}
-        badges={badges}
-        busy={navigation.state === 'loading'}
-        topbarEnd={
-          <>
-            <MotionToggle />
-            <UserSwitcher />
-            <ResetDemoButton />
-          </>
-        }
-        sidebarFooter={<ConnectionStatus connected={connected} />}
-      >
-        <Outlet />
-      </AppLayout>
-      <ItemDrawer />
-      <TruckSequenceRunner />
-      <CrewDirector />
-      <ConfirmHost />
-      <Toaster />
-      <ScrollRestoration />
-    </>
-  );
-}
-
 export const router = createBrowserRouter([
+  // Public: signing in, signing up and joining a team from an invite link.
+  { path: paths.login, errorElement: <RouteError />, lazy: async () => ({ Component: (await import('@/frontend/features/auth/Login')).Login }) },
+  { path: paths.signup, errorElement: <RouteError />, lazy: async () => ({ Component: (await import('@/frontend/features/auth/Signup')).Signup }) },
+  {
+    path: '/invite/:token',
+    errorElement: <RouteError />,
+    lazy: async () => ({ Component: (await import('@/frontend/features/auth/AcceptInvite')).AcceptInvite }),
+  },
+  // Signed in, choosing or creating a business.
+  {
+    path: paths.onboarding,
+    errorElement: <RouteError />,
+    lazy: async () => ({ Component: (await import('@/frontend/features/onboarding/Onboarding')).Onboarding }),
+  },
+  // Signed in, inside a business.
   {
     path: paths.home,
-    element: <Root />,
+    element: <Shell />,
     errorElement: <RouteError />,
     children: [
-      { index: true, element: <Navigate to={paths.warehouse} replace /> },
-      { path: 'warehouse', lazy: async () => ({ Component: (await import('@/frontend/features/warehouse/Warehouse')).Warehouse }) },
+      { index: true, element: <Navigate to={paths.world} replace /> },
+      { path: 'world', lazy: async () => ({ Component: (await import('@/frontend/features/world/World')).World }) },
       { path: 'dashboard', lazy: async () => ({ Component: (await import('@/frontend/features/dashboard/Dashboard')).Dashboard }) },
       { path: 'inventory', lazy: async () => ({ Component: (await import('@/frontend/features/inventory/Inventory')).Inventory }) },
-      { path: 'orders/:orderId?', lazy: async () => ({ Component: (await import('@/frontend/features/orders/Orders')).Orders }) },
-      { path: 'deliveries/:deliveryId?', lazy: async () => ({ Component: (await import('@/frontend/features/deliveries/Deliveries')).Deliveries }) },
+      { path: 'orders/:number?', lazy: async () => ({ Component: (await import('@/frontend/features/orders/Orders')).Orders }) },
+      { path: 'deliveries/:number?', lazy: async () => ({ Component: (await import('@/frontend/features/deliveries/Deliveries')).Deliveries }) },
       { path: 'locations', lazy: async () => ({ Component: (await import('@/frontend/features/locations/Locations')).Locations }) },
+      { path: 'customers/:id?', lazy: async () => ({ Component: (await import('@/frontend/features/customers/Customers')).Customers }) },
+      { path: 'suppliers', lazy: async () => ({ Component: (await import('@/frontend/features/suppliers/Suppliers')).Suppliers }) },
+      { path: 'team', lazy: async () => ({ Component: (await import('@/frontend/features/team/Team')).Team }) },
+      { path: 'settings', lazy: async () => ({ Component: (await import('@/frontend/features/settings/Settings')).Settings }) },
       { path: 'activity', lazy: async () => ({ Component: (await import('@/frontend/features/activity/Activity')).Activity }) },
       { path: '*', element: <NotFound /> },
     ],

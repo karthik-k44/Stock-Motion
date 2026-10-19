@@ -7,7 +7,8 @@ export function ParseCsv(text: string): string[][] {
   let row: string[] = [];
   let cell = '';
   let quoted = false;
-  const input = text.replace(/^﻿/, '');
+  // Excel adds a byte-order mark to "CSV UTF-8" exports.
+  const input = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
   for (let i = 0; i < input.length; i++) {
     const ch = input[i];
     if (quoted) {

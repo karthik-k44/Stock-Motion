@@ -1,68 +1,73 @@
 import { useState } from 'react';
-import { useParams } from 'react-router';
+import { useNavigate, useParams } from 'react-router';
 import { Button } from '@/frontend/components/button';
 import { EmptyState, ErrorState, SkeletonRows } from '@/frontend/components/feedback';
 import { SearchInput, SegmentedControl } from '@/frontend/components/form';
 import { PageHeader } from '@/frontend/components/layout';
+import { paths } from '@/frontend/config/paths';
+import { businessesService } from '@/frontend/features/businesses/services';
 import { useDebouncedValue } from '@/frontend/hooks/use-debounced-value';
 import { useDocumentTitle } from '@/frontend/hooks/use-document-title';
 import { Cn } from '@/frontend/lib/utils';
-import { HumanizeOrderStatus } from '@/frontend/utils/humanize';
+import { NewOrderModal } from './components/NewOrderModal';
 import { OrderDetail } from './components/OrderDetail';
 import { OrderList } from './components/OrderList';
-import { ORDER_STEPS } from './lib/order-flow';
 import { ordersService } from './services';
-import type { OrderStatusTypeEnum } from './types';
+import type { ListOrdersParams } from './types';
 
-type Filter = OrderStatusTypeEnum | 'ALL';
+const OPEN = 'OPEN';
+const CLOSED = 'CLOSED';
 
 export function Orders() {
-  useDocumentTitle('Orders');
-  const { orderId } = useParams();
-  const [status, setStatus] = useState<Filter>('ALL');
+  const { template } = businessesService.useBusiness();
+  const { labels, orderFlow } = template;
+  useDocumentTitle(labels.orders);
+  const navigate = useNavigate();
+  const { number } = useParams();
+  const [filter, setFilter] = useState(OPEN);
   const [search, setSearch] = useState('');
+  const [creating, setCreating] = useState(false);
   const q = useDebouncedValue(search.trim());
-  const all = ordersService.useOrders();
-  const list = ordersService.useOrders({ status: status === 'ALL' ? undefined : status, search: q || undefined });
+  const open = ordersService.useOrders({ open: true });
 
-  const count = (s: Filter) => (all.data ?? []).filter((o) => s === 'ALL' || o.status === s).length;
-  const options = (['ALL', ...ORDER_STEPS] as Filter[]).map((s) => ({
-    value: s,
-    label: s === 'ALL' ? 'All' : HumanizeOrderStatus(s),
-    count: all.data ? count(s) : undefined,
-  }));
+  const params: ListOrdersParams =
+    filter === OPEN ? { open: true } : filter === CLOSED ? { open: false } : { status: filter };
+  const list = ordersService.useOrders({ ...params, search: q || undefined });
+  const count = (status: string) => open.data?.filter((o) => o.status === status).length;
+  const options = [
+    { value: OPEN, label: 'Open', count: open.data?.length },
+    ...orderFlow.filter((s) => !s.closed).map((s) => ({ value: s.status, label: s.label, count: count(s.status) })),
+    { value: CLOSED, label: 'Closed' },
+  ];
 
   return (
     <div className="page">
-      <PageHeader title="Orders" description="Release orders to picking, pick lines from their bins, pack and ship." />
-      <div className={Cn('split', orderId && 'split-detail-open')}>
-        <section className="card card-flush split-list" aria-label="Order list">
+      <PageHeader
+        title={labels.orders}
+        description={`${orderFlow.map((s) => s.label).join(' → ')}. Stock is reserved and used as each ${labels.order.toLowerCase()} moves along.`}
+        actions={<Button variant="primary" icon="plus" onClick={() => setCreating(true)}>New {labels.order.toLowerCase()}</Button>}
+      />
+      <div className={Cn('split', number && 'split-detail-open')}>
+        <section className="card card-flush split-list" aria-label={`${labels.order} list`}>
           <div className="filters filters-stack">
-            <SearchInput label="Search orders" placeholder="Order number or customer…" value={search} onChange={setSearch} busy={list.isFetching && !list.isPending} />
-            <SegmentedControl label="Filter by status" size="sm" value={status} options={options} onChange={setStatus} />
+            <SearchInput label={`Search ${labels.orders.toLowerCase()}`} placeholder={`Number or ${labels.customer.toLowerCase()}…`} value={search} onChange={setSearch} busy={list.isFetching && !list.isPending} />
+            <SegmentedControl label="Filter by stage" size="sm" value={filter} options={options} onChange={setFilter} />
           </div>
           {list.isPending ? (
-            <SkeletonRows rows={6} height={72} label="Loading orders" />
+            <SkeletonRows rows={6} height={72} label="Loading" />
           ) : list.isError ? (
             <ErrorState message={list.error.message} onRetry={() => list.refetch()} />
           ) : !list.data.length ? (
-            <EmptyState
-              icon="orders"
-              title="No orders match"
-              action={
-                <Button size="sm" onClick={() => (setStatus('ALL'), setSearch(''))}>
-                  Clear filters
-                </Button>
-              }
-            />
+            <EmptyState icon="orders" title={`No ${labels.orders.toLowerCase()} here`} action={<Button size="sm" onClick={() => setCreating(true)}>New {labels.order.toLowerCase()}</Button>} />
           ) : (
-            <OrderList orders={list.data} selectedId={orderId} />
+            <OrderList orders={list.data} selected={number} />
           )}
         </section>
-        <section className="card split-detail" aria-label="Order detail">
-          {orderId ? <OrderDetail key={orderId} id={orderId} /> : <EmptyState icon="orders" title="Select an order">Pick an order on the left to see its lines and next step.</EmptyState>}
+        <section className="card split-detail" aria-label="Detail">
+          {number ? <OrderDetail key={number} number={number} /> : <EmptyState icon="orders" title={`Select a ${labels.order.toLowerCase()}`}>See its lines and the next step.</EmptyState>}
         </section>
       </div>
+      {creating && <NewOrderModal onClose={() => setCreating(false)} onSaved={(n) => (setCreating(false), navigate(paths.order(n)))} />}
     </div>
   );
 }

@@ -1,9 +1,8 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { Get } from '@/frontend/services/request';
+import { Biz } from '@/frontend/services/request';
 import type { ActivityResponseType, ListActivityParams } from '../types';
 
-const ListActivity = (params: ListActivityParams): Promise<ActivityResponseType[]> =>
-  Get<ActivityResponseType[]>('/activity', { params });
+const ListActivity = (params: ListActivityParams) => Biz.Get<ActivityResponseType[]>('/activity', { params });
 
 const activityKeys = {
   all: ['activity'] as const,

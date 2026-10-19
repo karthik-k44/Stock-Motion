@@ -9,10 +9,7 @@ import './styles/controls.css';
 import './styles/data.css';
 import './styles/overlay.css';
 import './styles/pages.css';
-import './styles/scene-world.css';
-import './styles/scene-items.css';
-import './styles/scene-crew.css';
-import './styles/scene-hud.css';
+import './styles/app.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

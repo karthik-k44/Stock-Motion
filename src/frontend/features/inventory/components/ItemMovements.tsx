@@ -1,18 +1,10 @@
 import { EmptyState } from '@/frontend/components/feedback';
-import { usersService } from '@/frontend/features/users/services';
 import { Cn } from '@/frontend/lib/utils';
 import { FormatDateTime, FormatSigned } from '@/frontend/utils/format';
-import type { MovementResponseType, MovementTypeEnum } from '../types';
+import { HumanizeMovement } from '@/frontend/utils/humanize';
+import type { MovementResponseType } from '../types';
 
-const TYPE_LABEL: Record<MovementTypeEnum, string> = {
-  RECEIPT: 'Received',
-  PICK: 'Picked',
-  ADJUSTMENT: 'Adjusted',
-  RELOCATION: 'Relocated',
-};
-
-export function ItemMovements({ movements }: { movements: MovementResponseType[] }) {
-  const { data: users } = usersService.useUsers();
+export function ItemMovements({ movements, unit }: { movements: MovementResponseType[]; unit: string }) {
   if (!movements.length) return <EmptyState icon="clock" title="No stock movements yet" />;
   return (
     <ol className="movements">
@@ -23,11 +15,11 @@ export function ItemMovements({ movements }: { movements: MovementResponseType[]
           </span>
           <div className="movement-text">
             <p>
-              <strong>{TYPE_LABEL[m.type]}</strong>
+              <strong>{HumanizeMovement(m.type)}</strong>
               {m.ref && <span className="mono"> · {m.ref}</span>} — {m.note}
             </p>
             <p className="muted small">
-              {FormatDateTime(m.at)} · {users?.find((u) => u.id === m.userId)?.name ?? m.userId} · balance {m.balance}
+              {FormatDateTime(m.at)} · {m.actorName ?? 'Someone who left'} · balance {m.balance} {unit}
             </p>
           </div>
         </li>

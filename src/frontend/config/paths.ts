@@ -1,16 +1,23 @@
 export const paths = {
+  login: '/login',
+  signup: '/signup',
+  invite: (token: string) => `/invite/${token}`,
+  onboarding: '/onboarding',
   home: '/',
-  warehouse: '/warehouse',
+  world: '/world',
   dashboard: '/dashboard',
   inventory: '/inventory',
   orders: '/orders',
-  order: (id: string) => `/orders/${id}`,
+  order: (number: string) => `/orders/${encodeURIComponent(number)}`,
   deliveries: '/deliveries',
-  delivery: (id: string) => `/deliveries/${id}`,
+  delivery: (number: string) => `/deliveries/${encodeURIComponent(number)}`,
   locations: '/locations',
+  customers: '/customers',
+  customer: (id: string) => `/customers/${id}`,
+  suppliers: '/suppliers',
+  team: '/team',
+  settings: '/settings',
   activity: '/activity',
-  /** The warehouse scene, panned to and highlighting an item's bin. */
-  locateItem: (sku: string) => `/warehouse?focus=${encodeURIComponent(sku)}`,
-  /** The warehouse scene, panned to a zone (yard, receiving, A–D, packing). */
-  locateZone: (zone: string) => `/warehouse?zone=${encodeURIComponent(zone)}`,
+  /** The 3D world, focused on the object that holds an item (its shelf / zone). */
+  locateItem: (sku: string) => `/world?focus=${encodeURIComponent(sku)}`,
 } as const;

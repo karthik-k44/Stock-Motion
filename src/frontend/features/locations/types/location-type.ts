@@ -2,13 +2,15 @@ import type { ItemResponseType } from '@/frontend/features/inventory/types';
 
 export type LocationResponseType = {
   code: string;
-  aisle: string;
-  level: number;
-  bin: number;
-  item: ItemResponseType | null;
+  zone: string;
+  name: string;
+  items: ItemResponseType[];
 };
+
+export type CreateLocationInput = { code: string; zone: string; name: string };
 
 /** Every location type under one name. */
 export type TLocationType = {
   Response: LocationResponseType;
+  CreateInput: CreateLocationInput;
 };

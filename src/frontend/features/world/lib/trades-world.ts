@@ -1,0 +1,113 @@
+import { paths } from '@/frontend/config/paths';
+import type { WorldLayoutType } from '../types';
+import { Deliveries, NextDeliveryMinutes, OpenCount, ZoneAlert, ZoneStats } from './world-stats';
+
+const ROAD: [number, number][] = [[4.5, -13], [4.5, 11], [21, 11], [21, -13]];
+
+/** A trades business: the depot and its shelves, the site store, two vans on the road and the job sites. */
+export const TRADES_WORLD: WorldLayoutType = {
+  size: [46, 32],
+  palette: { ground: '#d3e4c8', floor: '#e4e4df', wall: '#cdd6c8', accent: '#d97a1c', trim: '#2b4c7e', road: '#8f969f' },
+  building: { center: [-7, -4], size: [18, 12] },
+  walkers: [
+    [[-13, -3], [-2, -3], [-2, 0.5], [-13, 0.5]],
+    [[-12, -8.5], [-6, -8.5], [-6, -1]],
+    [[2, -6], [6, 2], [2, 4]],
+  ],
+  road: ROAD,
+  trees: [[-21, -12], [-21, 4], [-14, 9], [-4, 9], [24, -10], [24, 2], [12, -15], [0, -15]],
+  objects: [
+    {
+      id: 'depot',
+      label: 'Depot shelves',
+      model: 'rack',
+      zone: 'DEPOT',
+      position: [-9, -8],
+      stats: (ctx) => ZoneStats(ctx, 'DEPOT'),
+      alert: (ctx) => ZoneAlert(ctx, 'DEPOT'),
+      link: { label: 'Open depot & vans', to: paths.locations },
+    },
+    {
+      id: 'site',
+      label: 'Site store',
+      model: 'pallets',
+      zone: 'SITE',
+      position: [-12.5, -0.5],
+      stats: (ctx) => ZoneStats(ctx, 'SITE'),
+      alert: (ctx) => ZoneAlert(ctx, 'SITE'),
+      link: { label: 'Open depot & vans', to: paths.locations },
+    },
+    {
+      id: 'office',
+      label: 'Office · quotes',
+      model: 'office',
+      position: [-2, -1],
+      stats: (ctx) => [
+        { label: 'Quotes waiting', value: OpenCount(ctx, 'QUOTED') },
+        { label: 'Revenue this month', value: ctx.dashboard.kpis.revenueMonth, format: 'money' },
+        { label: 'Average job', value: ctx.dashboard.kpis.averageOrder, format: 'money' },
+        { label: 'Clients', value: ctx.dashboard.kpis.customers },
+      ],
+      link: { label: 'Open jobs', to: paths.orders },
+    },
+    {
+      id: 'van1',
+      label: 'Van 1',
+      model: 'van',
+      zone: 'VAN1',
+      position: [7, -7],
+      rotation: Math.PI,
+      route: ROAD,
+      moving: (ctx) => OpenCount(ctx, 'IN_PROGRESS') > 0,
+      stats: (ctx) => [{ label: 'Jobs in progress', value: OpenCount(ctx, 'IN_PROGRESS') }, ...ZoneStats(ctx, 'VAN1').slice(0, 3)],
+      alert: (ctx) => ZoneAlert(ctx, 'VAN1'),
+      link: { label: 'Open jobs', to: paths.orders },
+      color: '#d97a1c',
+    },
+    {
+      id: 'van2',
+      label: 'Van 2',
+      model: 'van',
+      zone: 'VAN2',
+      position: [7, -3],
+      rotation: Math.PI,
+      route: [...ROAD].reverse(),
+      moving: (ctx) => OpenCount(ctx, 'SCHEDULED') > 0,
+      stats: (ctx) => [{ label: 'Jobs booked', value: OpenCount(ctx, 'SCHEDULED') }, ...ZoneStats(ctx, 'VAN2').slice(0, 3)],
+      alert: (ctx) => ZoneAlert(ctx, 'VAN2'),
+      link: { label: 'Open jobs', to: paths.orders },
+      color: '#2b4c7e',
+    },
+    {
+      id: 'sites',
+      label: 'Job sites',
+      model: 'houses',
+      position: [14, 0],
+      count: (ctx) => Math.min(4, Math.max(1, OpenCount(ctx, 'SCHEDULED') + OpenCount(ctx, 'IN_PROGRESS'))),
+      stats: (ctx) => [
+        { label: 'Booked', value: OpenCount(ctx, 'SCHEDULED') },
+        { label: 'In progress', value: OpenCount(ctx, 'IN_PROGRESS') },
+        { label: 'Done today', value: ctx.dashboard.kpis.closedToday, tone: 'good' },
+        { label: 'Revenue today', value: ctx.dashboard.kpis.revenueToday, format: 'money' },
+      ],
+      link: { label: 'Open jobs', to: paths.orders },
+    },
+    {
+      id: 'courier',
+      label: 'Merchant deliveries',
+      model: 'truck',
+      position: [-18, 5],
+      rotation: 0,
+      route: [[-19, 12], [-19, -13], [4.5, -13], [4.5, 12]],
+      moving: (ctx) => Deliveries(ctx, 'IN_TRANSIT') > 0,
+      stats: (ctx) => [
+        { label: 'Purchase orders open', value: ctx.dashboard.kpis.incomingDeliveries },
+        { label: 'On the way now', value: Deliveries(ctx, 'IN_TRANSIT') },
+        { label: 'Units coming', value: ctx.dashboard.kpis.incomingUnits },
+        { label: 'Next due in (min)', value: NextDeliveryMinutes(ctx) },
+      ],
+      link: { label: 'Open purchase orders', to: paths.deliveries },
+      color: '#5b6b7f',
+    },
+  ],
+};

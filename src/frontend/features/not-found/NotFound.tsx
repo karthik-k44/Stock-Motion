@@ -7,7 +7,7 @@ export function NotFound() {
   useDocumentTitle('Not found');
   return (
     <div className="page">
-      <EmptyState icon="search" title="That page isn’t on the floor plan" action={<Link className="btn btn-primary" to={paths.warehouse}>Back to the warehouse</Link>}>
+      <EmptyState icon="search" title="That page doesn’t exist" action={<Link className="btn btn-primary" to={paths.home}>Back to the start</Link>}>
         The address may be mistyped or the record may no longer exist.
       </EmptyState>
     </div>

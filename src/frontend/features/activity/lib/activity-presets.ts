@@ -5,11 +5,12 @@ import { ActivityKindTypeEnum } from '../types';
 export const KIND_ICON: Record<ActivityKindTypeEnum, IconName> = {
   DELIVERY: 'truck',
   ADJUSTMENT: 'sliders',
-  ALLOCATION: 'orders',
-  PICK: 'box',
-  PACK: 'package',
-  SHIP: 'arrowUp',
+  ALLOCATION: 'package',
+  CONSUME: 'box',
+  STATUS: 'orders',
   RELOCATION: 'move',
+  CATALOG: 'edit',
+  TEAM: 'users',
   SYSTEM: 'clock',
 };
 

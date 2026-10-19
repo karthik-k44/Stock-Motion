@@ -9,6 +9,8 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
+    // The Live world page's chunk carries the 3D engine (~970 kB) and is only fetched when that page opens.
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
         manualChunks: {

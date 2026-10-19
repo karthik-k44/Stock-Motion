@@ -35,3 +35,35 @@ export function DayLabel(iso: string): string {
 }
 
 export const IsPast = (iso: string) => new Date(iso).getTime() < Date.now();
+
+const moneyFormats = new Map<string, Intl.NumberFormat>();
+
+/** Money in the business's currency, e.g. $1,240.50. Falls back to a plain number for unknown codes. */
+export function FormatMoney(n: number, currency: string): string {
+  let format = moneyFormats.get(currency);
+  if (!format) {
+    try {
+      format = new Intl.NumberFormat('en-US', { style: 'currency', currency });
+    } catch {
+      format = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    moneyFormats.set(currency, format);
+  }
+  return format.format(n);
+}
+
+/** Quantity with its unit; large gram / millilitre amounts read as kg / L. */
+export function FormatQty(n: number, unit: string): string {
+  if ((unit === 'g' || unit === 'ml') && Math.abs(n) >= 1000) {
+    return `${(n / 1000).toLocaleString('en-US', { maximumFractionDigits: 2 })} ${unit === 'g' ? 'kg' : 'L'}`;
+  }
+  return `${FormatNumber(n)} ${unit}`;
+}
+
+/** Value for an <input type="datetime-local"> from an ISO string. */
+export function ToLocalInput(iso: string | null): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const pad = (v: number) => String(v).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}

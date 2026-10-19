@@ -9,11 +9,12 @@ type AppLayoutProps = {
   badges: Record<string, number | undefined>;
   topbarEnd: ReactNode;
   sidebarFooter?: ReactNode;
+  brand?: ReactNode;
   busy?: boolean;
   children: ReactNode;
 };
 
-export function AppLayout({ nav, badges, topbarEnd, sidebarFooter, busy, children }: AppLayoutProps) {
+export function AppLayout({ nav, badges, topbarEnd, sidebarFooter, brand, busy, children }: AppLayoutProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const { pathname } = useLocation();
   const current = nav.find((n) => pathname.startsWith(n.path));
@@ -30,7 +31,7 @@ export function AppLayout({ nav, badges, topbarEnd, sidebarFooter, busy, childre
       <a href="#main" className="skip-link">
         Skip to content
       </a>
-      <Sidebar nav={nav} badges={badges} open={menuOpen} onNavigate={() => setMenuOpen(false)} footer={sidebarFooter} />
+      <Sidebar nav={nav} badges={badges} open={menuOpen} onNavigate={() => setMenuOpen(false)} footer={sidebarFooter} brand={brand} />
       {menuOpen && <div className="scrim" aria-hidden onClick={() => setMenuOpen(false)} />}
       <div className="shell-main">
         <header className="topbar">
