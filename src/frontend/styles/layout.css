@@ -1,0 +1,147 @@
+.shell {
+  min-height: 100dvh;
+}
+
+.sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: var(--sidebar-w);
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  background: #14213d;
+  color: #d9e1ef;
+  padding: 16px 12px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 8px 18px;
+}
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: #c8955a;
+  color: #2a1b08;
+}
+.brand-name { display: block; font-weight: 700; color: #fff; font-size: 15px; }
+.brand-sub { display: block; font-size: 11.5px; color: #93a1ba; }
+
+.nav-list { display: grid; gap: 2px; }
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  color: #c3cde0;
+  text-decoration: none;
+  font-weight: 500;
+}
+.nav-link:hover { background: rgba(255, 255, 255, 0.06); color: #fff; }
+.nav-link-active { background: rgba(255, 255, 255, 0.12); color: #fff; }
+.nav-link-active svg { color: #f5c26b; }
+.nav-label { flex: 1; }
+.nav-badge {
+  min-width: 22px;
+  padding: 0 6px;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.sidebar-foot { margin-top: auto; padding: 8px; }
+.conn { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+.conn-on { color: #8fd18f; }
+.conn-off { color: #f5c26b; }
+
+.shell-main {
+  margin-left: var(--sidebar-w);
+  min-width: 0;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  height: var(--topbar-h);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 20px;
+  background: rgba(255, 255, 255, 0.96);
+  border-bottom: 1px solid var(--line);
+}
+.topbar-title { font-weight: 600; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.topbar-end { display: flex; align-items: center; gap: 8px; }
+.menu-toggle { display: none; }
+.route-progress {
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  height: 2px;
+  width: 40%;
+  background: var(--accent);
+  animation: route-load 1s ease-in-out infinite;
+}
+@keyframes route-load {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(260%); }
+}
+
+.content { outline: none; }
+.page { padding: 24px; display: grid; gap: 20px; max-width: 1480px; }
+.page > * { min-width: 0; }
+.page-warehouse { padding: 0 0 24px; max-width: none; gap: 0; }
+.warehouse-intro { padding: 20px 24px 14px; }
+.below-scene { padding: 20px 24px 0; }
+
+.page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.page-title { font-size: 22px; line-height: 1.25; font-weight: 700; letter-spacing: -0.01em; }
+.page-desc { color: var(--ink-2); margin-top: 4px; max-width: 72ch; }
+.page-actions { display: flex; gap: 8px; align-items: center; }
+
+.grid-3 { display: grid; gap: 20px; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; }
+
+.split { display: grid; gap: 20px; grid-template-columns: minmax(300px, 380px) minmax(0, 1fr); align-items: start; }
+.split-list { position: sticky; top: calc(var(--topbar-h) + 16px); max-height: calc(100dvh - var(--topbar-h) - 32px); overflow: auto; }
+.split-detail { min-height: 420px; }
+.back-link { display: none; margin-bottom: 8px; }
+
+.scrim { display: none; }
+
+@media (max-width: 1180px) {
+  .grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 900px) {
+  .sidebar { transform: translateX(-100%); transition: transform 0.2s ease; box-shadow: var(--shadow-lg); }
+  .sidebar-open { transform: none; }
+  .scrim { display: block; position: fixed; inset: 0; z-index: 55; background: rgba(10, 15, 25, 0.45); }
+  .shell-main { margin-left: 0; }
+  .menu-toggle { display: inline-flex; }
+  .split { grid-template-columns: 1fr; }
+  .split-list { position: static; max-height: none; }
+  .split-detail-open .split-list { display: none; }
+  .split:not(.split-detail-open) .split-detail { display: none; }
+  .back-link { display: inline-block; }
+}
+
+@media (max-width: 760px) {
+  .page { padding: 16px; gap: 16px; }
+  .warehouse-intro { padding: 16px 16px 10px; }
+  .below-scene { padding: 16px 16px 0; }
+  .grid-3 { grid-template-columns: 1fr; }
+  .topbar { padding: 0 10px; gap: 6px; }
+  .topbar-title { display: none; }
+  .topbar-end { flex: 1; justify-content: flex-end; }
+  .hide-sm { display: none; }
+}

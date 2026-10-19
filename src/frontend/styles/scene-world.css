@@ -1,0 +1,192 @@
+/* ---------- stage / camera ---------- */
+.stage { position: relative; }
+.stage-sticky { position: sticky; top: var(--topbar-h); height: var(--stage-h); overflow: hidden; }
+.stage-viewport {
+  position: absolute;
+  inset: 0;
+  overflow: clip;
+  background: linear-gradient(#a9cbe8 0%, #d6e6f2 45%, #eef1ef 70%, #7d8287 70.5%, #6b7075 100%);
+}
+.world { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; contain: layout style; }
+.world-spacer { position: relative; }
+
+.far-layer {
+  position: absolute;
+  left: 0;
+  bottom: 30%;
+  width: 4000px;
+  height: 34%;
+  opacity: 0.55;
+  pointer-events: none;
+  background:
+    linear-gradient(#9fb2c4, #9fb2c4) 40px 60% / 70px 40% no-repeat,
+    linear-gradient(#93a8bb, #93a8bb) 130px 30% / 50px 70% no-repeat,
+    linear-gradient(#a7b8c8, #a7b8c8) 200px 70% / 110px 30% no-repeat,
+    linear-gradient(#8ea3b7, #8ea3b7) 330px 10% / 40px 90% no-repeat,
+    linear-gradient(#a0b3c5, #a0b3c5) 390px 50% / 90px 50% no-repeat,
+    linear-gradient(#9cafc1, #9cafc1) 500px 75% / 140px 25% no-repeat;
+  background-repeat: repeat-x;
+  will-change: transform;
+}
+
+
+/* phones: native horizontal scroll, HUD stacked around the viewport */
+.stage-native .stage-sticky { position: static; height: auto; overflow: visible; display: flex; flex-direction: column; gap: 10px; padding: 0 16px; }
+.stage-native .stage-viewport {
+  position: relative;
+  height: clamp(300px, 56vh, 440px);
+  overflow-x: auto;
+  overflow-y: hidden;
+  border-radius: 12px;
+  overscroll-behavior-x: contain;
+}
+
+/* ---------- yard ---------- */
+.yard { position: absolute; left: 0; height: 120px; }
+.yard-asphalt { position: absolute; inset: 0; background: linear-gradient(#5d6266, #4c5054); }
+.bay { position: absolute; top: 0; height: 100%; }
+.bay-line { position: absolute; top: 4px; width: 5px; height: 92px; background: #f1f1ea; }
+.bay-line-l { left: 0; }
+.bay-line-r { right: 0; }
+.bay-text { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); color: #f1f1ea; font: 800 18px/1 var(--font); letter-spacing: 0.15em; opacity: 0.85; white-space: nowrap; }
+.wheel-stop { position: absolute; top: 4px; width: 16px; height: 8px; background: #e8b923; border-radius: 2px; }
+.booth { position: absolute; bottom: 100%; width: 86px; height: 112px; background: #e5e1d6; border: 3px solid #b7b1a3; border-radius: 4px 4px 0 0; }
+.booth-window { position: absolute; top: 18px; left: 12px; right: 12px; height: 38px; background: #a9cbe6; border: 2px solid #8d8778; }
+.booth-sign { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); font: 700 11px var(--font); color: #5f5a4f; letter-spacing: 0.1em; }
+.lamp { position: absolute; bottom: 100%; width: 6px; height: 280px; background: #5d6268; }
+.lamp-head { position: absolute; top: 0; left: -2px; width: 46px; height: 10px; background: #5d6268; border-radius: 0 6px 6px 0; box-shadow: 30px 8px 22px rgba(255, 236, 170, 0.6); }
+
+/* ---------- building ---------- */
+.building { position: absolute; inset: 0; pointer-events: none; }
+.wall-back {
+  position: absolute;
+  top: 0;
+  background:
+    linear-gradient(transparent 82%, rgba(0, 0, 0, 0.08) 82%, rgba(0, 0, 0, 0.08) 86%, transparent 86%),
+    repeating-linear-gradient(90deg, #dcdfdb 0 26px, #d1d5d0 26px 28px);
+}
+.wall-back::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 70px;
+  height: 34px;
+  background: repeating-linear-gradient(90deg, transparent 0 120px, #bcd6ea 120px 300px, transparent 300px 360px);
+  opacity: 0.9;
+}
+.ceiling {
+  position: absolute;
+  top: 0;
+  height: 46px;
+  background: repeating-linear-gradient(45deg, #3b4148 0 10px, #343a40 10px 20px);
+  border-bottom: 4px solid #2a2f35;
+}
+.ceiling-light { position: absolute; top: 50px; width: 64px; height: 8px; border-radius: 4px; background: #fbf7df; box-shadow: 0 0 18px 4px rgba(255, 244, 200, 0.7); }
+.light-cone {
+  position: absolute;
+  top: 8px;
+  left: -78px;
+  width: 220px;
+  height: 420px;
+  background: linear-gradient(rgba(255, 247, 214, 0.42), rgba(255, 247, 214, 0));
+  clip-path: polygon(38% 0, 62% 0, 100% 100%, 0 100%);
+}
+.floor { position: absolute; height: 120px; background: linear-gradient(#aeb2ad, #93978f); }
+.floor-line { position: absolute; top: 6px; height: 4px; background: #e8b923; box-shadow: 0 98px 0 #e8b923; }
+
+.dock-wall { position: absolute; top: 0; background: linear-gradient(90deg, #7d838a, #959ba1); z-index: 7; }
+.dock-door { position: absolute; left: 0; right: 0; bottom: 0; height: 214px; background: #22272d; }
+.dock-shutter {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 100%;
+  background: repeating-linear-gradient(#bfc3c8 0 10px, #a5aab0 10px 12px);
+  transition: height 1.3s ease-in-out;
+}
+.dock-door-open .dock-shutter { height: 16px; }
+.dock-light { position: absolute; left: 50%; bottom: 228px; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; background: #c0392b; box-shadow: 0 0 8px #e74c3c; }
+.dock-light[data-on] { background: #1fae4b; box-shadow: 0 0 10px #2ecc71; }
+
+.sign { position: absolute; top: 62px; padding: 6px 12px; border-radius: 4px; background: var(--brand); color: #fff; font: 700 14px/1.2 var(--font); letter-spacing: 0.06em; white-space: nowrap; }
+.sign::before { content: ''; position: absolute; left: 16px; right: 16px; top: -16px; height: 16px; border-left: 2px solid #6b7178; border-right: 2px solid #6b7178; }
+.sign-aisle { top: 120px; width: 220px; display: flex; align-items: center; gap: 10px; font-size: 13px; letter-spacing: 0.02em; background: #1b2b47; }
+.sign-aisle::before { top: -70px; height: 70px; }
+.sign-aisle-letter { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: #f5c26b; color: #1b2b47; font-size: 17px; }
+.ship-door { position: absolute; top: 380px; height: 220px; background: #22272d; border-left: 6px solid #e8b923; }
+.ship-door-label { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-90deg); color: #e8b923; font: 800 13px var(--font); letter-spacing: 0.2em; }
+
+/* ---------- truck ---------- */
+.truck { position: absolute; left: 0; width: 500px; height: 214px; z-index: 6; will-change: transform; }
+.truck svg { display: block; overflow: visible; }
+.truck-idle { transition: none; visibility: hidden; }
+.truck-approaching { transition: transform 3s cubic-bezier(0.16, 0.6, 0.35, 1); }
+.truck-parking { transition: transform 1.5s ease-in-out; }
+.truck-departing { transition: transform 2.6s cubic-bezier(0.55, 0, 0.85, 0.45); }
+.wheel { transform-box: fill-box; transform-origin: center; }
+.truck-approaching .wheel, .truck-parking .wheel { animation: spin 0.8s linear infinite reverse; }
+.truck-departing .wheel { animation: spin 0.6s linear infinite; }
+.rev-light { fill: #7a1d1d; }
+.truck-approaching .rev-light, .truck-parking .rev-light { animation: blink 0.5s steps(2) infinite; }
+.head-light { fill: #ffe9a8; }
+@keyframes blink {
+  50% { fill: #ff5a4f; }
+}
+.truck-banner {
+  position: absolute;
+  left: 160px;
+  top: -50px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow);
+  font: 13px/1.2 var(--font);
+  white-space: nowrap;
+}
+.truck-banner-status { padding: 2px 8px; border-radius: 10px; background: var(--incoming-bg); color: var(--incoming-ink); font-weight: 700; font-size: 12px; }
+.exhaust { position: absolute; left: -6px; bottom: 30px; width: 18px; height: 18px; border-radius: 50%; background: rgba(120, 120, 120, 0.5); opacity: 0; }
+.truck-departing .exhaust { animation: puff 0.7s ease-out infinite; }
+@keyframes puff {
+  0% { opacity: 0.7; transform: scale(0.5); }
+  100% { opacity: 0; transform: translate(-30px, -24px) scale(2.2); }
+}
+
+/* ---------- staging & packing ---------- */
+.staging { position: absolute; width: 360px; height: 60px; z-index: 8; }
+.pallet { position: absolute; bottom: 0; width: 52px; height: 10px; background: repeating-linear-gradient(90deg, #b88a55 0 10px, #976c3e 10px 14px); }
+.staged {
+  position: absolute;
+  bottom: 10px;
+  width: 44px;
+  height: 38px;
+  border: 1px solid #9c6c35;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent 44%, #e7cd9b 44% 56%, transparent 56%), linear-gradient(#d7a86e, #c18d50);
+  animation: slide-in 0.7s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+.staged-label { position: absolute; bottom: 3px; left: 2px; right: 2px; font: 700 7px/1 var(--mono); color: #4a3214; text-align: center; background: #fff8; }
+.staged-qty { position: absolute; top: -22px; left: 50%; transform: translateX(-50%); padding: 1px 6px; border-radius: 8px; background: var(--good); color: #fff; font: 700 12px var(--font); white-space: nowrap; }
+.staged-leaving { animation: fade-out 1.4s ease forwards; }
+@keyframes slide-in {
+  from { transform: translateX(-120px); opacity: 0; }
+}
+@keyframes fade-out {
+  to { opacity: 0; transform: translateY(-10px); }
+}
+
+.packing { position: absolute; width: 460px; height: 120px; z-index: 5; }
+.bench { position: absolute; left: 0; bottom: 0; width: 200px; height: 72px; }
+.bench-top { position: absolute; top: 0; left: 0; right: 0; height: 12px; background: #8a6d4b; border-radius: 3px; }
+.bench-leg { position: absolute; top: 12px; bottom: 0; width: 8px; background: #5d646c; }
+.bench-leg-l { left: 10px; }
+.bench-leg-r { right: 10px; }
+.tape-gun { position: absolute; top: -14px; left: 40px; width: 26px; height: 14px; background: #d0453a; border-radius: 4px 4px 0 0; }
+.conveyor { position: absolute; bottom: 28px; height: 16px; border-radius: 8px; background: #4a5057; }
+.conveyor-belt { position: absolute; inset: 3px; border-radius: 6px; background: repeating-linear-gradient(90deg, #6c737b 0 8px, #5a6168 8px 16px); }
+.parcels { position: absolute; inset: 0; }
+.parcel { position: absolute; width: 27px; height: 24px; border: 1px solid #9c6c35; background: linear-gradient(#d7a86e, #c18d50); border-radius: 2px; }
+.parcel-label { position: absolute; inset: auto 2px 3px; height: 8px; background: #fff; font: 700 6px/8px var(--mono); color: #333; text-align: center; }
