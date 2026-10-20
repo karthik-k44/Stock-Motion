@@ -16,7 +16,7 @@ const STATUS = [
 ];
 
 /** Book stock coming in from a supplier. */
-export function NewDeliveryModal({ onClose, onSaved }: { onClose: () => void; onSaved: (number: string) => void }) {
+export const NewDeliveryModal = ({ onClose, onSaved }: { onClose: () => void; onSaved: (number: string) => void }) => {
   const { labels } = businessesService.useBusiness().template;
   const { data: suppliers = [] } = suppliersService.useSuppliers();
   const { data: stock = [] } = inventoryService.useItems({ kind: ItemKindTypeEnum.STOCK });
@@ -98,4 +98,4 @@ export function NewDeliveryModal({ onClose, onSaved }: { onClose: () => void; on
       </form>
     </Modal>
   );
-}
+};

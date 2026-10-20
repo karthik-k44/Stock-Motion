@@ -15,7 +15,7 @@ import { TemplateCard } from './components/TemplateCard';
 
 const STEPS = ['Kind of business', 'Name', 'Start'];
 
-function Wizard() {
+const Wizard = () => {
   const navigate = useNavigate();
   const templates = businessesService.useTemplates();
   const mine = businessesService.useMyBusinesses();
@@ -92,13 +92,13 @@ function Wizard() {
       </div>
     </AuthLayout>
   );
-}
+};
 
-export function Onboarding() {
+export const Onboarding = () => {
   useDocumentTitle('Set up your business');
   return (
     <SessionGate>
       <Wizard />
     </SessionGate>
   );
-}
+};

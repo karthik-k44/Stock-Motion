@@ -15,7 +15,7 @@ import { dashboardRepository } from './dashboard.repository';
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
 /** Everything the dashboard and the 3D world's stat cards show, in one round trip. */
-async function Get(scope: ScopeType): Promise<DashboardResponseType> {
+const Get = async (scope: ScopeType): Promise<DashboardResponseType> => {
   const [itemRows, categories, locations, sales, openByStatus, topSellers, counts, deliveryRows, activityRows] = await Promise.all([
     itemsRepository.ListViews(db, scope.businessId),
     categoriesRepository.List(db, scope.businessId),
@@ -92,6 +92,6 @@ async function Get(scope: ScopeType): Promise<DashboardResponseType> {
     upcomingDeliveries: upcoming.slice(0, 4),
     recentActivity: activityRows.map(ToActivityResponse),
   };
-}
+};
 
 export const dashboardService = { Get };

@@ -15,23 +15,22 @@ import { ItemKindTypeEnum } from '@/backend/types/item';
 
 const minutesAgo = (m: number) => new Date(Date.now() - m * 60_000);
 
-function at(dayOffset: number, hour: number, minute = 0): Date {
+const at = (dayOffset: number, hour: number, minute = 0): Date => {
   const d = new Date();
   d.setDate(d.getDate() + dayOffset);
   d.setHours(hour, minute, 0, 0);
   return d;
-}
+};
 
 /**
  * Give a new (or reset) business its template's storage locations and categories, and
  * optionally the template's sample data. Everything sample is attributed to `ownerId`.
  */
-export async function SetupBusiness(
+export const SetupBusiness = async (
   tx: Queryable,
   business: { id: string; type: string; name: string },
   ownerId: string,
-  withSample: boolean,
-): Promise<void> {
+  withSample: boolean,): Promise<void> => {
   const template = templatesService.Get(business.type);
   for (const l of templatesService.Locations(template)) await locationsRepository.Insert(tx, business.id, l);
   for (const [position, c] of template.categories.entries()) await categoriesRepository.Insert(tx, business.id, { ...c, position });
@@ -42,9 +41,9 @@ export async function SetupBusiness(
     accountId: ownerId,
     message: `Set up ${business.name} as a ${template.name.toLowerCase()}${withSample ? ' with sample data' : ''}`,
   });
-}
+};
 
-async function loadSample(tx: Queryable, business: { id: string; type: string }, ownerId: string, sample: SampleDataType) {
+const loadSample = async (tx: Queryable, business: { id: string; type: string }, ownerId: string, sample: SampleDataType) => {
   const template = templatesService.Get(business.type);
 
   const supplierIds = new Map<string, string>();
@@ -142,4 +141,4 @@ async function loadSample(tx: Queryable, business: { id: string; type: string },
       });
     }
   }
-}
+};

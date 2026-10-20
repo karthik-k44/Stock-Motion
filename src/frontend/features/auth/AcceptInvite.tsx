@@ -11,7 +11,7 @@ import { AuthLayout } from './components/AuthLayout';
 import { authService } from './services';
 
 /** `/invite/:token` — join a team as a new person, or with the account you're signed in to. */
-export function AcceptInvite() {
+export const AcceptInvite = () => {
   useDocumentTitle('Join a team');
   const { token = '' } = useParams();
   const qc = useQueryClient();
@@ -91,4 +91,4 @@ export function AcceptInvite() {
       )}
     </AuthLayout>
   );
-}
+};

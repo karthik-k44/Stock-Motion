@@ -18,7 +18,7 @@ import type { ListOrdersParams } from './types';
 const OPEN = 'OPEN';
 const CLOSED = 'CLOSED';
 
-export function Orders() {
+export const Orders = () => {
   const { template } = businessesService.useBusiness();
   const { labels, orderFlow } = template;
   useDocumentTitle(labels.orders);
@@ -70,4 +70,4 @@ export function Orders() {
       {creating && <NewOrderModal onClose={() => setCreating(false)} onSaved={(n) => (setCreating(false), navigate(paths.order(n)))} />}
     </div>
   );
-}
+};

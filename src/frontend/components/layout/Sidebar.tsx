@@ -14,7 +14,7 @@ type SidebarProps = {
   brand?: ReactNode;
 };
 
-export function Sidebar({ nav, badges, open, onNavigate, footer, brand }: SidebarProps) {
+export const Sidebar = ({ nav, badges, open, onNavigate, footer, brand }: SidebarProps) => {
   return (
     <nav id="app-nav" className={Cn('sidebar', open && 'sidebar-open')} aria-label="Main">
       <div className="brand">
@@ -45,4 +45,4 @@ export function Sidebar({ nav, badges, open, onNavigate, footer, brand }: Sideba
       {footer && <div className="sidebar-foot">{footer}</div>}
     </nav>
   );
-}
+};

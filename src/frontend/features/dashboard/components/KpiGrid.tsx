@@ -5,7 +5,7 @@ import { businessesService } from '@/frontend/features/businesses/services';
 import { FormatMoney, FormatNumber } from '@/frontend/utils/format';
 import type { DashboardKpisType } from '../types';
 
-export function KpiGrid({ kpis }: { kpis: DashboardKpisType }) {
+export const KpiGrid = ({ kpis }: { kpis: DashboardKpisType }) => {
   const navigate = useNavigate();
   const business = businessesService.useBusiness();
   const { labels } = business.template;
@@ -27,4 +27,4 @@ export function KpiGrid({ kpis }: { kpis: DashboardKpisType }) {
       <StatCard label={labels.customers} value={kpis.customers} hint={`${kpis.newCustomersMonth} new this month · team of ${kpis.team}`} icon="user" onClick={() => navigate(paths.customers)} />
     </div>
   );
-}
+};

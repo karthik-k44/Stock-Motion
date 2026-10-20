@@ -4,7 +4,7 @@ import { Card } from '@/frontend/components/card';
 import { Field } from '@/frontend/components/form';
 import { businessesService } from '@/frontend/features/businesses/services';
 
-export function BusinessDetailsCard() {
+export const BusinessDetailsCard = () => {
   const business = businessesService.useBusiness();
   const save = businessesService.useUpdateBusinessMutation();
   const [name, setName] = useState(business.name);
@@ -36,4 +36,4 @@ export function BusinessDetailsCard() {
       </form>
     </Card>
   );
-}
+};

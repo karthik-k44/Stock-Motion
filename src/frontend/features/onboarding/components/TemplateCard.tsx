@@ -7,7 +7,7 @@ const ICON: Record<BusinessTypeEnum, IconName> = { RETAIL: 'warehouse', CAFE: 's
 type Props = { template: TemplateResponseType; selected: boolean; onSelect: () => void };
 
 /** One business type to choose from, previewing how the app will talk about the work. */
-export function TemplateCard({ template, selected, onSelect }: Props) {
+export const TemplateCard = ({ template, selected, onSelect }: Props) => {
   const { labels } = template;
   return (
     <button type="button" role="radio" aria-checked={selected} className={Cn('template-card', selected && 'template-card-on')} onClick={onSelect}>
@@ -30,4 +30,4 @@ export function TemplateCard({ template, selected, onSelect }: Props) {
       </span>
     </button>
   );
-}
+};

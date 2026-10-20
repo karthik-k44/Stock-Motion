@@ -25,29 +25,29 @@ const toCustomer = (r: CustomerListRow): CustomerResponseType => ({
   createdAt: ToIso(r.created_at),
 });
 
-async function List(scope: ScopeType, search?: string): Promise<CustomerResponseType[]> {
+const List = async (scope: ScopeType, search?: string): Promise<CustomerResponseType[]> => {
   return (await customersRepository.List(db, scope.businessId, search)).map(toCustomer);
-}
+};
 
-async function find(scope: ScopeType, id: string, q: Queryable = db): Promise<CustomerResponseType> {
+const find = async (scope: ScopeType, id: string, q: Queryable = db): Promise<CustomerResponseType> => {
   const row = await customersRepository.Find(q, scope.businessId, id);
   if (!row) throw NotFound(scope.template.labels.customer, id);
   return toCustomer(row);
-}
+};
 
-async function Get(scope: ScopeType, id: string): Promise<CustomerDetailResponseType> {
+const Get = async (scope: ScopeType, id: string): Promise<CustomerDetailResponseType> => {
   const customer = await find(scope, id);
   return { ...customer, orders: await ordersService.List(scope, { customerId: id }) };
-}
+};
 
 /** The customer's name for an order, validating the id belongs to this business. */
-async function NameFor(scope: ScopeType, id: string, q: Queryable = db): Promise<string> {
+const NameFor = async (scope: ScopeType, id: string, q: Queryable = db): Promise<string> => {
   const row = await customersRepository.Find(q, scope.businessId, id);
   if (!row) throw BadRequest(`Choose one of your ${scope.template.labels.customers.toLowerCase()}`);
   return row.name;
-}
+};
 
-async function Create(scope: ScopeType, input: CustomerInput): Promise<CustomerResponseType> {
+const Create = async (scope: ScopeType, input: CustomerInput): Promise<CustomerResponseType> => {
   const { customer, activity } = await db.transaction(async (tx) => {
     const id = await customersRepository.Insert(tx, scope.businessId, input);
     const activity = await RecordActivity(tx, scope, {
@@ -58,22 +58,22 @@ async function Create(scope: ScopeType, input: CustomerInput): Promise<CustomerR
   });
   BroadcastChange(scope.businessId, [ResourceTypeEnum.CUSTOMERS, ResourceTypeEnum.ACTIVITY, ResourceTypeEnum.DASHBOARD], [activity]);
   return customer;
-}
+};
 
-async function Update(scope: ScopeType, id: string, input: CustomerInput): Promise<CustomerResponseType> {
+const Update = async (scope: ScopeType, id: string, input: CustomerInput): Promise<CustomerResponseType> => {
   await find(scope, id);
   await customersRepository.Update(db, id, input);
   BroadcastChange(scope.businessId, [ResourceTypeEnum.CUSTOMERS]);
   return find(scope, id);
-}
+};
 
-async function Delete(scope: ScopeType, id: string): Promise<void> {
+const Delete = async (scope: ScopeType, id: string): Promise<void> => {
   const current = await find(scope, id);
   if (current.openOrders) {
     throw Conflict(`${current.name} has ${current.openOrders} open ${scope.template.labels.orders.toLowerCase()} — close them first`);
   }
   await customersRepository.Delete(db, id);
   BroadcastChange(scope.businessId, [ResourceTypeEnum.CUSTOMERS, ResourceTypeEnum.DASHBOARD]);
-}
+};
 
 export const customersService = { List, Get, NameFor, Create, Update, Delete };

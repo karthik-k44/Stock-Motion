@@ -8,7 +8,7 @@ const worst = (l: LocationResponseType) =>
   l.items.some((i) => i.status === 'OUT') ? 'out' : l.items.some((i) => i.status === 'LOW') ? 'low' : 'in_stock';
 
 /** One bin / shelf: empty, a single product (warehouse bins) or several items (shared shelves). */
-export function LocationCell({ location, dimmed, onOpen }: Props) {
+export const LocationCell = ({ location, dimmed, onOpen }: Props) => {
   const { items, code, name } = location;
   if (!items.length) {
     return (
@@ -38,4 +38,4 @@ export function LocationCell({ location, dimmed, onOpen }: Props) {
       </ul>
     </div>
   );
-}
+};

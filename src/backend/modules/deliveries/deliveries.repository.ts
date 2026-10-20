@@ -10,7 +10,7 @@ export type DeliveryFiltersType = {
   limit?: number;
 };
 
-async function List(q: Queryable, businessId: string, filters: DeliveryFiltersType = {}): Promise<DeliveryRow[]> {
+const List = async (q: Queryable, businessId: string, filters: DeliveryFiltersType = {}): Promise<DeliveryRow[]> => {
   const where = ['business_id = $1'];
   const params: unknown[] = [businessId];
   if (filters.view === 'UPCOMING') where.push(`status <> 'RECEIVED'`);
@@ -33,22 +33,22 @@ async function List(q: Queryable, businessId: string, filters: DeliveryFiltersTy
     params,
   );
   return rows;
-}
+};
 
-async function FindByNumber(q: Queryable, businessId: string, number: string): Promise<DeliveryRow | undefined> {
+const FindByNumber = async (q: Queryable, businessId: string, number: string): Promise<DeliveryRow | undefined> => {
   const { rows } = await q.query<DeliveryRow>('SELECT * FROM deliveries WHERE business_id = $1 AND number = $2', [businessId, number]);
   return rows[0];
-}
+};
 
-async function LockByNumber(q: Queryable, businessId: string, number: string): Promise<DeliveryRow | undefined> {
+const LockByNumber = async (q: Queryable, businessId: string, number: string): Promise<DeliveryRow | undefined> => {
   const { rows } = await q.query<DeliveryRow>('SELECT * FROM deliveries WHERE business_id = $1 AND number = $2 FOR UPDATE', [
     businessId,
     number,
   ]);
   return rows[0];
-}
+};
 
-async function ListLines(q: Queryable, deliveryIds: string[]): Promise<DeliveryLineRow[]> {
+const ListLines = async (q: Queryable, deliveryIds: string[]): Promise<DeliveryLineRow[]> => {
   if (!deliveryIds.length) return [];
   const { rows } = await q.query<DeliveryLineRow>(
     `SELECT dl.delivery_id, dl.item_id, i.sku, i.name, i.unit, i.location, dl.expected, dl.received, dl.unit_cost
@@ -57,11 +57,11 @@ async function ListLines(q: Queryable, deliveryIds: string[]): Promise<DeliveryL
     [deliveryIds],
   );
   return rows;
-}
+};
 
 const Next = (q: Queryable, businessId: string, prefix: string) => NextNumber(q, 'deliveries', businessId, prefix, 2001);
 
-async function Insert(
+const Insert = async (
   q: Queryable,
   input: {
     businessId: string;
@@ -73,8 +73,7 @@ async function Insert(
     expectedAt: DbDate;
     status: string;
     receivedAt?: DbDate | null;
-  },
-): Promise<string> {
+  },): Promise<string> => {
   const { rows } = await q.query<{ id: string }>(
     `INSERT INTO deliveries (business_id, number, supplier_id, supplier_name, vehicle, reference, expected_at, received_at, status)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
@@ -84,34 +83,32 @@ async function Insert(
     ],
   );
   return rows[0].id;
-}
+};
 
-async function InsertLine(
+const InsertLine = async (
   q: Queryable,
-  input: { deliveryId: string; itemId: string; position: number; expected: number; received?: number | null; unitCost: number },
-): Promise<void> {
+  input: { deliveryId: string; itemId: string; position: number; expected: number; received?: number | null; unitCost: number },): Promise<void> => {
   await q.query(
     'INSERT INTO delivery_lines (delivery_id, item_id, position, expected, received, unit_cost) VALUES ($1, $2, $3, $4, $5, $6)',
     [input.deliveryId, input.itemId, input.position, input.expected, input.received ?? null, input.unitCost],
   );
-}
+};
 
-async function SetStatus(q: Queryable, id: string, status: string): Promise<void> {
+const SetStatus = async (q: Queryable, id: string, status: string): Promise<void> => {
   await q.query(
     `UPDATE deliveries SET status = $2, received_at = CASE WHEN $2 = 'RECEIVED' THEN now() ELSE received_at END WHERE id = $1`,
     [id, status],
   );
-}
+};
 
-async function SetLineReceived(q: Queryable, deliveryId: string, itemId: string, received: number): Promise<void> {
+const SetLineReceived = async (q: Queryable, deliveryId: string, itemId: string, received: number): Promise<void> => {
   await q.query('UPDATE delivery_lines SET received = $3 WHERE delivery_id = $1 AND item_id = $2', [deliveryId, itemId, received]);
-}
+};
 
 /** Open deliveries that include an item, for the item detail panel. */
-async function ListOpenForItem(
+const ListOpenForItem = async (
   q: Queryable,
-  itemId: string,
-): Promise<{ number: string; supplier_name: string; expected_at: DbDate; expected: number }[]> {
+  itemId: string,): Promise<{ number: string; supplier_name: string; expected_at: DbDate; expected: number }[]> => {
   const { rows } = await q.query<{ number: string; supplier_name: string; expected_at: DbDate; expected: number }>(
     `SELECT d.number, d.supplier_name, d.expected_at, dl.expected
      FROM delivery_lines dl JOIN deliveries d ON d.id = dl.delivery_id
@@ -119,7 +116,7 @@ async function ListOpenForItem(
     [itemId],
   );
   return rows;
-}
+};
 
 export const deliveriesRepository = {
   List,

@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 type Row = { key: string; label: ReactNode; value: number; display?: string };
 
 /** Single-series horizontal bars (one hue), every bar direct-labelled. */
-export function BarList({ rows, label }: { rows: Row[]; label: string }) {
+export const BarList = ({ rows, label }: { rows: Row[]; label: string }) => {
   const max = Math.max(1, ...rows.map((r) => r.value));
   return (
     <ul className="bars" aria-label={label}>
@@ -18,4 +18,4 @@ export function BarList({ rows, label }: { rows: Row[]; label: string }) {
       ))}
     </ul>
   );
-}
+};

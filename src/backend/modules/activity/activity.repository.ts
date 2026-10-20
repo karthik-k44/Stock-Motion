@@ -18,7 +18,7 @@ export type InsertActivityType = {
   at?: DbDate;
 };
 
-async function Insert(q: Queryable, input: InsertActivityType): Promise<ActivityRow> {
+const Insert = async (q: Queryable, input: InsertActivityType): Promise<ActivityRow> => {
   const { rows } = await q.query<ActivityRow>(
     `INSERT INTO activity (business_id, at, kind, account_id, message, ref_type, ref_id, meta)
      VALUES ($1, COALESCE($2, now()), $3, $4, $5, $6, $7, $8)
@@ -29,13 +29,12 @@ async function Insert(q: Queryable, input: InsertActivityType): Promise<Activity
     ],
   );
   return rows[0];
-}
+};
 
-async function List(
+const List = async (
   q: Queryable,
   businessId: string,
-  filters: { kind?: string; accountId?: string; search?: string; refType?: string; refId?: string; limit: number },
-): Promise<ActivityRow[]> {
+  filters: { kind?: string; accountId?: string; search?: string; refType?: string; refId?: string; limit: number },): Promise<ActivityRow[]> => {
   const where = ['a.business_id = $1'];
   const params: unknown[] = [businessId];
   const add = (sql: string, value: unknown) => {
@@ -53,6 +52,6 @@ async function List(
     params,
   );
   return rows;
-}
+};
 
 export const activityRepository = { Insert, List };

@@ -2,7 +2,7 @@ import type { WorldLayoutType, XZType } from '../types';
 import { Block } from './models/Block';
 
 /** A road ribbon along a closed loop. */
-function Road({ points, color }: { points: XZType[]; color: string }) {
+const Road = ({ points, color }: { points: XZType[]; color: string }) => {
   return (
     <>
       {points.map(([x1, z1], i) => {
@@ -18,9 +18,9 @@ function Road({ points, color }: { points: XZType[]; color: string }) {
       })}
     </>
   );
-}
+};
 
-function Tree({ at }: { at: XZType }) {
+const Tree = ({ at }: { at: XZType }) => {
   return (
     <group position={[at[0], 0, at[1]]}>
       <mesh position={[0, 0.5, 0]} castShadow>
@@ -33,10 +33,10 @@ function Tree({ at }: { at: XZType }) {
       </mesh>
     </group>
   );
-}
+};
 
 /** Ground, the building's floor with cut-away walls on its far sides, the road and trees. */
-export function Scenery({ layout }: { layout: WorldLayoutType }) {
+export const Scenery = ({ layout }: { layout: WorldLayoutType }) => {
   const [gw, gd] = layout.size;
   const { center, size } = layout.building;
   const [bw, bd] = size;
@@ -55,4 +55,4 @@ export function Scenery({ layout }: { layout: WorldLayoutType }) {
       {layout.trees.map((t) => <Tree key={`${t[0]},${t[1]}`} at={t} />)}
     </group>
   );
-}
+};

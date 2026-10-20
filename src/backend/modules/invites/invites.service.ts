@@ -31,7 +31,7 @@ const toInvite = (r: InviteRow): InviteResponseType => ({
   id: r.id, role: r.role, expiresAt: ToIso(r.expires_at), createdAt: ToIso(r.created_at),
 });
 
-async function Create(scope: ScopeType, input: CreateInviteInput): Promise<CreatedInviteResponseType> {
+const Create = async (scope: ScopeType, input: CreateInviteInput): Promise<CreatedInviteResponseType> => {
   if (!scope.template.roles.some((r) => r.code === input.role)) throw BadRequest(`${input.role} is not a role here`);
   if (input.role === BaseRoleTypeEnum.OWNER && scope.actor.role !== BaseRoleTypeEnum.OWNER) {
     throw Forbidden('Only an owner can invite another owner');
@@ -41,18 +41,18 @@ async function Create(scope: ScopeType, input: CreateInviteInput): Promise<Creat
     tokenHash: HashOpaqueToken(token), businessId: scope.businessId, role: input.role, createdBy: scope.actor.id, days: input.days,
   });
   return { ...toInvite(row), token };
-}
+};
 
-async function List(scope: ScopeType): Promise<InviteResponseType[]> {
+const List = async (scope: ScopeType): Promise<InviteResponseType[]> => {
   return (await invitesRepository.ListPending(db, scope.businessId)).map(toInvite);
-}
+};
 
-async function Revoke(scope: ScopeType, inviteId: string): Promise<void> {
+const Revoke = async (scope: ScopeType, inviteId: string): Promise<void> => {
   if (!(await invitesRepository.Revoke(db, scope.businessId, inviteId))) throw NotFound('Invite', inviteId);
-}
+};
 
 /** A still-usable invite and its business, or a clear reason why the link no longer works. */
-async function usable(q: Queryable, token: string, lock = false): Promise<{ invite: InviteRow; business: BusinessRow }> {
+const usable = async (q: Queryable, token: string, lock = false): Promise<{ invite: InviteRow; business: BusinessRow }> => {
   const invite = await invitesRepository.FindByTokenHash(q, HashOpaqueToken(token), lock);
   if (!invite || invite.revoked_at) throw NotFound('Invite', 'link');
   if (invite.accepted_at) throw Conflict('This invite link has already been used');
@@ -60,9 +60,9 @@ async function usable(q: Queryable, token: string, lock = false): Promise<{ invi
   const business = await businessesRepository.Find(q, invite.business_id);
   if (!business) throw NotFound('Invite', 'link');
   return { invite, business };
-}
+};
 
-async function Preview(token: string): Promise<InvitePreviewResponseType> {
+const Preview = async (token: string): Promise<InvitePreviewResponseType> => {
   const { invite, business } = await usable(db, token);
   const template = templatesService.Get(business.type);
   return {
@@ -72,9 +72,9 @@ async function Preview(token: string): Promise<InvitePreviewResponseType> {
     roleLabel: templatesService.RoleLabel(template, invite.role),
     expiresAt: ToIso(invite.expires_at),
   };
-}
+};
 
-async function join(tx: Queryable, token: string, account: AccountResponseType) {
+const join = async (tx: Queryable, token: string, account: AccountResponseType) => {
   const { invite, business } = await usable(tx, token, true);
   if (await businessesService.FindMembership(business.id, account.id, tx)) {
     throw Conflict(`You are already on the ${business.name} team`);
@@ -88,18 +88,18 @@ async function join(tx: Queryable, token: string, account: AccountResponseType) 
     message: `${account.name} joined as ${templatesService.RoleLabel(template, invite.role)}`,
   });
   return { businessId: business.id, activity };
-}
+};
 
 /** An existing account joins the business. */
-async function Accept(account: AccountResponseType, token: string): Promise<BusinessResponseType> {
+const Accept = async (account: AccountResponseType, token: string): Promise<BusinessResponseType> => {
   const { businessId, activity } = await db.transaction((tx) => join(tx, token, account));
   BroadcastChange(businessId, JOIN_RESOURCES, [activity]);
   const mine = await businessesService.ListMine(account.id);
   return mine.find((b) => b.id === businessId)!;
-}
+};
 
 /** A new person signs up straight from the invite link. */
-async function Register(token: string, input: RegisterInput): Promise<IssuedSessionType & { businessId: string }> {
+const Register = async (token: string, input: RegisterInput): Promise<IssuedSessionType & { businessId: string }> => {
   const result = await db.transaction(async (tx) => {
     await usable(tx, token, true);
     const account = await authService.CreateAccount(tx, input);
@@ -108,6 +108,6 @@ async function Register(token: string, input: RegisterInput): Promise<IssuedSess
   });
   BroadcastChange(result.businessId, JOIN_RESOURCES, [result.activity]);
   return { ...result.session, businessId: result.businessId };
-}
+};
 
 export const invitesService = { Create, List, Revoke, Preview, Accept, Register };

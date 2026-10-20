@@ -10,7 +10,7 @@ type Props = {
   grouped?: boolean;
 };
 
-export function ActivityFeed({ query, compact, grouped }: Props) {
+export const ActivityFeed = ({ query, compact, grouped }: Props) => {
   if (query.isPending) return <SkeletonRows rows={compact ? 4 : 8} height={compact ? 36 : 48} label="Loading activity" />;
   if (query.isError) return <ErrorState message={query.error.message} onRetry={() => query.refetch()} />;
   if (!query.data.length) return <EmptyState icon="clock" title="No activity yet" />;
@@ -44,4 +44,4 @@ export function ActivityFeed({ query, compact, grouped }: Props) {
       ))}
     </div>
   );
-}
+};

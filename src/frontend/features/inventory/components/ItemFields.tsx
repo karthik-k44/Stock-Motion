@@ -19,7 +19,7 @@ type Props = {
 };
 
 /** The form fields for an item; which ones show depends on the kind (stock / made / service). */
-export function ItemFields({ kind, values, errors, onChange, editing }: Props) {
+export const ItemFields = ({ kind, values, errors, onChange, editing }: Props) => {
   const business = businessesService.useBusiness();
   const { template } = business;
   const { data: categories = [] } = categoriesService.useCategories();
@@ -73,4 +73,4 @@ export function ItemFields({ kind, values, errors, onChange, editing }: Props) {
       )}
     </div>
   );
-}
+};

@@ -12,7 +12,7 @@ import { AttachRealtime, CloseRealtime } from './realtime/socket';
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 
-async function main() {
+const main = async () => {
   await ConnectDb({ url: env.DATABASE_URL, dataDir: env.PGLITE_DIR });
   await RunMigrations();
   // Demo login on an empty development database; production starts empty and owners sign up.
@@ -51,7 +51,7 @@ async function main() {
   };
   process.on('SIGINT', shutdown);
   process.on('SIGTERM', shutdown);
-}
+};
 
 main().catch((err) => {
   logger.error(`Failed to start: ${err instanceof Error ? err.message : String(err)}`);

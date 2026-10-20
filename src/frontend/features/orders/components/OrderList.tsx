@@ -8,7 +8,7 @@ import { StageOf } from '../lib/order-flow';
 import type { OrderResponseType } from '../types';
 import { OrderStatusBadge } from './OrderStatusBadge';
 
-export function OrderList({ orders, selected }: { orders: OrderResponseType[]; selected?: string }) {
+export const OrderList = ({ orders, selected }: { orders: OrderResponseType[]; selected?: string }) => {
   const business = businessesService.useBusiness();
   return (
     <ul className="order-list">
@@ -40,4 +40,4 @@ export function OrderList({ orders, selected }: { orders: OrderResponseType[]; s
       })}
     </ul>
   );
-}
+};

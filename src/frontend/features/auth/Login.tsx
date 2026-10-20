@@ -6,7 +6,7 @@ import { AuthLayout } from './components/AuthLayout';
 import { SafeNext } from './lib/safe-next';
 import { authService } from './services';
 
-export function Login() {
+export const Login = () => {
   useDocumentTitle('Sign in');
   const navigate = useNavigate();
   const [params] = useSearchParams();
@@ -29,4 +29,4 @@ export function Login() {
       </p>
     </AuthLayout>
   );
-}
+};

@@ -5,7 +5,7 @@ import { FormatDateTime } from '@/frontend/utils/format';
 import type { ItemDetailResponseType } from '../types';
 
 /** Orders waiting on this item and deliveries bringing more of it. */
-export function ItemOpenWork({ item }: { item: ItemDetailResponseType }) {
+export const ItemOpenWork = ({ item }: { item: ItemDetailResponseType }) => {
   const { template } = businessesService.useBusiness();
   if (!item.openOrders.length && !item.incomingDeliveries.length) {
     return <p className="muted small">Not on any open {template.labels.orders.toLowerCase()} or {template.labels.deliveries.toLowerCase()}.</p>;
@@ -27,4 +27,4 @@ export function ItemOpenWork({ item }: { item: ItemDetailResponseType }) {
       ))}
     </ul>
   );
-}
+};

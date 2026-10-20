@@ -6,7 +6,7 @@ import { FormatDateTime, RelativeTime } from '@/frontend/utils/format';
 import { KIND_ICON } from '../lib/activity-presets';
 import type { ActivityResponseType } from '../types';
 
-export function ActivityItem({ entry, compact }: { entry: ActivityResponseType; compact?: boolean }) {
+export const ActivityItem = ({ entry, compact }: { entry: ActivityResponseType; compact?: boolean }) => {
   const drawer = useItemDrawer();
   const ref = entry.refId;
   const link =
@@ -37,4 +37,4 @@ export function ActivityItem({ entry, compact }: { entry: ActivityResponseType; 
       </div>
     </li>
   );
-}
+};

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 /** Counts from the previous value to the new one when live data changes, and flashes briefly. */
-export function AnimatedNumber({ value, format, animate }: { value: number; format: (n: number) => string; animate: boolean }) {
+export const AnimatedNumber = ({ value, format, animate }: { value: number; format: (n: number) => string; animate: boolean }) => {
   const [shown, setShown] = useState(value);
   const [changed, setChanged] = useState(false);
   const from = useRef(value);
@@ -32,4 +32,4 @@ export function AnimatedNumber({ value, format, animate }: { value: number; form
   }, [value, animate]);
 
   return <span className={changed ? 'num-changed' : undefined}>{format(Number.isInteger(value) ? Math.round(shown) : shown)}</span>;
-}
+};

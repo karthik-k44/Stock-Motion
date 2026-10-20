@@ -4,7 +4,7 @@ import type { Group } from 'three';
 import { Block } from './Block';
 
 /** A small office cabin with a pitched roof and a lit window. */
-export function Office({ accent }: { accent: string }) {
+export const Office = ({ accent }: { accent: string }) => {
   return (
     <group>
       <Block size={[3.4, 2.2, 2.8]} color="#f4f1ea" radius={0.1} />
@@ -16,10 +16,10 @@ export function Office({ accent }: { accent: string }) {
       <Block size={[0.7, 1.4, 0.05]} position={[0.9, 0, 1.41]} color="#8a6a4a" radius={0.02} />
     </group>
   );
-}
+};
 
 /** Packing bench with boxes and a tape roll. */
-export function Bench() {
+export const Bench = () => {
   return (
     <group>
       <Block size={[3.2, 0.9, 1.4]} color="#9c6b43" radius={0.06} />
@@ -31,30 +31,30 @@ export function Bench() {
       </mesh>
     </group>
   );
-}
+};
 
 /** The café counter. */
-export function Counter({ accent }: { accent: string }) {
+export const Counter = ({ accent }: { accent: string }) => {
   return (
     <group>
       <Block size={[9, 1, 1.3]} color={accent} radius={0.1} />
       <Block size={[9.2, 0.1, 1.5]} position={[0, 1, 0]} color="#efe7da" radius={0.05} />
     </group>
   );
-}
+};
 
 /** Till with its screen, on the counter. */
-export function Till() {
+export const Till = () => {
   return (
     <group position={[0, 1.1, 0]}>
       <Block size={[0.9, 0.35, 0.7]} color="#2e3440" radius={0.06} />
       <Block size={[0.7, 0.45, 0.06]} position={[0, 0.35, -0.15]} color="#1b2230" emissive="#3fd18a" emissiveIntensity={0.5} radius={0.02} />
     </group>
   );
-}
+};
 
 /** Espresso machine; steam rises while there are tickets being prepared. */
-export function CoffeeMachine({ working, animate }: { working: boolean; animate: boolean }) {
+export const CoffeeMachine = ({ working, animate }: { working: boolean; animate: boolean }) => {
   const steam = useRef<Group>(null);
   useFrame((state) => {
     if (!steam.current) return;
@@ -81,10 +81,10 @@ export function CoffeeMachine({ working, animate }: { working: boolean; animate:
       </group>
     </group>
   );
-}
+};
 
 /** A row of round tables with stools. */
-export function Tables({ count }: { count: number }) {
+export const Tables = ({ count }: { count: number }) => {
   return (
     <group>
       {Array.from({ length: count }, (_, i) => {
@@ -111,10 +111,10 @@ export function Tables({ count }: { count: number }) {
       })}
     </group>
   );
-}
+};
 
 /** Customers' houses where jobs are happening; each has a roof and a little work flag. */
-export function Houses({ count, accent }: { count: number; accent: string }) {
+export const Houses = ({ count, accent }: { count: number; accent: string }) => {
   const colors = ['#f1e3cf', '#dfe9f2', '#e9f0dc', '#f4dcdc'];
   return (
     <group>
@@ -135,4 +135,4 @@ export function Houses({ count, accent }: { count: number; accent: string }) {
       })}
     </group>
   );
-}
+};

@@ -10,7 +10,7 @@ export type LineDraftType = { sku: string; qty: string };
 type Props = { lines: LineDraftType[]; onChange: (lines: LineDraftType[]) => void; error?: string };
 
 /** Pick what's on the order: anything you sell (stock, made items, services) × quantity. */
-export function OrderLinesEditor({ lines, onChange, error }: Props) {
+export const OrderLinesEditor = ({ lines, onChange, error }: Props) => {
   const business = businessesService.useBusiness();
   const { data: items = [] } = inventoryService.useItems();
   const [adding, setAdding] = useState('');
@@ -60,4 +60,4 @@ export function OrderLinesEditor({ lines, onChange, error }: Props) {
       {lines.length > 0 && <p className="strong">Total {FormatMoney(total, business.currency)}</p>}
     </Field>
   );
-}
+};

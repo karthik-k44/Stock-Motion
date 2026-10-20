@@ -9,7 +9,7 @@ type FieldProps = {
 };
 
 /** Label + control + hint/error, wired up for screen readers via `${id}-hint` / `${id}-error`. */
-export function Field({ id, label, error, hint, children }: FieldProps) {
+export const Field = ({ id, label, error, hint, children }: FieldProps) => {
   return (
     <div className={error ? 'field field-invalid' : 'field'}>
       <label htmlFor={id} className="field-label">
@@ -27,7 +27,7 @@ export function Field({ id, label, error, hint, children }: FieldProps) {
       ) : null}
     </div>
   );
-}
+};
 
 export const describedBy = (id: string, error?: string, hint?: unknown) =>
   error ? `${id}-error` : hint ? `${id}-hint` : undefined;

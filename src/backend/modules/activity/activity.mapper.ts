@@ -7,7 +7,7 @@ import type {
   ActivityResponseType,
 } from '@/backend/types/activity';
 
-export function ToActivityResponse(row: ActivityRow): ActivityResponseType {
+export const ToActivityResponse = (row: ActivityRow): ActivityResponseType => {
   const meta = typeof row.meta === 'string' ? (JSON.parse(row.meta) as ActivityMetaType) : ((row.meta ?? {}) as ActivityMetaType);
   return {
     id: row.id,
@@ -20,4 +20,4 @@ export function ToActivityResponse(row: ActivityRow): ActivityResponseType {
     refId: row.ref_id,
     meta,
   };
-}
+};

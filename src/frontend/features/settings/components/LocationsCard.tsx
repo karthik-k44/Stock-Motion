@@ -6,7 +6,7 @@ import { businessesService } from '@/frontend/features/businesses/services';
 import { locationsService } from '@/frontend/features/locations/services';
 
 /** Add a shelf / bin beyond the ones the template created. */
-export function LocationsCard() {
+export const LocationsCard = () => {
   const { template } = businessesService.useBusiness();
   const create = locationsService.useCreateLocationMutation();
   const [zone, setZone] = useState(template.zones[0]?.code ?? '');
@@ -42,4 +42,4 @@ export function LocationsCard() {
       </form>
     </Card>
   );
-}
+};

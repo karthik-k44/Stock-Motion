@@ -8,7 +8,7 @@ const FOCUSABLE =
  * (to `[data-autofocus]` if present), Tab is trapped, Escape closes, and focus
  * returns to the opener on close.
  */
-export function useOverlay<T extends HTMLElement>(open: boolean, onClose: () => void) {
+export const useOverlay = <T extends HTMLElement>(open: boolean, onClose: () => void) => {
   const ref = useRef<T>(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
@@ -46,4 +46,4 @@ export function useOverlay<T extends HTMLElement>(open: boolean, onClose: () => 
   }, [open]);
 
   return ref;
-}
+};

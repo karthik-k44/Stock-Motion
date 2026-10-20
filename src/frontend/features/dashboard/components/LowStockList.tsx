@@ -5,7 +5,7 @@ import type { ItemResponseType } from '@/frontend/features/inventory/types';
 import { useItemDrawer } from '@/frontend/hooks/use-item-drawer';
 import { FormatQty } from '@/frontend/utils/format';
 
-export function LowStockList({ items }: { items: ItemResponseType[] }) {
+export const LowStockList = ({ items }: { items: ItemResponseType[] }) => {
   const drawer = useItemDrawer();
   return (
     <Card title="Low stock" subtitle="Lowest cover against reorder level">
@@ -31,4 +31,4 @@ export function LowStockList({ items }: { items: ItemResponseType[] }) {
       )}
     </Card>
   );
-}
+};

@@ -11,7 +11,7 @@ const PG_ERRORS: Record<string, { status: number; code: string; message: string 
   '22P02': { status: 400, code: 'BAD_REQUEST', message: 'Invalid identifier or value' },
 };
 
-export function ErrorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction) {
+export const ErrorHandler = (err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   if (err instanceof SyntaxError && 'type' in err && err.type === 'entity.parse.failed') {
     res.status(400).json({ error: { code: 'BAD_REQUEST', message: 'Invalid JSON request body' } });
     return;
@@ -37,4 +37,4 @@ export function ErrorHandler(err: unknown, _req: Request, res: Response, _next: 
   }
   logger.error('Unhandled error', err);
   res.status(500).json({ error: { code: 'INTERNAL', message: 'Something went wrong on the server' } });
-}
+};

@@ -11,7 +11,7 @@ type StatCardProps = {
   onClick?: () => void;
 };
 
-export function StatCard({ label, value, icon, hint, tone = 'neutral', onClick }: StatCardProps) {
+export const StatCard = ({ label, value, icon, hint, tone = 'neutral', onClick }: StatCardProps) => {
   const body = (
     <>
       <span className="stat-icon" aria-hidden>
@@ -29,4 +29,4 @@ export function StatCard({ label, value, icon, hint, tone = 'neutral', onClick }
   ) : (
     <div className={Cn('stat', `stat-${tone}`)}>{body}</div>
   );
-}
+};

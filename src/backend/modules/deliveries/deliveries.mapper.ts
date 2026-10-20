@@ -2,7 +2,7 @@ import { ToIso, ToIsoOrNull } from '@/backend/common/utils/dates';
 import type { DeliveryLineRow, DeliveryRow } from '@/backend/db/schema';
 import type { DeliveryResponseType, DeliveryStatusTypeEnum } from '@/backend/types/delivery';
 
-export function ToDeliveryResponse(row: DeliveryRow, lines: DeliveryLineRow[]): DeliveryResponseType {
+export const ToDeliveryResponse = (row: DeliveryRow, lines: DeliveryLineRow[]): DeliveryResponseType => {
   const own = lines
     .filter((l) => l.delivery_id === row.id)
     .map((l) => ({
@@ -21,4 +21,4 @@ export function ToDeliveryResponse(row: DeliveryRow, lines: DeliveryLineRow[]): 
     totalExpected: own.reduce((s, l) => s + l.expected, 0),
     totalCost: Math.round(own.reduce((s, l) => s + (l.received ?? l.expected) * l.unitCost, 0) * 100) / 100,
   };
-}
+};

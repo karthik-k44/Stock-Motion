@@ -14,7 +14,7 @@ import { CustomerDetail } from './components/CustomerDetail';
 import { CustomerModal } from './components/CustomerModal';
 import { customersService } from './services';
 
-export function Customers() {
+export const Customers = () => {
   const business = businessesService.useBusiness();
   const { labels } = business.template;
   useDocumentTitle(labels.customers);
@@ -69,4 +69,4 @@ export function Customers() {
       {creating && <CustomerModal onClose={() => setCreating(false)} onSaved={(newId) => !newId.startsWith('pending') && navigate(paths.customer(newId))} />}
     </div>
   );
-}
+};

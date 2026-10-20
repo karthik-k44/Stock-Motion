@@ -15,7 +15,7 @@ import { StockHealthChart } from './components/StockHealthChart';
 import { UpcomingDeliveries } from './components/UpcomingDeliveries';
 import { dashboardService } from './services';
 
-export function Dashboard() {
+export const Dashboard = () => {
   useDocumentTitle('Dashboard');
   const business = businessesService.useBusiness();
   const { labels, orderFlow } = business.template;
@@ -81,4 +81,4 @@ export function Dashboard() {
       )}
     </div>
   );
-}
+};

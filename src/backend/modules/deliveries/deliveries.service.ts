@@ -27,29 +27,29 @@ const STATUS_LABEL: Record<DeliveryStatusTypeEnum, string> = {
   SCHEDULED: 'scheduled', IN_TRANSIT: 'in transit', ARRIVED: 'arrived', RECEIVED: 'received',
 };
 
-async function load(q: Queryable, rows: DeliveryRow[]): Promise<DeliveryResponseType[]> {
+const load = async (q: Queryable, rows: DeliveryRow[]): Promise<DeliveryResponseType[]> => {
   const lines = await deliveriesRepository.ListLines(q, rows.map((r) => r.id));
   return rows.map((r) => ToDeliveryResponse(r, lines));
-}
+};
 
-async function find(q: Queryable, scope: ScopeType, number: string, lock = false) {
+const find = async (q: Queryable, scope: ScopeType, number: string, lock = false) => {
   const row = lock
     ? await deliveriesRepository.LockByNumber(q, scope.businessId, number)
     : await deliveriesRepository.FindByNumber(q, scope.businessId, number);
   if (!row) throw NotFound(scope.template.labels.delivery, number);
   return { row, delivery: (await load(q, [row]))[0] };
-}
+};
 
-async function List(scope: ScopeType, filters: DeliveryFiltersType): Promise<DeliveryResponseType[]> {
+const List = async (scope: ScopeType, filters: DeliveryFiltersType): Promise<DeliveryResponseType[]> => {
   return load(db, await deliveriesRepository.List(db, scope.businessId, filters));
-}
+};
 
-async function Get(scope: ScopeType, number: string): Promise<DeliveryResponseType> {
+const Get = async (scope: ScopeType, number: string): Promise<DeliveryResponseType> => {
   return (await find(db, scope, number)).delivery;
-}
+};
 
 /** Create one delivery inside a transaction; returns its number and the activity entry. */
-async function insert(tx: Queryable, scope: ScopeType, input: CreateDeliveryInput) {
+const insert = async (tx: Queryable, scope: ScopeType, input: CreateDeliveryInput) => {
   let supplierName = input.supplierName;
   if (input.supplierId) {
     const supplier = await suppliersRepository.Find(tx, scope.businessId, input.supplierId);
@@ -80,22 +80,22 @@ async function insert(tx: Queryable, scope: ScopeType, input: CreateDeliveryInpu
     ref: { type: ActivityRefTypeEnum.DELIVERY, id: number }, meta: { skus: input.lines.map((l) => l.sku) },
   });
   return { number, activity };
-}
+};
 
-async function Create(scope: ScopeType, input: CreateDeliveryInput): Promise<DeliveryResponseType> {
+const Create = async (scope: ScopeType, input: CreateDeliveryInput): Promise<DeliveryResponseType> => {
   const result = await db.transaction(async (tx) => {
     const { number, activity } = await insert(tx, scope, input);
     return { delivery: (await find(tx, scope, number)).delivery, activity };
   });
   BroadcastChange(scope.businessId, RESOURCES, [result.activity]);
   return result.delivery;
-}
+};
 
 /**
  * Book one delivery per supplier for every low / out-of-stock item that isn't already covered by
  * incoming stock, ordering enough to reach twice the reorder level.
  */
-async function Reorder(scope: ScopeType, input: ReorderInput): Promise<DeliveryResponseType[]> {
+const Reorder = async (scope: ScopeType, input: ReorderInput): Promise<DeliveryResponseType[]> => {
   const result = await db.transaction(async (tx) => {
     const items = (await itemsRepository.ListViews(tx, scope.businessId, { kind: ItemKindTypeEnum.STOCK }))
       .filter((i) => i.status !== StockStatusTypeEnum.IN_STOCK && i.supplier_id)
@@ -123,9 +123,9 @@ async function Reorder(scope: ScopeType, input: ReorderInput): Promise<DeliveryR
   });
   BroadcastChange(scope.businessId, RESOURCES, result.activity);
   return result.deliveries;
-}
+};
 
-async function UpdateStatus(scope: ScopeType, number: string, input: UpdateDeliveryStatusInput): Promise<DeliveryResponseType> {
+const UpdateStatus = async (scope: ScopeType, number: string, input: UpdateDeliveryStatusInput): Promise<DeliveryResponseType> => {
   const result = await db.transaction(async (tx) => {
     const { row, delivery } = await find(tx, scope, number, true);
     const from = STATUS_ORDER.indexOf(delivery.status);
@@ -145,9 +145,9 @@ async function UpdateStatus(scope: ScopeType, number: string, input: UpdateDeliv
   });
   BroadcastChange(scope.businessId, RESOURCES, result.activity);
   return result.delivery;
-}
+};
 
-async function Receive(scope: ScopeType, number: string, input: ReceiveDeliveryInput): Promise<DeliveryResponseType> {
+const Receive = async (scope: ScopeType, number: string, input: ReceiveDeliveryInput): Promise<DeliveryResponseType> => {
   const result = await db.transaction(async (tx) => {
     const { row, delivery } = await find(tx, scope, number, true);
     if (delivery.status === DeliveryStatusTypeEnum.RECEIVED) throw Conflict(`${number} has already been received`);
@@ -182,6 +182,6 @@ async function Receive(scope: ScopeType, number: string, input: ReceiveDeliveryI
   });
   BroadcastChange(scope.businessId, RESOURCES, [result.activity]);
   return result.delivery;
-}
+};
 
 export const deliveriesService = { List, Get, Create, Reorder, UpdateStatus, Receive };

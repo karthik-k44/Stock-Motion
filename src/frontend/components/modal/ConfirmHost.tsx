@@ -3,7 +3,7 @@ import { Button } from '@/frontend/components/button';
 import { ConfirmManager } from './confirm-manager';
 import { Modal } from './Modal';
 
-export function ConfirmHost() {
+export const ConfirmHost = () => {
   const pending = useSyncExternalStore(ConfirmManager.Subscribe, ConfirmManager.Get);
   return (
     <Modal
@@ -26,4 +26,4 @@ export function ConfirmHost() {
       }
     />
   );
-}
+};

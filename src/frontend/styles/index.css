@@ -1,0 +1,66 @@
+/*
+ * The one stylesheet entry. Layer order decides who wins, not selector weight:
+ *   theme       design tokens (Tailwind @theme)
+ *   components  the app's own CSS files (buttons, tables, shell …)
+ *   utilities   Tailwind classes — always beat component CSS, so `className` overrides work
+ * Tailwind's preflight is left out on purpose: base.css is the reset the existing screens are built on.
+ */
+@layer theme, components, utilities;
+
+@import '@fontsource-variable/inter';
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities) source('..');
+
+@import './base.css' layer(components);
+@import './layout.css' layer(components);
+@import './controls.css' layer(components);
+@import './data.css' layer(components);
+@import './overlay.css' layer(components);
+@import './pages.css' layer(components);
+@import './app.css' layer(components);
+@import './world.css' layer(components);
+
+/* Orange and white. Every colour in the app comes from these tokens; the legacy --vars in base.css point here. */
+@theme static {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, 'SFMono-Regular', 'Cascadia Mono', Menlo, Consolas, monospace;
+
+  --color-primary-50: #fff7ed;
+  --color-primary-100: #ffedd5;
+  --color-primary-200: #fed7aa;
+  --color-primary-300: #fdba74;
+  --color-primary-400: #fb923c;
+  --color-primary-500: #f97316;
+  --color-primary-600: #ea580c;
+  /* 700+ carry white text at AA contrast (≥ 4.5:1); use them for filled buttons and links. */
+  --color-primary-700: #c2410c;
+  --color-primary-800: #9a3412;
+  --color-primary-900: #7c2d12;
+
+  --color-surface: #ffffff;
+  --color-canvas: #faf8f6;
+  --color-sunken: #f4f1ee;
+  --color-line: #ebe6e1;
+  --color-line-strong: #d6cfc8;
+  --color-ink: #1c1917;
+  --color-ink-2: #44403c;
+  --color-muted: #6f6862;
+
+  --color-success: #15803d;
+  --color-success-bg: #e8f6ed;
+  --color-warning: #a35a00;
+  --color-warning-bg: #fff3dc;
+  --color-danger: #c42b2b;
+  --color-danger-bg: #fdecec;
+  --color-info: #1d5fc7;
+  --color-info-bg: #e9f1fd;
+  --color-incoming: #0b6283;
+  --color-incoming-bg: #e3f3f9;
+  --color-reserved: #4b3bb3;
+  --color-reserved-bg: #eeebfb;
+  --color-neutral: #57534e;
+  --color-neutral-bg: #f1eeeb;
+
+  --shadow-card: 0 1px 2px rgb(28 25 23 / 0.05), 0 8px 24px rgb(28 25 23 / 0.07);
+  --shadow-float: 0 4px 14px rgb(124 45 18 / 0.16);
+}

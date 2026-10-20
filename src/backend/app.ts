@@ -22,7 +22,7 @@ import { systemRoutes } from './modules/system/rest-api/system.routes';
 import { templatesRoutes } from './modules/templates/rest-api/templates.routes';
 
 /** The API only. `server.ts` adds the frontend (Vite in dev, static build in production). */
-export function CreateApp(): Express {
+export const CreateApp = (): Express => {
   const app = express();
   app.disable('x-powered-by');
   app.set('trust proxy', 'loopback');
@@ -59,4 +59,4 @@ export function CreateApp(): Express {
 
   app.use('/api', api);
   return app;
-}
+};

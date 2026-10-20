@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 
-export function useDocumentTitle(title: string) {
+export const useDocumentTitle = (title: string) => {
   useEffect(() => {
     document.title = `${title} · StockMotion`;
   }, [title]);
-}
+};

@@ -6,7 +6,7 @@ import { realtime } from '@/frontend/services/socket';
  * Keep every open tab in sync: the server broadcasts which resources of the current business
  * changed, and each one's query keys start with that resource name.
  */
-export function useRealtime() {
+export const useRealtime = () => {
   const qc = useQueryClient();
   const [connected, setConnected] = useState(realtime.IsConnected());
 
@@ -24,4 +24,4 @@ export function useRealtime() {
   }, [qc]);
 
   return { connected };
-}
+};

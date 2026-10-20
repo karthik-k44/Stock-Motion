@@ -1,7 +1,7 @@
 import { businessesService } from '@/frontend/features/businesses/services';
 import { CANCELLED_STATUS } from '../types';
 
-export function OrderStepper({ status }: { status: string }) {
+export const OrderStepper = ({ status }: { status: string }) => {
   const { orderFlow } = businessesService.useBusiness().template;
   const at = orderFlow.findIndex((s) => s.status === status);
   const finished = orderFlow[at]?.closed;
@@ -17,4 +17,4 @@ export function OrderStepper({ status }: { status: string }) {
       })}
     </ol>
   );
-}
+};

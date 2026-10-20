@@ -6,7 +6,7 @@ import { Display, Freezer, Pallets, Shelving } from './models/StorageModels';
 type Props = { spec: WorldObjectSpecType; ctx: WorldContextType; layout: WorldLayoutType; animate: boolean };
 
 /** The low-poly model for one object, drawn from its live data. */
-export function ObjectModel({ spec, ctx, layout, animate }: Props) {
+export const ObjectModel = ({ spec, ctx, layout, animate }: Props) => {
   const zone = ctx.template.zones.find((z) => z.code === spec.zone);
   const locations = spec.zone ? ctx.locations.filter((l) => l.zone === spec.zone) : [];
   const accent = spec.color ?? layout.palette.accent;
@@ -52,4 +52,4 @@ export function ObjectModel({ spec, ctx, layout, animate }: Props) {
     case 'houses':
       return <Houses count={spec.count?.(ctx) ?? 1} accent={accent} />;
   }
-}
+};

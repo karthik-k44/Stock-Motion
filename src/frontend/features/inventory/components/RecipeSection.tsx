@@ -6,7 +6,7 @@ import type { ComponentInput, ItemDetailResponseType } from '../types';
 import { RecipeEditor } from './RecipeEditor';
 
 /** The components of a made item, editable by managers. */
-export function RecipeSection({ item, canEdit, onOpen }: { item: ItemDetailResponseType; canEdit: boolean; onOpen: (sku: string) => void }) {
+export const RecipeSection = ({ item, canEdit, onOpen }: { item: ItemDetailResponseType; canEdit: boolean; onOpen: (sku: string) => void }) => {
   const [draft, setDraft] = useState<ComponentInput[] | null>(null);
   const save = inventoryService.useSetComponentsMutation();
 
@@ -44,4 +44,4 @@ export function RecipeSection({ item, canEdit, onOpen }: { item: ItemDetailRespo
       )}
     </>
   );
-}
+};

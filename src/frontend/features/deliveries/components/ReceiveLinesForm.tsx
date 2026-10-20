@@ -6,7 +6,7 @@ import { deliveriesService } from '../services';
 import { ReceiveDeliverySchema, type DeliveryResponseType } from '../types';
 
 /** Counted quantities per line (defaults to expected), checked, confirmed, then added to stock. */
-export function ReceiveLinesForm({ delivery }: { delivery: DeliveryResponseType }) {
+export const ReceiveLinesForm = ({ delivery }: { delivery: DeliveryResponseType }) => {
   const [counts, setCounts] = useState<Record<string, string>>(() => Object.fromEntries(delivery.lines.map((l) => [l.sku, String(l.expected)])));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const receive = deliveriesService.useReceiveMutation();
@@ -79,4 +79,4 @@ export function ReceiveLinesForm({ delivery }: { delivery: DeliveryResponseType 
       </div>
     </form>
   );
-}
+};

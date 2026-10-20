@@ -8,7 +8,7 @@ const SEGMENTS = [
 ] as const;
 
 /** One stacked bar of SKUs by stock status, direct-labelled, with a table fallback. */
-export function StockHealthChart({ health }: { health: DashboardResponseType['stockHealth'] }) {
+export const StockHealthChart = ({ health }: { health: DashboardResponseType['stockHealth'] }) => {
   const total = health.inStock + health.low + health.out || 1;
   return (
     <Card title="Stock levels" subtitle="SKUs by stock status">
@@ -55,4 +55,4 @@ export function StockHealthChart({ health }: { health: DashboardResponseType['st
       </details>
     </Card>
   );
-}
+};

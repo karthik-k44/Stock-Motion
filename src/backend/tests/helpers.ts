@@ -6,14 +6,14 @@ import { ALL_TABLES } from '@/backend/db/schema';
 import type { BusinessTypeEnum } from '@/backend/types/template';
 
 /** In-memory Postgres (PGlite), migrated once per test file. */
-export async function SetupDatabase() {
+export const SetupDatabase = async () => {
   await ConnectDb({});
   await RunMigrations();
-}
+};
 
-export async function ResetDatabase() {
+export const ResetDatabase = async () => {
   await db.exec(`TRUNCATE ${ALL_TABLES.join(', ')} RESTART IDENTITY CASCADE`);
-}
+};
 
 export const app = CreateApp();
 
@@ -21,30 +21,30 @@ let counter = 0;
 
 export type SessionType = { token: string; accountId: string; email: string; cookie: string };
 
-export async function SignUp(name = 'Test Owner'): Promise<SessionType> {
+export const SignUp = async (name = 'Test Owner'): Promise<SessionType> => {
   const email = `owner${++counter}@example.com`;
   const res = await request(app).post('/api/auth/register').send({ name, email, password: 'correct-horse-battery' });
   if (res.status !== 201) throw new Error(`Sign-up failed: ${res.status} ${JSON.stringify(res.body)}`);
   return { token: res.body.accessToken, accountId: res.body.account.id, email, cookie: RefreshCookie(res) };
-}
+};
 
 /** The `sm_refresh=…` pair from a response's Set-Cookie header. */
-export function RefreshCookie(res: request.Response): string {
+export const RefreshCookie = (res: request.Response): string => {
   const header = res.headers['set-cookie'] as unknown as string[] | undefined;
   return (header ?? []).find((c) => c.startsWith('sm_refresh='))?.split(';')[0] ?? '';
-}
+};
 
-export async function CreateBusiness(token: string, type: BusinessTypeEnum, sampleData = true) {
+export const CreateBusiness = async (token: string, type: BusinessTypeEnum, sampleData = true) => {
   const res = await request(app)
     .post('/api/businesses')
     .set('authorization', `Bearer ${token}`)
     .send({ name: `Test ${type}`, type, sampleData });
   if (res.status !== 201) throw new Error(`Create business failed: ${res.status} ${JSON.stringify(res.body)}`);
   return res.body as { id: string; template: { orderFlow: { status: string }[] } };
-}
+};
 
 /** Requests against `/api/businesses/:businessId/…` as one signed-in account. */
-export function Client(token: string, businessId: string) {
+export const Client = (token: string, businessId: string) => {
   const url = (path: string) => `/api/businesses/${businessId}${path}`;
   const auth = (r: request.Test) => r.set('authorization', `Bearer ${token}`);
   return {
@@ -54,11 +54,11 @@ export function Client(token: string, businessId: string) {
     patch: (path: string, body: object) => auth(request(app).patch(url(path))).send(body),
     delete: (path: string) => auth(request(app).delete(url(path))),
   };
-}
+};
 
 /** A signed-up owner with one business of `type`, ready to call. */
-export async function OwnerWithBusiness(type: BusinessTypeEnum, sampleData = true) {
+export const OwnerWithBusiness = async (type: BusinessTypeEnum, sampleData = true) => {
   const session = await SignUp();
   const business = await CreateBusiness(session.token, type, sampleData);
   return { session, business, api: Client(session.token, business.id) };
-}
+};

@@ -2,7 +2,7 @@ import pg from 'pg';
 import { logger } from '@/backend/config/logger';
 
 /** The connection URL with the password masked, safe for logs. */
-export function RedactUrl(url: string): string {
+export const RedactUrl = (url: string): string => {
   try {
     const u = new URL(url);
     if (u.password) u.password = '****';
@@ -10,9 +10,9 @@ export function RedactUrl(url: string): string {
   } catch {
     return '<invalid DATABASE_URL>';
   }
-}
+};
 
-function explain(err: unknown, url: string): Error {
+const explain = (err: unknown, url: string): Error => {
   const e = err as { code?: string; message?: string };
   const u = new URL(url);
   const where = `${u.hostname}:${u.port || 5432}`;
@@ -28,7 +28,7 @@ function explain(err: unknown, url: string): Error {
     default:
       return new Error(`Could not connect to ${RedactUrl(url)}: ${e.message ?? String(err)}`);
   }
-}
+};
 
 const quoteIdent = (name: string) => `"${name.replace(/"/g, '""')}"`;
 
@@ -36,7 +36,7 @@ const quoteIdent = (name: string) => `"${name.replace(/"/g, '""')}"`;
  * Make sure the database named in DATABASE_URL exists, creating it on first
  * run (connects to the `postgres` maintenance database to do so).
  */
-export async function EnsureDatabase(url: string): Promise<void> {
+export const EnsureDatabase = async (url: string): Promise<void> => {
   const probe = new pg.Client({ connectionString: url });
   try {
     await probe.connect();
@@ -61,4 +61,4 @@ export async function EnsureDatabase(url: string): Promise<void> {
   } finally {
     await admin.end().catch(() => undefined);
   }
-}
+};

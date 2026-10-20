@@ -5,8 +5,8 @@ import { ToActivityResponse } from './activity.mapper';
 import { activityRepository } from './activity.repository';
 import type { ListActivityQuery } from './activity.validators';
 
-async function List(scope: ScopeType, filters: ListActivityQuery): Promise<ActivityResponseType[]> {
+const List = async (scope: ScopeType, filters: ListActivityQuery): Promise<ActivityResponseType[]> => {
   return (await activityRepository.List(db, scope.businessId, filters)).map(ToActivityResponse);
-}
+};
 
 export const activityService = { List };

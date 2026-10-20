@@ -4,7 +4,7 @@ import type { TemplateResponseType } from '@/frontend/features/businesses/types'
 type Props = { template: TemplateResponseType; sampleData: boolean; onChange: (sample: boolean) => void };
 
 /** Start with a realistic example business, or with nothing. */
-export function StartChoice({ template, sampleData, onChange }: Props) {
+export const StartChoice = ({ template, sampleData, onChange }: Props) => {
   const { labels } = template;
   const options = [
     {
@@ -35,4 +35,4 @@ export function StartChoice({ template, sampleData, onChange }: Props) {
       ))}
     </div>
   );
-}
+};

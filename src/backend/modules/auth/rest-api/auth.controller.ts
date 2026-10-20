@@ -7,11 +7,11 @@ import { authService, type IssuedSessionType } from '../auth.service';
 import { LoginSchema, RegisterSchema, UpdateProfileSchema } from '../auth.validators';
 
 /** The refresh token only ever travels in the httpOnly cookie, never in a response body. */
-export function SendSession(res: Response, session: IssuedSessionType, status = 200) {
+export const SendSession = (res: Response, session: IssuedSessionType, status = 200) => {
   SetRefreshCookie(res, session.refreshToken);
   const body: AuthSessionResponseType = { account: session.account, accessToken: session.accessToken };
   res.status(status).json(body);
-}
+};
 
 export const authController = {
   Register: async (req: Request, res: Response) => {

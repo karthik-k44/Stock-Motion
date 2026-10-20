@@ -5,7 +5,7 @@ import { useSearchParams } from 'react-router';
  * The item detail drawer is driven by `?item=SKU` so any screen (warehouse,
  * inventory, locations, orders) opens the same panel and the URL is shareable.
  */
-export function useItemDrawer() {
+export const useItemDrawer = () => {
   const [params, setParams] = useSearchParams();
   const sku = params.get('item');
 
@@ -30,4 +30,4 @@ export function useItemDrawer() {
   );
 
   return { sku, open, close };
-}
+};

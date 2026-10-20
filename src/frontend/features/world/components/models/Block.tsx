@@ -12,7 +12,7 @@ type BlockProps = {
 };
 
 /** A soft-edged low-poly box — every model is built from these. */
-export function Block({ size, position = [0, 0, 0], color, radius = 0.08, emissive, emissiveIntensity = 0, rotation }: BlockProps) {
+export const Block = ({ size, position = [0, 0, 0], color, radius = 0.08, emissive, emissiveIntensity = 0, rotation }: BlockProps) => {
   const [w, h, d] = size;
   return (
     <RoundedBox
@@ -27,4 +27,4 @@ export function Block({ size, position = [0, 0, 0], color, radius = 0.08, emissi
       <meshStandardMaterial color={color} roughness={0.75} metalness={0.05} emissive={emissive ?? '#000000'} emissiveIntensity={emissiveIntensity} />
     </RoundedBox>
   );
-}
+};

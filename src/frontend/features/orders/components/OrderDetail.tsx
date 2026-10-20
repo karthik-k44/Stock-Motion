@@ -15,7 +15,7 @@ import { OrderLines } from './OrderLines';
 import { OrderStatusBadge } from './OrderStatusBadge';
 import { OrderStepper } from './OrderStepper';
 
-export function OrderDetail({ number }: { number: string }) {
+export const OrderDetail = ({ number }: { number: string }) => {
   const { template } = businessesService.useBusiness();
   const { data: order, isPending, isError, error, refetch } = ordersService.useOrder(number);
   const { data: items = [] } = inventoryService.useItems();
@@ -67,4 +67,4 @@ export function OrderDetail({ number }: { number: string }) {
       {editing && <NewOrderModal order={order} onClose={() => setEditing(false)} onSaved={() => setEditing(false)} />}
     </article>
   );
-}
+};

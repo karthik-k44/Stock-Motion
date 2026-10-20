@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Text } from '@/frontend/components/text';
 import { Cn } from '@/frontend/lib/utils';
 
 type CardProps = {
@@ -10,14 +11,14 @@ type CardProps = {
   flush?: boolean;
 };
 
-export function Card({ title, subtitle, actions, children, className, flush }: CardProps) {
+export const Card = ({ title, subtitle, actions, children, className, flush }: CardProps) => {
   return (
     <section className={Cn('card', flush && 'card-flush', className)}>
       {(title || actions) && (
         <header className="card-head">
           <div>
-            {title && <h2 className="card-title">{title}</h2>}
-            {subtitle && <p className="card-subtitle">{subtitle}</p>}
+            {title && <Text variant="subheading" as="h2">{title}</Text>}
+            {subtitle && <Text variant="small" tone="muted" className="mt-0.5">{subtitle}</Text>}
           </div>
           {actions && <div className="card-actions">{actions}</div>}
         </header>
@@ -25,4 +26,4 @@ export function Card({ title, subtitle, actions, children, className, flush }: C
       <div className="card-body">{children}</div>
     </section>
   );
-}
+};

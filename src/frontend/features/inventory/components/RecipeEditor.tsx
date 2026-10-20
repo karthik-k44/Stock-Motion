@@ -8,7 +8,7 @@ import { ItemKindTypeEnum, type ComponentInput } from '../types';
 type Props = { value: ComponentInput[]; onChange: (next: ComponentInput[]) => void; error?: string };
 
 /** What a made item (menu item, job kit, bundle) is built from: stock items × quantity in their unit. */
-export function RecipeEditor({ value, onChange, error }: Props) {
+export const RecipeEditor = ({ value, onChange, error }: Props) => {
   const { data: stock = [] } = inventoryService.useItems({ kind: ItemKindTypeEnum.STOCK });
   const [adding, setAdding] = useState('');
   const unused = stock.filter((s) => !value.some((c) => c.sku === s.sku));
@@ -60,4 +60,4 @@ export function RecipeEditor({ value, onChange, error }: Props) {
       {error ? <p className="field-error" role="alert">{error}</p> : value.length > 0 && <p className="muted small">With today’s stock you can make {canMake}.</p>}
     </div>
   );
-}
+};

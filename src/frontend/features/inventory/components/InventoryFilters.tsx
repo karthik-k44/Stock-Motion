@@ -18,7 +18,7 @@ type Props = {
   searching: boolean;
 };
 
-export function InventoryFilters({ kind, value, onChange, searching }: Props) {
+export const InventoryFilters = ({ kind, value, onChange, searching }: Props) => {
   const { template } = businessesService.useBusiness();
   const { data: categories = [] } = categoriesService.useCategories();
   const set = <K extends keyof InventoryFilterState>(key: K, v: InventoryFilterState[K]) => onChange({ ...value, [key]: v });
@@ -51,4 +51,4 @@ export function InventoryFilters({ kind, value, onChange, searching }: Props) {
       )}
     </div>
   );
-}
+};

@@ -14,7 +14,7 @@ type AppLayoutProps = {
   children: ReactNode;
 };
 
-export function AppLayout({ nav, badges, topbarEnd, sidebarFooter, brand, busy, children }: AppLayoutProps) {
+export const AppLayout = ({ nav, badges, topbarEnd, sidebarFooter, brand, busy, children }: AppLayoutProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const { pathname } = useLocation();
   const current = nav.find((n) => pathname.startsWith(n.path));
@@ -54,4 +54,4 @@ export function AppLayout({ nav, badges, topbarEnd, sidebarFooter, brand, busy, 
       </div>
     </div>
   );
-}
+};

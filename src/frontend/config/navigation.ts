@@ -3,7 +3,7 @@ import type { TemplateLabelsType } from '@/frontend/features/businesses/types';
 import { paths } from './paths';
 
 /** The sidebar, worded in the business's own vocabulary (Tickets, Jobs, Sales orders …). */
-export function BuildNavigation(labels: TemplateLabelsType, isManager: boolean): NavItemType[] {
+export const BuildNavigation = (labels: TemplateLabelsType, isManager: boolean): NavItemType[] => {
   const nav: NavItemType[] = [
     { label: 'Live world', path: paths.world, icon: 'globe' },
     { label: 'Dashboard', path: paths.dashboard, icon: 'dashboard' },
@@ -18,4 +18,4 @@ export function BuildNavigation(labels: TemplateLabelsType, isManager: boolean):
   ];
   if (isManager) nav.push({ label: 'Settings', path: paths.settings, icon: 'cog' });
   return nav;
-}
+};

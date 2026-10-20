@@ -45,43 +45,42 @@ const REASON_LABEL: Record<AdjustReasonTypeEnum, string> = {
 const STOCK_RESOURCES: ResourceTypeEnum[] = [ResourceTypeEnum.ITEMS, ResourceTypeEnum.LOCATIONS, ResourceTypeEnum.DASHBOARD, ResourceTypeEnum.ACTIVITY];
 const CATALOG_RESOURCES = [...STOCK_RESOURCES, ResourceTypeEnum.CATEGORIES, ResourceTypeEnum.SUPPLIERS];
 
-async function view(q: Queryable, scope: ScopeType, sku: string): Promise<ItemResponseType> {
+const view = async (q: Queryable, scope: ScopeType, sku: string): Promise<ItemResponseType> => {
   const row = await itemsRepository.FindView(q, scope.businessId, sku);
   if (!row) throw NotFound(scope.template.labels.item, sku);
   return ToItemResponse(row);
-}
+};
 
-async function lock(q: Queryable, scope: ScopeType, sku: string): Promise<ItemLockRow> {
+const lock = async (q: Queryable, scope: ScopeType, sku: string): Promise<ItemLockRow> => {
   const row = await itemsRepository.LockItem(q, scope.businessId, sku);
   if (!row) throw NotFound(scope.template.labels.item, sku);
   return row;
-}
+};
 
 /** Run a change in a transaction, then broadcast it and return the fresh item. */
-async function mutate(
+const mutate = async (
   scope: ScopeType,
   sku: string,
   resources: ResourceTypeEnum[],
-  fn: (tx: Queryable) => Promise<ActivityResponseType[]>,
-): Promise<ItemResponseType> {
+  fn: (tx: Queryable) => Promise<ActivityResponseType[]>,): Promise<ItemResponseType> => {
   const { item, activity } = await db.transaction(async (tx) => {
     const activity = await fn(tx);
     return { item: await view(tx, scope, sku), activity };
   });
   BroadcastChange(scope.businessId, resources, activity);
   return item;
-}
+};
 
-async function List(scope: ScopeType, filters: ListItemsQuery): Promise<ItemResponseType[]> {
+const List = async (scope: ScopeType, filters: ListItemsQuery): Promise<ItemResponseType[]> => {
   return (await itemsRepository.ListViews(db, scope.businessId, filters)).map(ToItemResponse);
-}
+};
 
 const toMovement = (r: MovementRow): MovementResponseType => ({
   id: r.id, at: ToIso(r.at), sku: r.sku, type: r.type as MovementTypeEnum, delta: r.delta,
   balance: r.balance, ref: r.ref, accountId: r.account_id, actorName: r.actor_name, note: r.note,
 });
 
-async function Get(scope: ScopeType, sku: string): Promise<ItemDetailResponseType> {
+const Get = async (scope: ScopeType, sku: string): Promise<ItemDetailResponseType> => {
   const item = await view(db, scope, sku);
   const [components, usedIn, movements, orders, incoming, supplier] = await Promise.all([
     itemsRepository.ListComponents(db, [item.id]),
@@ -102,31 +101,30 @@ async function Get(scope: ScopeType, sku: string): Promise<ItemDetailResponseTyp
       number: r.number, supplierName: r.supplier_name, expectedAt: ToIso(r.expected_at), expected: r.expected,
     })),
   };
-}
+};
 
 /** Category, supplier and location must belong to this business; exclusive bins can hold one item. */
-async function assertReferences(
+const assertReferences = async (
   tx: Queryable,
   scope: ScopeType,
   input: { category: string; supplierId: string | null; location?: string | null },
-  selfId?: string,
-) {
+  selfId?: string,) => {
   if (!(await categoriesRepository.Find(tx, scope.businessId, input.category))) throw BadRequest(`Unknown category ${input.category}`);
   if (input.supplierId && !(await suppliersRepository.Find(tx, scope.businessId, input.supplierId))) {
     throw BadRequest(`Choose one of your ${scope.template.labels.suppliers.toLowerCase()}`);
   }
   if (input.location) await assertLocationFree(tx, scope, input.location, selfId);
-}
+};
 
-async function assertLocationFree(tx: Queryable, scope: ScopeType, location: string, selfId?: string) {
+const assertLocationFree = async (tx: Queryable, scope: ScopeType, location: string, selfId?: string) => {
   if (!(await locationsRepository.Find(tx, scope.businessId, location))) throw BadRequest(`Unknown location ${location}`);
   if (!scope.template.exclusiveLocations) return;
   const occupant = await itemsRepository.FindOccupant(tx, scope.businessId, location);
   if (occupant && occupant.sku !== selfId) throw Conflict(`${location} is occupied by ${occupant.sku}`);
-}
+};
 
 /** Components must be stock items of this business. */
-async function resolveComponents(tx: Queryable, scope: ScopeType, parentSku: string, list: SetComponentsInput['components']) {
+const resolveComponents = async (tx: Queryable, scope: ScopeType, parentSku: string, list: SetComponentsInput['components']) => {
   const rows = await itemsRepository.ListViewsBySkus(tx, scope.businessId, list.map((c) => c.sku));
   return list.map((c) => {
     const row = rows.find((r) => r.sku === c.sku);
@@ -135,9 +133,9 @@ async function resolveComponents(tx: Queryable, scope: ScopeType, parentSku: str
     if (row.kind !== ItemKindTypeEnum.STOCK) throw BadRequest(`${row.name} is not a stock item — components must be counted stock`);
     return { componentId: row.id, qty: c.qty };
   });
-}
+};
 
-function Create(scope: ScopeType, input: CreateItemInput): Promise<ItemResponseType> {
+const Create = (scope: ScopeType, input: CreateItemInput): Promise<ItemResponseType> => {
   return mutate(scope, input.sku, CATALOG_RESOURCES, async (tx) => {
     if (await itemsRepository.SkuTaken(tx, scope.businessId, input.sku)) throw Conflict(`SKU ${input.sku} is already used`);
     await assertReferences(tx, scope, input, input.sku);
@@ -157,9 +155,9 @@ function Create(scope: ScopeType, input: CreateItemInput): Promise<ItemResponseT
       }),
     ];
   });
-}
+};
 
-function Update(scope: ScopeType, sku: string, input: UpdateItemInput): Promise<ItemResponseType> {
+const Update = (scope: ScopeType, sku: string, input: UpdateItemInput): Promise<ItemResponseType> => {
   return mutate(scope, sku, CATALOG_RESOURCES, async (tx) => {
     const item = await lock(tx, scope, sku);
     await assertReferences(tx, scope, input, sku);
@@ -171,9 +169,9 @@ function Update(scope: ScopeType, sku: string, input: UpdateItemInput): Promise<
       }),
     ];
   });
-}
+};
 
-async function Archive(scope: ScopeType, sku: string): Promise<void> {
+const Archive = async (scope: ScopeType, sku: string): Promise<void> => {
   const activity = await db.transaction(async (tx) => {
     const item = await lock(tx, scope, sku);
     const uses = await itemsRepository.CountOpenUses(tx, item.id);
@@ -188,9 +186,9 @@ async function Archive(scope: ScopeType, sku: string): Promise<void> {
     });
   });
   BroadcastChange(scope.businessId, CATALOG_RESOURCES, [activity]);
-}
+};
 
-function SetComponents(scope: ScopeType, sku: string, input: SetComponentsInput): Promise<ItemResponseType> {
+const SetComponents = (scope: ScopeType, sku: string, input: SetComponentsInput): Promise<ItemResponseType> => {
   return mutate(scope, sku, STOCK_RESOURCES, async (tx) => {
     const item = await lock(tx, scope, sku);
     if (item.kind !== ItemKindTypeEnum.MADE) throw BadRequest(`${item.name} is not a ${scope.template.labels.made.toLowerCase()}`);
@@ -203,9 +201,9 @@ function SetComponents(scope: ScopeType, sku: string, input: SetComponentsInput)
       }),
     ];
   });
-}
+};
 
-function Adjust(scope: ScopeType, sku: string, input: AdjustStockInput): Promise<ItemResponseType> {
+const Adjust = (scope: ScopeType, sku: string, input: AdjustStockInput): Promise<ItemResponseType> => {
   return mutate(scope, sku, STOCK_RESOURCES, async (tx) => {
     const item = await lock(tx, scope, sku);
     if (item.kind !== ItemKindTypeEnum.STOCK) throw BadRequest(`${item.name} has no stock of its own to adjust`);
@@ -237,9 +235,9 @@ function Adjust(scope: ScopeType, sku: string, input: AdjustStockInput): Promise
       }),
     ];
   });
-}
+};
 
-function Relocate(scope: ScopeType, sku: string, input: RelocateInput): Promise<ItemResponseType> {
+const Relocate = (scope: ScopeType, sku: string, input: RelocateInput): Promise<ItemResponseType> => {
   return mutate(scope, sku, STOCK_RESOURCES, async (tx) => {
     const item = await lock(tx, scope, sku);
     if (item.kind !== ItemKindTypeEnum.STOCK) throw BadRequest(`${item.name} is not stored anywhere`);
@@ -258,6 +256,6 @@ function Relocate(scope: ScopeType, sku: string, input: RelocateInput): Promise<
       }),
     ];
   });
-}
+};
 
 export const itemsService = { List, Get, Create, Update, Archive, SetComponents, Adjust, Relocate };

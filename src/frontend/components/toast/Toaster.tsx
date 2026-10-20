@@ -4,7 +4,7 @@ import { ToastManager } from './toast-manager';
 
 const ICON = { success: 'check', error: 'alert', info: 'truck' } as const;
 
-export function Toaster() {
+export const Toaster = () => {
   const toasts = useSyncExternalStore(ToastManager.Subscribe, ToastManager.Get);
   return (
     <div className="toaster" aria-live="polite" aria-relevant="additions">
@@ -24,4 +24,4 @@ export function Toaster() {
       ))}
     </div>
   );
-}
+};

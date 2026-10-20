@@ -33,7 +33,7 @@ const ALL_RESOURCES = [
 
 type LoadedOrderType = { row: OrderRow; lines: OrderLineRow[] };
 
-function toOrder({ row, lines }: LoadedOrderType): OrderResponseType {
+const toOrder = ({ row, lines }: LoadedOrderType): OrderResponseType => {
   const own = lines.map((l) => ({
     sku: l.sku, name: l.name, kind: l.kind, unit: l.unit, location: l.location, qty: l.qty, done: l.done, unitPrice: Number(l.unit_price),
   }));
@@ -56,57 +56,55 @@ function toOrder({ row, lines }: LoadedOrderType): OrderResponseType {
     doneUnits: own.reduce((s, l) => s + l.done, 0),
     total: Math.round(own.reduce((s, l) => s + l.qty * l.unitPrice, 0) * 100) / 100,
   };
-}
+};
 
-async function withLines(q: Queryable, rows: OrderRow[]): Promise<LoadedOrderType[]> {
+const withLines = async (q: Queryable, rows: OrderRow[]): Promise<LoadedOrderType[]> => {
   const lines = await ordersRepository.ListLines(q, rows.map((r) => r.id));
   return rows.map((row) => ({ row, lines: lines.filter((l) => l.order_id === row.id) }));
-}
+};
 
-async function find(q: Queryable, scope: ScopeType, number: string, lock = false): Promise<LoadedOrderType> {
+const find = async (q: Queryable, scope: ScopeType, number: string, lock = false): Promise<LoadedOrderType> => {
   const row = lock
     ? await ordersRepository.LockByNumber(q, scope.businessId, number)
     : await ordersRepository.FindByNumber(q, scope.businessId, number);
   if (!row) throw NotFound(scope.template.labels.order, number);
   return (await withLines(q, [row]))[0];
-}
+};
 
-function stageOf(scope: ScopeType, status: string): OrderStageType | undefined {
+const stageOf = (scope: ScopeType, status: string): OrderStageType | undefined => {
   return scope.template.orderFlow.find((s) => s.status === status);
-}
+};
 
 const statusLabel = (scope: ScopeType, status: string) =>
   status === CANCELLED_STATUS ? 'Cancelled' : (stageOf(scope, status)?.label ?? status);
 
-function assertOpen(scope: ScopeType, order: LoadedOrderType) {
+const assertOpen = (scope: ScopeType, order: LoadedOrderType) => {
   if (order.row.closed) {
     throw Conflict(`${order.row.number} is ${statusLabel(scope, order.row.status).toLowerCase()} and can no longer change`);
   }
-}
+};
 
 /** Run a change in a transaction, then broadcast it and return the fresh order. */
-async function mutate(
+const mutate = async (
   scope: ScopeType,
   number: () => string,
-  fn: (tx: Queryable) => Promise<ActivityResponseType[]>,
-): Promise<OrderResponseType> {
+  fn: (tx: Queryable) => Promise<ActivityResponseType[]>,): Promise<OrderResponseType> => {
   const { order, activity } = await db.transaction(async (tx) => {
     const activity = await fn(tx);
     return { order: toOrder(await find(tx, scope, number())), activity };
   });
   BroadcastChange(scope.businessId, ALL_RESOURCES, activity);
   return order;
-}
+};
 
 /**
  * Stock each line needs: stock lines need themselves, made lines need their components,
  * service lines need nothing. `qtyOf` picks how much of each line counts (open, or a slice).
  */
-async function stockNeeds(
+const stockNeeds = async (
   tx: Queryable,
   lines: OrderLineRow[],
-  qtyOf: (l: OrderLineRow) => number,
-): Promise<Map<string, { name: string; needed: number }>> {
+  qtyOf: (l: OrderLineRow) => number,): Promise<Map<string, { name: string; needed: number }>> => {
   const needs = new Map<string, { name: string; needed: number }>();
   const add = (id: string, name: string, n: number) => {
     if (n <= 0) return;
@@ -122,10 +120,10 @@ async function stockNeeds(
     }
   }
   return needs;
-}
+};
 
 /** Entering a reserving stage: every open quantity must be covered by available stock. */
-async function assertAvailable(tx: Queryable, order: LoadedOrderType) {
+const assertAvailable = async (tx: Queryable, order: LoadedOrderType) => {
   const needs = await stockNeeds(tx, order.lines, (l) => l.qty - l.done);
   await itemsRepository.LockItemsByIds(tx, [...needs.keys()]);
   const views = await itemsRepository.ListViewsByIds(tx, [...needs.keys()]);
@@ -136,10 +134,10 @@ async function assertAvailable(tx: Queryable, order: LoadedOrderType) {
     const list = shortages.map((s) => `${s.name} (need ${s.needed} ${s.unit}, ${s.available} available)`).join(', ');
     throw Conflict(`Not enough stock for ${order.row.number}: ${list}`, { shortages });
   }
-}
+};
 
 /** Take quantities of lines out of stock, record the ledger and mark the lines done. */
-async function consume(tx: Queryable, scope: ScopeType, order: LoadedOrderType, takes: { line: OrderLineRow; qty: number }[]) {
+const consume = async (tx: Queryable, scope: ScopeType, order: LoadedOrderType, takes: { line: OrderLineRow; qty: number }[]) => {
   const byItem = new Map(takes.map((t) => [t.line.item_id, t.qty]));
   const needs = await stockNeeds(tx, takes.map((t) => t.line), (l) => byItem.get(l.item_id) ?? 0);
   const locked = await itemsRepository.LockItemsByIds(tx, [...needs.keys()]);
@@ -157,31 +155,31 @@ async function consume(tx: Queryable, scope: ScopeType, order: LoadedOrderType, 
   }
   for (const t of takes) await ordersRepository.SetLineDone(tx, order.row.id, t.line.item_id, t.line.done + t.qty);
   return locked.map((i) => i.sku);
-}
+};
 
-async function List(scope: ScopeType, filters: OrderFiltersType): Promise<OrderResponseType[]> {
+const List = async (scope: ScopeType, filters: OrderFiltersType): Promise<OrderResponseType[]> => {
   const rows = await ordersRepository.List(db, scope.businessId, filters);
   return (await withLines(db, rows)).map(toOrder);
-}
+};
 
-async function Get(scope: ScopeType, number: string): Promise<OrderResponseType> {
+const Get = async (scope: ScopeType, number: string): Promise<OrderResponseType> => {
   return toOrder(await find(db, scope, number));
-}
+};
 
-async function resolveCustomer(tx: Queryable, scope: ScopeType, customerId: string | null, fallbackName: string) {
+const resolveCustomer = async (tx: Queryable, scope: ScopeType, customerId: string | null, fallbackName: string) => {
   if (!customerId) return { customerId: null, customerName: fallbackName };
   const customer = await customersRepository.Find(tx, scope.businessId, customerId);
   if (!customer) throw BadRequest(`Choose one of your ${scope.template.labels.customers.toLowerCase()}`);
   return { customerId, customerName: customer.name };
-}
+};
 
-async function assertAssignee(tx: Queryable, scope: ScopeType, assigneeId: string | null) {
+const assertAssignee = async (tx: Queryable, scope: ScopeType, assigneeId: string | null) => {
   if (assigneeId && !(await businessesRepository.FindMembership(tx, scope.businessId, assigneeId))) {
     throw BadRequest('Assign it to someone on your team');
   }
-}
+};
 
-async function insertLines(tx: Queryable, scope: ScopeType, orderId: string, lines: OrderLinesInput) {
+const insertLines = async (tx: Queryable, scope: ScopeType, orderId: string, lines: OrderLinesInput) => {
   const items = await itemsRepository.ListViewsBySkus(tx, scope.businessId, lines.map((l) => l.sku));
   for (const [position, line] of lines.entries()) {
     const item = items.find((i) => i.sku === line.sku);
@@ -190,9 +188,9 @@ async function insertLines(tx: Queryable, scope: ScopeType, orderId: string, lin
       orderId, itemId: item.id, position, qty: line.qty, unitPrice: line.unitPrice ?? Number(item.price),
     });
   }
-}
+};
 
-function Create(scope: ScopeType, input: CreateOrderInput): Promise<OrderResponseType> {
+const Create = (scope: ScopeType, input: CreateOrderInput): Promise<OrderResponseType> => {
   let number = '';
   return mutate(scope, () => number, async (tx) => {
     const customer = await resolveCustomer(tx, scope, input.customerId, input.customerName);
@@ -214,9 +212,9 @@ function Create(scope: ScopeType, input: CreateOrderInput): Promise<OrderRespons
       }),
     ];
   });
-}
+};
 
-function Update(scope: ScopeType, number: string, input: UpdateOrderInput): Promise<OrderResponseType> {
+const Update = (scope: ScopeType, number: string, input: UpdateOrderInput): Promise<OrderResponseType> => {
   return mutate(scope, () => number, async (tx) => {
     const order = await find(tx, scope, number, true);
     assertOpen(scope, order);
@@ -240,10 +238,10 @@ function Update(scope: ScopeType, number: string, input: UpdateOrderInput): Prom
       }),
     ];
   });
-}
+};
 
 /** Lines can be changed while nothing has been reserved or used yet. */
-function SetLines(scope: ScopeType, number: string, input: SetLinesInput): Promise<OrderResponseType> {
+const SetLines = (scope: ScopeType, number: string, input: SetLinesInput): Promise<OrderResponseType> => {
   return mutate(scope, () => number, async (tx) => {
     const order = await find(tx, scope, number, true);
     assertOpen(scope, order);
@@ -259,10 +257,10 @@ function SetLines(scope: ScopeType, number: string, input: SetLinesInput): Promi
       }),
     ];
   });
-}
+};
 
 /** Move an order to the next stage of its template's flow, applying that stage's stock rules. */
-function Advance(scope: ScopeType, number: string, input: AdvanceOrderInput): Promise<OrderResponseType> {
+const Advance = (scope: ScopeType, number: string, input: AdvanceOrderInput): Promise<OrderResponseType> => {
   return mutate(scope, () => number, async (tx) => {
     const order = await find(tx, scope, number, true);
     assertOpen(scope, order);
@@ -295,10 +293,10 @@ function Advance(scope: ScopeType, number: string, input: AdvanceOrderInput): Pr
       }),
     ];
   });
-}
+};
 
 /** Pick / use stock for one line (optionally part of it) or for every open line. */
-function Consume(scope: ScopeType, number: string, input: ConsumeInput): Promise<OrderResponseType> {
+const Consume = (scope: ScopeType, number: string, input: ConsumeInput): Promise<OrderResponseType> => {
   return mutate(scope, () => number, async (tx) => {
     const order = await find(tx, scope, number, true);
     assertOpen(scope, order);
@@ -330,10 +328,10 @@ function Consume(scope: ScopeType, number: string, input: ConsumeInput): Promise
       }),
     ];
   });
-}
+};
 
 /** Cancel an open order: reservations are released; stock already used stays used. */
-function Cancel(scope: ScopeType, number: string): Promise<OrderResponseType> {
+const Cancel = (scope: ScopeType, number: string): Promise<OrderResponseType> => {
   return mutate(scope, () => number, async (tx) => {
     const order = await find(tx, scope, number, true);
     assertOpen(scope, order);
@@ -345,6 +343,6 @@ function Cancel(scope: ScopeType, number: string): Promise<OrderResponseType> {
       }),
     ];
   });
-}
+};
 
 export const ordersService = { List, Get, Create, Update, SetLines, Advance, Consume, Cancel };

@@ -12,7 +12,7 @@ type StorageProps = { zone: StorageZoneType | undefined; locations: LocationResp
 /** How full a stack looks: on hand against three times the reorder level. */
 const fill = (i: ItemResponseType) => (i.onHand <= 0 ? 0.12 : Math.min(1, Math.max(0.25, i.onHand / Math.max(1, i.reorderLevel * 3))));
 
-function Goods({ items, width, y }: { items: ItemResponseType[]; width: number; y: number }) {
+const Goods = ({ items, width, y }: { items: ItemResponseType[]; width: number; y: number }) => {
   const shown = items.slice(0, 4);
   const w = (width - 0.1) / Math.max(1, shown.length);
   return (
@@ -33,10 +33,10 @@ function Goods({ items, width, y }: { items: ItemResponseType[]; width: number; 
       })}
     </>
   );
-}
+};
 
 /** Shelving drawn from the zone's real layout: levels × bins, each slot holding its live stock. */
-export function Shelving({ zone, locations, style }: StorageProps) {
+export const Shelving = ({ zone, locations, style }: StorageProps) => {
   const levels = Math.max(1, zone?.levels ?? 3);
   const bins = Math.max(1, zone?.bins ?? 1);
   const binW = bins > 1 ? BIN_W : 2.4;
@@ -79,10 +79,10 @@ export function Shelving({ zone, locations, style }: StorageProps) {
       })}
     </group>
   );
-}
+};
 
 /** A chest freezer with its drawers' goods visible from above. */
-export function Freezer({ locations }: Omit<StorageProps, 'style' | 'zone'>) {
+export const Freezer = ({ locations }: Omit<StorageProps, 'style' | 'zone'>) => {
   const items = locations.flatMap((l) => l.items);
   return (
     <group>
@@ -96,10 +96,10 @@ export function Freezer({ locations }: Omit<StorageProps, 'style' | 'zone'>) {
       </group>
     </group>
   );
-}
+};
 
 /** A glass display case on the counter. */
-export function Display({ locations }: Omit<StorageProps, 'style' | 'zone'>) {
+export const Display = ({ locations }: Omit<StorageProps, 'style' | 'zone'>) => {
   const items = locations.flatMap((l) => l.items);
   return (
     <group position={[0, 1.05, 0]}>
@@ -111,10 +111,10 @@ export function Display({ locations }: Omit<StorageProps, 'style' | 'zone'>) {
       </mesh>
     </group>
   );
-}
+};
 
 /** Pallets in the yard, one stack per stored item. */
-export function Pallets({ locations }: Omit<StorageProps, 'style' | 'zone'>) {
+export const Pallets = ({ locations }: Omit<StorageProps, 'style' | 'zone'>) => {
   const items = locations.flatMap((l) => l.items).slice(0, 6);
   return (
     <group>
@@ -131,4 +131,4 @@ export function Pallets({ locations }: Omit<StorageProps, 'style' | 'zone'>) {
       {!items.length && <Block size={[1.3, 0.15, 1.3]} color="#b98b55" radius={0.02} />}
     </group>
   );
-}
+};

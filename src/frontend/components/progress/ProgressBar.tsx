@@ -2,7 +2,7 @@ import { Clamp } from '@/frontend/lib/utils';
 
 type ProgressBarProps = { value: number; max: number; label: string; tone?: 'default' | 'good' };
 
-export function ProgressBar({ value, max, label, tone = 'default' }: ProgressBarProps) {
+export const ProgressBar = ({ value, max, label, tone = 'default' }: ProgressBarProps) => {
   const pct = max > 0 ? Clamp((value / max) * 100, 0, 100) : 0;
   return (
     <div
@@ -16,4 +16,4 @@ export function ProgressBar({ value, max, label, tone = 'default' }: ProgressBar
       <span className={tone === 'good' || pct === 100 ? 'progress-fill progress-good' : 'progress-fill'} style={{ width: `${pct}%` }} />
     </div>
   );
-}
+};

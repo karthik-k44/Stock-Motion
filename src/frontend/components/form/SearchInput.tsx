@@ -8,7 +8,7 @@ type SearchInputProps = {
   busy?: boolean;
 };
 
-export function SearchInput({ value, onChange, placeholder, label, busy }: SearchInputProps) {
+export const SearchInput = ({ value, onChange, placeholder, label, busy }: SearchInputProps) => {
   return (
     <div className="search">
       <Icon name="search" size={16} className="search-icon" />
@@ -24,4 +24,4 @@ export function SearchInput({ value, onChange, placeholder, label, busy }: Searc
       {busy && <span className="spinner search-spinner" aria-label="Searching" />}
     </div>
   );
-}
+};

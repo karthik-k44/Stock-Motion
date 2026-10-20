@@ -6,7 +6,7 @@ import { db } from './client';
 const MIGRATIONS_DIR = fileURLToPath(new URL('./migrations', import.meta.url));
 
 /** Apply every `migrations/*.sql` file that hasn't been applied yet, in filename order. */
-export async function RunMigrations(): Promise<string[]> {
+export const RunMigrations = async (): Promise<string[]> => {
   await db.exec(`CREATE TABLE IF NOT EXISTS schema_migrations (
     name TEXT PRIMARY KEY,
     applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -26,7 +26,7 @@ export async function RunMigrations(): Promise<string[]> {
     logger.info(`Applied migration ${file}`);
   }
   return pending;
-}
+};
 
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMain) {

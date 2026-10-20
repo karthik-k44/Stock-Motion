@@ -4,7 +4,7 @@ import { MotionPreferenceTypeEnum } from '@/frontend/types';
 const KEY = 'stockmotion:motion';
 const query = typeof window !== 'undefined' ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
 
-function readPref(): MotionPreferenceTypeEnum {
+const readPref = (): MotionPreferenceTypeEnum => {
   try {
     const v = localStorage.getItem(KEY);
     if (v && v in MotionPreferenceTypeEnum) return v as MotionPreferenceTypeEnum;
@@ -12,31 +12,32 @@ function readPref(): MotionPreferenceTypeEnum {
     /* ignore */
   }
   return MotionPreferenceTypeEnum.SYSTEM;
-}
+};
 
 type Snapshot = { preference: MotionPreferenceTypeEnum; reduced: boolean };
 
 let preference = readPref();
-let snapshot: Snapshot = compute();
 const listeners = new Set<() => void>();
 
-function compute(): Snapshot {
+const compute = (): Snapshot => {
   const reduced =
     preference === MotionPreferenceTypeEnum.OFF || (preference === MotionPreferenceTypeEnum.SYSTEM && Boolean(query?.matches));
   document.documentElement.classList.toggle('reduce-motion', reduced);
   return { preference, reduced };
-}
+};
 
-function emit() {
+let snapshot: Snapshot = compute();
+
+const emit = () => {
   snapshot = compute();
   listeners.forEach((l) => l());
-}
+};
 
 query?.addEventListener('change', emit);
 
 export const motionPreference = {
   Get: (): Snapshot => snapshot,
-  Set(next: MotionPreferenceTypeEnum) {
+  Set: (next: MotionPreferenceTypeEnum) => {
     preference = next;
     try {
       localStorage.setItem(KEY, next);
@@ -45,7 +46,7 @@ export const motionPreference = {
     }
     emit();
   },
-  Subscribe(fn: () => void) {
+  Subscribe: (fn: () => void) => {
     listeners.add(fn);
     return () => {
       listeners.delete(fn);

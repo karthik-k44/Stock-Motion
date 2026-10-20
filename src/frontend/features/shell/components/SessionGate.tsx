@@ -7,7 +7,7 @@ import { OnSignedOut } from '@/frontend/services/api';
 import { FullPageStatus } from './FullPageStatus';
 
 /** Renders children only for a signed-in account; otherwise sends people to sign in and back. */
-export function SessionGate({ children }: { children: ReactNode }) {
+export const SessionGate = ({ children }: { children: ReactNode }) => {
   const qc = useQueryClient();
   const location = useLocation();
   const { data: account, isPending } = authService.useSession();
@@ -21,4 +21,4 @@ export function SessionGate({ children }: { children: ReactNode }) {
     return <Navigate to={`${paths.login}${next}`} replace />;
   }
   return children;
-}
+};

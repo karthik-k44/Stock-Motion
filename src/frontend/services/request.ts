@@ -5,13 +5,13 @@ import { BusinessPath } from './session-state';
 
 type Config = Pick<AxiosRequestConfig, 'params' | 'signal' | 'skipAuthRefresh'>;
 
-async function run<T>(fn: () => Promise<{ data: T }>): Promise<T> {
+const run = async <T>(fn: () => Promise<{ data: T }>): Promise<T> => {
   try {
     return (await fn()).data;
   } catch (err) {
     throw ToApiError(err);
   }
-}
+};
 
 export const Get = <T>(url: string, config?: Config) => run<T>(() => httpClient.get<T>(url, config));
 export const Post = <T>(url: string, body?: unknown, config?: Config) => run<T>(() => httpClient.post<T>(url, body ?? {}, config));

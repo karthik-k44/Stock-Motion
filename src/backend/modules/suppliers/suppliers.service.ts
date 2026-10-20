@@ -24,22 +24,22 @@ const toSupplier = (r: SupplierListRow): SupplierResponseType => ({
   createdAt: ToIso(r.created_at),
 });
 
-async function List(scope: ScopeType, search?: string): Promise<SupplierResponseType[]> {
+const List = async (scope: ScopeType, search?: string): Promise<SupplierResponseType[]> => {
   return (await suppliersRepository.List(db, scope.businessId, search)).map(toSupplier);
-}
+};
 
-async function Get(scope: ScopeType, id: string, q: Queryable = db): Promise<SupplierResponseType> {
+const Get = async (scope: ScopeType, id: string, q: Queryable = db): Promise<SupplierResponseType> => {
   const row = await suppliersRepository.Find(q, scope.businessId, id);
   if (!row) throw NotFound('Supplier', id);
   return toSupplier(row);
-}
+};
 
 /** Validates a supplier id from a request body belongs to this business. */
-async function AssertExists(scope: ScopeType, id: string | null | undefined, q: Queryable = db): Promise<void> {
+const AssertExists = async (scope: ScopeType, id: string | null | undefined, q: Queryable = db): Promise<void> => {
   if (id && !(await suppliersRepository.Find(q, scope.businessId, id))) throw BadRequest('Choose one of your suppliers');
-}
+};
 
-async function Create(scope: ScopeType, input: SupplierInput): Promise<SupplierResponseType> {
+const Create = async (scope: ScopeType, input: SupplierInput): Promise<SupplierResponseType> => {
   const { supplier, activity } = await db.transaction(async (tx) => {
     if (await suppliersRepository.FindByName(tx, scope.businessId, input.name)) throw Conflict(`${input.name} already exists`);
     const id = await suppliersRepository.Insert(tx, scope.businessId, input);
@@ -51,9 +51,9 @@ async function Create(scope: ScopeType, input: SupplierInput): Promise<SupplierR
   });
   BroadcastChange(scope.businessId, RESOURCES, [activity]);
   return supplier;
-}
+};
 
-async function Update(scope: ScopeType, id: string, input: SupplierInput): Promise<SupplierResponseType> {
+const Update = async (scope: ScopeType, id: string, input: SupplierInput): Promise<SupplierResponseType> => {
   const supplier = await db.transaction(async (tx) => {
     await Get(scope, id, tx);
     const clash = await suppliersRepository.FindByName(tx, scope.businessId, input.name);
@@ -63,14 +63,14 @@ async function Update(scope: ScopeType, id: string, input: SupplierInput): Promi
   });
   BroadcastChange(scope.businessId, [ResourceTypeEnum.SUPPLIERS, ResourceTypeEnum.ITEMS, ResourceTypeEnum.DELIVERIES]);
   return supplier;
-}
+};
 
-async function Delete(scope: ScopeType, id: string): Promise<void> {
+const Delete = async (scope: ScopeType, id: string): Promise<void> => {
   const current = await Get(scope, id);
   if (current.openDeliveries) throw Conflict(`${current.name} has ${current.openDeliveries} open deliveries — receive them first`);
   // Items keep their stock; their supplier link is cleared by the foreign key.
   await suppliersRepository.Delete(db, id);
   BroadcastChange(scope.businessId, [ResourceTypeEnum.SUPPLIERS, ResourceTypeEnum.ITEMS]);
-}
+};
 
 export const suppliersService = { List, Get, AssertExists, Create, Update, Delete };

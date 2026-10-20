@@ -10,7 +10,7 @@ type Props =
   | { mode: 'register'; submitLabel: string; busy: boolean; error: ApiError | null; onSubmit: (input: RegisterInput) => void };
 
 /** Email + password (and name when signing up), validated before it is sent. */
-export function AccountForm(props: Props) {
+export const AccountForm = (props: Props) => {
   const [values, setValues] = useState({ name: '', email: '', password: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const set = (key: keyof typeof values) => (e: React.ChangeEvent<HTMLInputElement>) => setValues((v) => ({ ...v, [key]: e.target.value }));
@@ -59,4 +59,4 @@ export function AccountForm(props: Props) {
       </Button>
     </form>
   );
-}
+};

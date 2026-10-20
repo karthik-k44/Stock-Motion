@@ -11,7 +11,7 @@ import { BusinessDetailsCard } from './components/BusinessDetailsCard';
 import { CategoriesCard } from './components/CategoriesCard';
 import { LocationsCard } from './components/LocationsCard';
 
-export function Settings() {
+export const Settings = () => {
   useDocumentTitle('Settings');
   const business = businessesService.useBusiness();
   const reset = businessesService.useResetDataMutation();
@@ -45,4 +45,4 @@ export function Settings() {
       </div>
     </div>
   );
-}
+};

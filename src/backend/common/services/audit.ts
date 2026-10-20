@@ -15,7 +15,7 @@ import type { MovementTypeEnum } from '@/backend/types/item';
  * The activity log and stock ledger are written by several modules (items,
  * orders, deliveries), always inside the caller's transaction.
  */
-export async function RecordActivity(
+export const RecordActivity = async (
   tx: Queryable,
   scope: ScopeType,
   input: {
@@ -23,8 +23,7 @@ export async function RecordActivity(
     message: string;
     ref?: { type: ActivityRefTypeEnum; id: string };
     meta?: ActivityMetaType;
-  },
-): Promise<ActivityResponseType> {
+  },): Promise<ActivityResponseType> => {
   const row = await activityRepository.Insert(tx, {
     businessId: scope.businessId,
     kind: input.kind,
@@ -35,12 +34,11 @@ export async function RecordActivity(
     meta: input.meta,
   });
   return ToActivityResponse({ ...row, actor_name: scope.actor.name });
-}
+};
 
-export async function RecordMovement(
+export const RecordMovement = async (
   tx: Queryable,
   scope: ScopeType,
-  input: { itemId: string; type: MovementTypeEnum; delta: number; balance: number; ref?: string | null; note: string },
-): Promise<void> {
+  input: { itemId: string; type: MovementTypeEnum; delta: number; balance: number; ref?: string | null; note: string },): Promise<void> => {
   await itemsRepository.InsertMovement(tx, { businessId: scope.businessId, accountId: scope.actor.id, ...input });
-}
+};

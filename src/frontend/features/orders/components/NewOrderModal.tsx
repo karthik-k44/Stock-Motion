@@ -13,7 +13,7 @@ import { OrderLinesEditor, type LineDraftType } from './OrderLinesEditor';
 type Props = { onClose: () => void; onSaved: (number: string) => void; order?: OrderResponseType };
 
 /** A new order / ticket / job — or, with `order`, change the lines of one that hasn't started. */
-export function NewOrderModal({ onClose, onSaved, order }: Props) {
+export const NewOrderModal = ({ onClose, onSaved, order }: Props) => {
   const { template } = businessesService.useBusiness();
   const { labels } = template;
   const { data: customers = [] } = customersService.useCustomers();
@@ -86,4 +86,4 @@ export function NewOrderModal({ onClose, onSaved, order }: Props) {
       </form>
     </Modal>
   );
-}
+};

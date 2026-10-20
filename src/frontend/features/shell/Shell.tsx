@@ -15,7 +15,7 @@ import { BusinessGate } from './components/BusinessGate';
 import { SessionGate } from './components/SessionGate';
 
 /** The signed-in app: navigation in the business's vocabulary, plus everything that lives across screens. */
-function Frame() {
+const Frame = () => {
   const { connected } = useRealtime();
   const navigation = useNavigation();
   const business = businessesService.useBusiness();
@@ -48,9 +48,9 @@ function Frame() {
       <ScrollRestoration />
     </>
   );
-}
+};
 
-export function Shell() {
+export const Shell = () => {
   return (
     <SessionGate>
       <BusinessGate>
@@ -58,4 +58,4 @@ export function Shell() {
       </BusinessGate>
     </SessionGate>
   );
-}
+};

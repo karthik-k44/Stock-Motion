@@ -22,7 +22,7 @@ type AnalysedRowType = { line: number; data: ImportRowInput | null; existing: It
 const categoryCode = (name: string) => name.toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 40);
 
 /** Parse and check every row against the business without writing anything. */
-async function analyse(q: Queryable, scope: ScopeType, csv: string) {
+const analyse = async (q: Queryable, scope: ScopeType, csv: string) => {
   const table = ParseCsv(csv);
   if (table.length < 2) throw BadRequest('The file needs a header row and at least one item');
   if (table.length - 1 > MAX_ROWS) throw BadRequest(`Import up to ${MAX_ROWS} items at a time`);
@@ -99,14 +99,14 @@ async function analyse(q: Queryable, scope: ScopeType, csv: string) {
     newSuppliers: [...newSuppliers],
   };
   return { rows, preview };
-}
+};
 
-async function Preview(scope: ScopeType, input: ImportItemsInput): Promise<ImportPreviewResponseType> {
+const Preview = async (scope: ScopeType, input: ImportItemsInput): Promise<ImportPreviewResponseType> => {
   return (await analyse(db, scope, input.csv)).preview;
-}
+};
 
 /** All or nothing: any row with an error rejects the whole file. */
-async function Commit(scope: ScopeType, input: ImportItemsInput): Promise<ImportResultResponseType> {
+const Commit = async (scope: ScopeType, input: ImportItemsInput): Promise<ImportResultResponseType> => {
   const { result, activity } = await db.transaction(async (tx) => {
     const { rows, preview } = await analyse(tx, scope, input.csv);
     if (preview.errorCount) throw BadRequest(`${preview.errorCount} row${preview.errorCount === 1 ? ' has' : 's have'} errors — fix them and try again`, preview);
@@ -175,6 +175,6 @@ async function Commit(scope: ScopeType, input: ImportItemsInput): Promise<Import
     [activity],
   );
   return result;
-}
+};
 
 export const importsService = { Preview, Commit };

@@ -9,7 +9,7 @@ import { LocationCell } from './LocationCell';
 type Props = { zone: StorageZoneType; locations: LocationResponseType[]; issuesOnly: boolean };
 
 /** A zone as it looks from the front: top level first, bins left to right. Extra locations follow. */
-export function ZoneGrid({ zone, locations, issuesOnly }: Props) {
+export const ZoneGrid = ({ zone, locations, issuesOnly }: Props) => {
   const navigate = useNavigate();
   const drawer = useItemDrawer();
   const filled = locations.filter((l) => l.items.length).length;
@@ -50,4 +50,4 @@ export function ZoneGrid({ zone, locations, issuesOnly }: Props) {
       </div>
     </section>
   );
-}
+};

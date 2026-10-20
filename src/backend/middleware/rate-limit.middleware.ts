@@ -2,7 +2,7 @@ import type { NextFunction, Request, Response } from 'express';
 import { TooManyRequests } from '@/backend/common/errors';
 
 /** Small fixed-window limiter for write requests, keyed by client IP. */
-export function RateLimitWrites(opts: { windowMs: number; max: number }) {
+export const RateLimitWrites = (opts: { windowMs: number; max: number }) => {
   const hits = new Map<string, { count: number; resetAt: number }>();
   return (req: Request, _res: Response, next: NextFunction) => {
     if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') return next();
@@ -17,4 +17,4 @@ export function RateLimitWrites(opts: { windowMs: number; max: number }) {
     if (entry.count > opts.max) return next(TooManyRequests());
     next();
   };
-}
+};

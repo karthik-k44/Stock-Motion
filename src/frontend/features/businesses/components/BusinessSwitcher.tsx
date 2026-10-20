@@ -6,7 +6,7 @@ import { businessesService } from '../services';
 const ADD = '__add__';
 
 /** Pick which business to work in, or start another one. */
-export function BusinessSwitcher() {
+export const BusinessSwitcher = () => {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const business = businessesService.useBusiness();
@@ -36,4 +36,4 @@ export function BusinessSwitcher() {
       </select>
     </label>
   );
-}
+};

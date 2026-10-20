@@ -22,7 +22,7 @@ const VIEWS = [
   { value: DeliveryViewTypeEnum.ALL, label: 'All' },
 ];
 
-export function Deliveries() {
+export const Deliveries = () => {
   const business = businessesService.useBusiness();
   const { labels } = business.template;
   useDocumentTitle(labels.deliveries);
@@ -77,4 +77,4 @@ export function Deliveries() {
       {creating && <NewDeliveryModal onClose={() => setCreating(false)} onSaved={(n) => (setCreating(false), navigate(paths.delivery(n)))} />}
     </div>
   );
-}
+};

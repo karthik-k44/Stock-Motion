@@ -11,7 +11,7 @@ import { FullPageStatus } from './FullPageStatus';
  * Makes sure a business is selected and loaded before any business screen renders: the remembered
  * one if the account still belongs to it, else the first one, else onboarding.
  */
-export function BusinessGate({ children }: { children: ReactNode }) {
+export const BusinessGate = ({ children }: { children: ReactNode }) => {
   const qc = useQueryClient();
   const selected = businessesService.useBusinessId();
   const mine = businessesService.useMyBusinesses();
@@ -34,4 +34,4 @@ export function BusinessGate({ children }: { children: ReactNode }) {
       {children}
     </BusinessContext.Provider>
   );
-}
+};

@@ -11,7 +11,7 @@ let io: Server | null = null;
 
 const room = (businessId: string) => `business:${businessId}`;
 
-export function AttachRealtime(server: HttpServer): Server {
+export const AttachRealtime = (server: HttpServer): Server => {
   // destroyUpgrade:false — Vite's HMR websocket shares this HTTP server in development.
   io = new Server(server, { destroyUpgrade: false, serveClient: false });
 
@@ -39,17 +39,17 @@ export function AttachRealtime(server: HttpServer): Server {
     });
   });
   return io;
-}
+};
 
 /** Tell every client watching this business which resources changed (and what happened). */
-export function BroadcastChange(businessId: string, resources: ResourceTypeEnum[], activity: ActivityResponseType[] = []): void {
+export const BroadcastChange = (businessId: string, resources: ResourceTypeEnum[], activity: ActivityResponseType[] = []): void => {
   if (!io) return;
   const payload: DataChangedPayloadType = { businessId, resources, activity };
   io.to(room(businessId)).emit('data:changed', payload);
-}
+};
 
-export async function CloseRealtime(): Promise<void> {
+export const CloseRealtime = async (): Promise<void> => {
   if (!io) return;
   await io.close();
   io = null;
-}
+};

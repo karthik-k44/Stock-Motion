@@ -9,7 +9,7 @@ import { StockStatusBadge } from './StockStatusBadge';
 type Props = { kind: ItemKindTypeEnum; items: ItemResponseType[]; selectedSku: string | null; onSelect: (sku: string) => void };
 
 /** Stock items show on hand / reserved / available; made items how many can be made; services just a price. */
-export function InventoryTable({ kind, items, selectedSku, onSelect }: Props) {
+export const InventoryTable = ({ kind, items, selectedSku, onSelect }: Props) => {
   const business = businessesService.useBusiness();
   const { data: categories } = categoriesService.useCategories();
   const stocked = kind === ItemKindTypeEnum.STOCK;
@@ -68,4 +68,4 @@ export function InventoryTable({ kind, items, selectedSku, onSelect }: Props) {
       </table>
     </div>
   );
-}
+};

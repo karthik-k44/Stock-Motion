@@ -4,7 +4,7 @@ import { FormatDateTime, FormatSigned } from '@/frontend/utils/format';
 import { HumanizeMovement } from '@/frontend/utils/humanize';
 import type { MovementResponseType } from '../types';
 
-export function ItemMovements({ movements, unit }: { movements: MovementResponseType[]; unit: string }) {
+export const ItemMovements = ({ movements, unit }: { movements: MovementResponseType[]; unit: string }) => {
   if (!movements.length) return <EmptyState icon="clock" title="No stock movements yet" />;
   return (
     <ol className="movements">
@@ -26,4 +26,4 @@ export function ItemMovements({ movements, unit }: { movements: MovementResponse
       ))}
     </ol>
   );
-}
+};

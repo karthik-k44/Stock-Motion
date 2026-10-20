@@ -33,11 +33,11 @@ const businessesKeys = {
 const GLOBAL_KEYS = new Set(['session', 'businesses', 'templates', 'invite']);
 
 /** Work in another business: forget everything cached for the previous one. */
-function SelectBusiness(qc: QueryClient, id: string | null) {
+const SelectBusiness = (qc: QueryClient, id: string | null) => {
   tokenStore.Advance();
   sessionState.SetBusinessId(id);
   qc.removeQueries({ predicate: (q) => !GLOBAL_KEYS.has(String(q.queryKey[0])) });
-}
+};
 
 const useBusinessId = () => useSyncExternalStore(sessionState.Subscribe, sessionState.GetBusinessId);
 

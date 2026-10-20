@@ -24,13 +24,13 @@ const RegisterFromInvite = (token: string, input: RegisterInput) =>
   Post<AuthSessionResponseType>(`/invites/${token}/register`, input, NO_REFRESH);
 
 /** Restore the session from the refresh cookie on page load; null when signed out. */
-async function Restore(): Promise<AccountResponseType | null> {
+const Restore = async (): Promise<AccountResponseType | null> => {
   try {
     return (await RefreshAccessToken()).account;
   } catch {
     return null;
   }
-}
+};
 
 const authKeys = {
   session: ['session'] as const,
@@ -38,23 +38,23 @@ const authKeys = {
 };
 
 /** Signed in as someone new: drop everything cached for the previous person. */
-function StartSession(qc: QueryClient, session: AuthSessionResponseType) {
+const StartSession = (qc: QueryClient, session: AuthSessionResponseType) => {
   tokenStore.Advance();
   tokenStore.Set(session.accessToken);
   qc.clear();
   qc.setQueryData(authKeys.session, session.account);
   realtime.Disconnect();
   realtime.Connect();
-}
+};
 
-function EndSession(qc: QueryClient) {
+const EndSession = (qc: QueryClient) => {
   tokenStore.Advance();
   tokenStore.Set(null);
   sessionState.SetBusinessId(null);
   realtime.Disconnect();
   qc.clear();
   qc.setQueryData(authKeys.session, null);
-}
+};
 
 const useSession = () =>
   useQuery({ queryKey: authKeys.session, queryFn: Restore, staleTime: Infinity, gcTime: Infinity, retry: false });
@@ -62,7 +62,7 @@ const useSession = () =>
 const useInvitePreview = (token: string) =>
   useQuery({ queryKey: authKeys.invite(token), queryFn: () => PreviewInvite(token), retry: false });
 
-function useSessionMutation<V>(fn: (vars: V) => Promise<AuthSessionResponseType>, after?: (session: AuthSessionResponseType) => void) {
+const useSessionMutation = <V>(fn: (vars: V) => Promise<AuthSessionResponseType>, after?: (session: AuthSessionResponseType) => void) => {
   const qc = useQueryClient();
   return useMutation<AuthSessionResponseType, ApiError, V>({
     mutationFn: fn,
@@ -71,7 +71,7 @@ function useSessionMutation<V>(fn: (vars: V) => Promise<AuthSessionResponseType>
       after?.(session);
     },
   });
-}
+};
 
 const useLoginMutation = () => useSessionMutation((input: LoginInput) => Login(input));
 const useRegisterMutation = () => useSessionMutation((input: RegisterInput) => Register(input));

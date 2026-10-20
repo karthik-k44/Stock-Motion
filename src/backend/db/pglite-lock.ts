@@ -7,23 +7,23 @@ import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
  * taken over.
  */
 
-function isAlive(pid: number): boolean {
+const isAlive = (pid: number): boolean => {
   try {
     process.kill(pid, 0);
     return true;
   } catch (err) {
     return (err as NodeJS.ErrnoException).code === 'EPERM';
   }
-}
+};
 
-function ownerOf(file: string): number | null {
+const ownerOf = (file: string): number | null => {
   if (!existsSync(file)) return null;
   const pid = Number(readFileSync(file, 'utf8').trim());
   return Number.isInteger(pid) && pid > 0 && pid !== process.pid && isAlive(pid) ? pid : null;
-}
+};
 
 /** Returns a release function. Waits briefly for a previous owner to exit (e.g. `tsx watch` restarts). */
-export async function AcquireDataDirLock(dataDir: string, waitMs = 5000): Promise<() => void> {
+export const AcquireDataDirLock = async (dataDir: string, waitMs = 5000): Promise<() => void> => {
   const file = `${dataDir}.lock`;
   const deadline = Date.now() + waitMs;
   let owner = ownerOf(file);
@@ -47,4 +47,4 @@ export async function AcquireDataDirLock(dataDir: string, waitMs = 5000): Promis
   };
   process.once('exit', release);
   return release;
-}
+};

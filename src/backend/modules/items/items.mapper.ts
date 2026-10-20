@@ -1,7 +1,7 @@
 import type { ItemViewRow } from '@/backend/db/schema';
 import type { ItemKindTypeEnum, ItemResponseType, StockStatusTypeEnum } from '@/backend/types/item';
 
-export function ToItemResponse(r: ItemViewRow): ItemResponseType {
+export const ToItemResponse = (r: ItemViewRow): ItemResponseType => {
   return {
     id: r.id,
     sku: r.sku,
@@ -20,4 +20,4 @@ export function ToItemResponse(r: ItemViewRow): ItemResponseType {
     incoming: r.incoming,
     status: r.status as StockStatusTypeEnum,
   };
-}
+};

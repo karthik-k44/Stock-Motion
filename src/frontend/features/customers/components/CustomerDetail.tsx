@@ -11,7 +11,7 @@ import { FormatDate, FormatMoney } from '@/frontend/utils/format';
 import { customersService } from '../services';
 import { CustomerModal } from './CustomerModal';
 
-export function CustomerDetail({ id }: { id: string }) {
+export const CustomerDetail = ({ id }: { id: string }) => {
   const business = businessesService.useBusiness();
   const { labels } = business.template;
   const navigate = useNavigate();
@@ -57,4 +57,4 @@ export function CustomerDetail({ id }: { id: string }) {
       {editing && <CustomerModal customer={c} onClose={() => setEditing(false)} />}
     </article>
   );
-}
+};

@@ -40,27 +40,27 @@ const Initials = (name: string) =>
     .map((p) => p[0]!.toUpperCase())
     .join('') || '?';
 
-async function ListMine(accountId: string): Promise<BusinessResponseType[]> {
+const ListMine = async (accountId: string): Promise<BusinessResponseType[]> => {
   return (await businessesRepository.ListForAccount(db, accountId)).map(toBusiness);
-}
+};
 
 /** The caller's membership, or null when they don't belong to the business. */
-async function FindMembership(businessId: string, accountId: string, q: Queryable = db) {
+const FindMembership = async (businessId: string, accountId: string, q: Queryable = db) => {
   return (await businessesRepository.FindMembership(q, businessId, accountId)) ?? null;
-}
+};
 
-async function detail(q: Queryable, businessId: string, accountId: string): Promise<BusinessDetailResponseType> {
+const detail = async (q: Queryable, businessId: string, accountId: string): Promise<BusinessDetailResponseType> => {
   const row = await businessesRepository.FindForAccount(q, businessId, accountId);
   if (!row) throw NotFound('Business', businessId);
   return { ...toBusiness(row), template: templatesService.Get(row.type) };
-}
+};
 
-async function AddMember(q: Queryable, businessId: string, accountId: string, role: string): Promise<void> {
+const AddMember = async (q: Queryable, businessId: string, accountId: string, role: string): Promise<void> => {
   const count = await businessesRepository.CountMembers(q, businessId);
   await businessesRepository.InsertMembership(q, { businessId, accountId, role, color: MEMBER_COLORS[count % MEMBER_COLORS.length] });
-}
+};
 
-function Create(account: AccountResponseType, input: CreateBusinessInput): Promise<BusinessDetailResponseType> {
+const Create = (account: AccountResponseType, input: CreateBusinessInput): Promise<BusinessDetailResponseType> => {
   return db.transaction(async (tx) => {
     const business = await businessesRepository.Insert(tx, {
       name: input.name, type: input.type, currency: input.currency, createdBy: account.id,
@@ -69,18 +69,18 @@ function Create(account: AccountResponseType, input: CreateBusinessInput): Promi
     await SetupBusiness(tx, business, account.id, input.sampleData);
     return detail(tx, business.id, account.id);
   });
-}
+};
 
 const Get = (scope: ScopeType) => detail(db, scope.businessId, scope.actor.id);
 
-async function Update(scope: ScopeType, input: UpdateBusinessInput): Promise<BusinessDetailResponseType> {
+const Update = async (scope: ScopeType, input: UpdateBusinessInput): Promise<BusinessDetailResponseType> => {
   await businessesRepository.Update(db, scope.businessId, input);
   BroadcastChange(scope.businessId, [ResourceTypeEnum.BUSINESS, ResourceTypeEnum.DASHBOARD]);
   return Get(scope);
-}
+};
 
 /** Owner only: clear every product, order, delivery … and optionally reload the sample data. */
-async function Reset(scope: ScopeType, input: ResetDataInput): Promise<{ ok: true }> {
+const Reset = async (scope: ScopeType, input: ResetDataInput): Promise<{ ok: true }> => {
   await db.transaction(async (tx) => {
     const business = await businessesRepository.Lock(tx, scope.businessId);
     if (!business) throw NotFound('Business', scope.businessId);
@@ -89,9 +89,9 @@ async function Reset(scope: ScopeType, input: ResetDataInput): Promise<{ ok: tru
   });
   BroadcastChange(scope.businessId, Object.values(ResourceTypeEnum));
   return { ok: true };
-}
+};
 
-async function ListMembers(scope: ScopeType): Promise<MemberResponseType[]> {
+const ListMembers = async (scope: ScopeType): Promise<MemberResponseType[]> => {
   const rows = await businessesRepository.ListMembers(db, scope.businessId);
   return rows.map((r) => ({
     accountId: r.account_id,
@@ -102,16 +102,16 @@ async function ListMembers(scope: ScopeType): Promise<MemberResponseType[]> {
     initials: Initials(r.name),
     joinedAt: ToIso(r.created_at),
   }));
-}
+};
 
-async function lockMember(tx: Queryable, scope: ScopeType, accountId: string) {
+const lockMember = async (tx: Queryable, scope: ScopeType, accountId: string) => {
   const member = await businessesRepository.LockMember(tx, scope.businessId, accountId);
   if (!member) throw NotFound('Team member', accountId);
   const owners = await businessesRepository.CountMembers(tx, scope.businessId, BaseRoleTypeEnum.OWNER);
   return { member, owners };
-}
+};
 
-async function UpdateMember(scope: ScopeType, accountId: string, input: UpdateMemberInput): Promise<MemberResponseType[]> {
+const UpdateMember = async (scope: ScopeType, accountId: string, input: UpdateMemberInput): Promise<MemberResponseType[]> => {
   if (!scope.template.roles.some((r) => r.code === input.role)) {
     throw BadRequest(`${input.role} is not a role in a ${scope.template.name.toLowerCase()}`);
   }
@@ -128,10 +128,10 @@ async function UpdateMember(scope: ScopeType, accountId: string, input: UpdateMe
   });
   BroadcastChange(scope.businessId, [ResourceTypeEnum.MEMBERS, ResourceTypeEnum.ACTIVITY], [activity]);
   return ListMembers(scope);
-}
+};
 
 /** Owners can remove anyone; everyone else can only remove themselves (leave). */
-async function RemoveMember(scope: ScopeType, accountId: string): Promise<MemberResponseType[]> {
+const RemoveMember = async (scope: ScopeType, accountId: string): Promise<MemberResponseType[]> => {
   const leaving = accountId === scope.actor.id;
   if (!leaving && scope.actor.role !== BaseRoleTypeEnum.OWNER) throw Forbidden('Only an owner can remove team members');
   const activity = await db.transaction(async (tx) => {
@@ -148,7 +148,7 @@ async function RemoveMember(scope: ScopeType, accountId: string): Promise<Member
   });
   BroadcastChange(scope.businessId, [ResourceTypeEnum.MEMBERS, ResourceTypeEnum.ACTIVITY, ResourceTypeEnum.ORDERS], [activity]);
   return leaving ? [] : ListMembers(scope);
-}
+};
 
 export const businessesService = {
   ListMine,

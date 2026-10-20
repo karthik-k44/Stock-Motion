@@ -8,7 +8,7 @@ type SelectProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, 'onChange'> & {
   onChange: (value: string) => void;
 };
 
-export function Select({ options, onChange, className, ...rest }: SelectProps) {
+export const Select = ({ options, onChange, className, ...rest }: SelectProps) => {
   return (
     <select className={Cn('input', 'select', className)} onChange={(e) => onChange(e.target.value)} {...rest}>
       {options.map((o) => (
@@ -18,4 +18,4 @@ export function Select({ options, onChange, className, ...rest }: SelectProps) {
       ))}
     </select>
   );
-}
+};

@@ -29,7 +29,7 @@ const SELECT = `
     GROUP BY o.customer_id
   ) s ON s.customer_id = c.id`;
 
-async function List(q: Queryable, businessId: string, search?: string): Promise<CustomerListRow[]> {
+const List = async (q: Queryable, businessId: string, search?: string): Promise<CustomerListRow[]> => {
   const params: unknown[] = [businessId];
   let filter = '';
   if (search) {
@@ -41,31 +41,31 @@ async function List(q: Queryable, businessId: string, search?: string): Promise<
     params,
   );
   return rows;
-}
+};
 
-async function Find(q: Queryable, businessId: string, id: string): Promise<CustomerListRow | undefined> {
+const Find = async (q: Queryable, businessId: string, id: string): Promise<CustomerListRow | undefined> => {
   const { rows } = await q.query<CustomerListRow>(`${SELECT} WHERE c.business_id = $1 AND c.id = $2`, [businessId, id]);
   return rows[0];
-}
+};
 
-async function Insert(q: Queryable, businessId: string, input: CustomerWriteType & { createdAt?: DbDate }): Promise<string> {
+const Insert = async (q: Queryable, businessId: string, input: CustomerWriteType & { createdAt?: DbDate }): Promise<string> => {
   const { rows } = await q.query<{ id: string }>(
     `INSERT INTO customers (business_id, name, email, phone, address, notes, created_at)
      VALUES ($1, $2, $3, $4, $5, $6, COALESCE($7, now())) RETURNING id`,
     [businessId, input.name, input.email, input.phone, input.address, input.notes, input.createdAt ?? null],
   );
   return rows[0].id;
-}
+};
 
-async function Update(q: Queryable, id: string, input: CustomerWriteType): Promise<void> {
+const Update = async (q: Queryable, id: string, input: CustomerWriteType): Promise<void> => {
   await q.query('UPDATE customers SET name = $2, email = $3, phone = $4, address = $5, notes = $6 WHERE id = $1', [
     id, input.name, input.email, input.phone, input.address, input.notes,
   ]);
-}
+};
 
-async function Delete(q: Queryable, id: string): Promise<void> {
+const Delete = async (q: Queryable, id: string): Promise<void> => {
   // Orders keep their customer name snapshot; the link is cleared by the foreign key.
   await q.query('DELETE FROM customers WHERE id = $1', [id]);
-}
+};
 
 export const customersRepository = { List, Find, Insert, Update, Delete };

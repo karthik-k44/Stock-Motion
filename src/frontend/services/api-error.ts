@@ -23,7 +23,7 @@ export class ApiError extends Error {
   }
 }
 
-export function ToApiError(err: unknown): ApiError {
+export const ToApiError = (err: unknown): ApiError => {
   if (err instanceof ApiError) return err;
   if (isAxiosError<ApiErrorBody>(err)) {
     const body = err.response?.data;
@@ -32,8 +32,8 @@ export function ToApiError(err: unknown): ApiError {
     return new ApiError(err.response.status, 'HTTP_ERROR', `Request failed (${err.response.status})`);
   }
   return new ApiError(0, 'UNKNOWN', err instanceof Error ? err.message : 'Something went wrong');
-}
+};
 
-export function IsCanceled(err: unknown): boolean {
+export const IsCanceled = (err: unknown): boolean => {
   return isCancel(err);
-}
+};

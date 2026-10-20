@@ -11,7 +11,7 @@ const OFF_SHELF = '__none__';
 
 type Props = { item: ItemResponseType; onClose: () => void };
 
-export function RelocateModal({ item, onClose }: Props) {
+export const RelocateModal = ({ item, onClose }: Props) => {
   const { template } = businessesService.useBusiness();
   const { data: locations, isPending } = locationsService.useLocations();
   const relocate = inventoryService.useRelocateMutation();
@@ -57,4 +57,4 @@ export function RelocateModal({ item, onClose }: Props) {
       </Field>
     </Modal>
   );
-}
+};

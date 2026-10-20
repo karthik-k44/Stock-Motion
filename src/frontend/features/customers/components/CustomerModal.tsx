@@ -17,7 +17,7 @@ const FIELDS: { key: keyof CustomerInput; label: string; type?: string; area?: b
   { key: 'notes', label: 'Notes (optional)', area: true },
 ];
 
-export function CustomerModal({ customer, onClose, onSaved }: Props) {
+export const CustomerModal = ({ customer, onClose, onSaved }: Props) => {
   const { labels } = businessesService.useBusiness().template;
   const [values, setValues] = useState<CustomerInput>({
     name: customer?.name ?? '', email: customer?.email ?? '', phone: customer?.phone ?? '', address: customer?.address ?? '', notes: customer?.notes ?? '',
@@ -62,4 +62,4 @@ export function CustomerModal({ customer, onClose, onSaved }: Props) {
       </form>
     </Modal>
   );
-}
+};

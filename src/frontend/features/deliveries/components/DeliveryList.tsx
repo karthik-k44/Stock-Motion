@@ -5,7 +5,7 @@ import { FormatDateTime, FormatNumber } from '@/frontend/utils/format';
 import type { DeliveryResponseType } from '../types';
 import { DeliveryStatusBadge } from './DeliveryStatusBadge';
 
-export function DeliveryList({ deliveries, selected }: { deliveries: DeliveryResponseType[]; selected?: string }) {
+export const DeliveryList = ({ deliveries, selected }: { deliveries: DeliveryResponseType[]; selected?: string }) => {
   return (
     <ul className="order-list">
       {deliveries.map((d) => (
@@ -27,4 +27,4 @@ export function DeliveryList({ deliveries, selected }: { deliveries: DeliveryRes
       ))}
     </ul>
   );
-}
+};

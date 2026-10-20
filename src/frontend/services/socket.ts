@@ -25,16 +25,16 @@ const listeners = new Set<(e: DataChangedEvent) => void>();
 const statusListeners = new Set<(connected: boolean) => void>();
 const emitStatus = (on: boolean) => statusListeners.forEach((l) => l(on));
 
-function join() {
+const join = () => {
   const id = sessionState.GetBusinessId();
   if (socket?.connected && id) socket.emit('business:join', id, (ok: boolean) => emitStatus(ok));
-}
+};
 
 sessionState.Subscribe(join);
 
 export const realtime = {
   /** Connects with the current access token; re-joins the current business on every (re)connect. */
-  Connect() {
+  Connect: () => {
     if (socket) return;
     socket = io({ path: '/socket.io', transports: ['websocket', 'polling'], auth: (cb) => cb({ token: tokenStore.Get() ?? '' }) });
     socket.on('data:changed', (e: DataChangedEvent) => {
@@ -51,18 +51,18 @@ export const realtime = {
       }
     });
   },
-  Disconnect() {
+  Disconnect: () => {
     socket?.close();
     socket = null;
     emitStatus(false);
   },
-  OnDataChanged(fn: (e: DataChangedEvent) => void) {
+  OnDataChanged: (fn: (e: DataChangedEvent) => void) => {
     listeners.add(fn);
     return () => {
       listeners.delete(fn);
     };
   },
-  OnStatus(fn: (connected: boolean) => void) {
+  OnStatus: (fn: (connected: boolean) => void) => {
     statusListeners.add(fn);
     return () => {
       statusListeners.delete(fn);

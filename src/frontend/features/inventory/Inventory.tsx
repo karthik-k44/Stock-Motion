@@ -20,7 +20,7 @@ import { ItemKindTypeEnum, type ListItemsParams } from './types';
 
 const EMPTY: InventoryFilterState = { search: '', category: '', zone: '', status: 'ALL' };
 
-export function Inventory() {
+export const Inventory = () => {
   const business = businessesService.useBusiness();
   const { labels } = business.template;
   useDocumentTitle(labels.items);
@@ -90,4 +90,4 @@ export function Inventory() {
       {dialog === 'import' && <ImportModal onClose={() => setDialog(null)} />}
     </div>
   );
-}
+};

@@ -15,20 +15,20 @@ const emit = () => listeners.forEach((l) => l());
 
 /** `await ConfirmManager.Ask({...})` resolves true when the user confirms. Rendered by `<ConfirmHost />`. */
 export const ConfirmManager = {
-  Ask(options: ConfirmOptions): Promise<boolean> {
+  Ask: (options: ConfirmOptions): Promise<boolean> => {
     pending?.resolve(false);
     return new Promise((resolve) => {
       pending = { ...options, resolve };
       emit();
     });
   },
-  Resolve(ok: boolean) {
+  Resolve: (ok: boolean) => {
     pending?.resolve(ok);
     pending = null;
     emit();
   },
   Get: () => pending,
-  Subscribe(fn: () => void) {
+  Subscribe: (fn: () => void) => {
     listeners.add(fn);
     return () => {
       listeners.delete(fn);

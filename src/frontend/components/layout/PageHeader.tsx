@@ -1,13 +1,18 @@
 import type { ReactNode } from 'react';
+import { Text } from '@/frontend/components/text';
 
-export function PageHeader({ title, description, actions }: { title: string; description?: ReactNode; actions?: ReactNode }) {
+export const PageHeader = ({ title, description, actions }: { title: string; description?: ReactNode; actions?: ReactNode }) => {
   return (
     <div className="page-head">
       <div>
-        <h1 className="page-title">{title}</h1>
-        {description && <p className="page-desc">{description}</p>}
+        <Text variant="title">{title}</Text>
+        {description && (
+          <Text tone="secondary" className="mt-1 max-w-[72ch]">
+            {description}
+          </Text>
+        )}
       </div>
       {actions && <div className="page-actions">{actions}</div>}
     </div>
   );
-}
+};

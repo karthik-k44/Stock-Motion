@@ -2,7 +2,7 @@ import { businessesService } from '@/frontend/features/businesses/services';
 import { FormatMoney, FormatQty } from '@/frontend/utils/format';
 import { ItemKindTypeEnum, type ItemResponseType } from '../types';
 
-export function ItemStats({ item }: { item: ItemResponseType }) {
+export const ItemStats = ({ item }: { item: ItemResponseType }) => {
   const business = businessesService.useBusiness();
   const money = (n: number) => FormatMoney(n, business.currency);
   const q = (n: number) => FormatQty(n, item.unit);
@@ -35,4 +35,4 @@ export function ItemStats({ item }: { item: ItemResponseType }) {
       ))}
     </dl>
   );
-}
+};

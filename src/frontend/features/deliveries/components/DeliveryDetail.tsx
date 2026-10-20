@@ -9,7 +9,7 @@ import { DeliveryStatusTypeEnum } from '../types';
 import { DeliveryStatusBadge } from './DeliveryStatusBadge';
 import { ReceiveLinesForm } from './ReceiveLinesForm';
 
-export function DeliveryDetail({ number }: { number: string }) {
+export const DeliveryDetail = ({ number }: { number: string }) => {
   const business = businessesService.useBusiness();
   const { labels } = business.template;
   const { data: d, isPending, isError, error, refetch } = deliveriesService.useDelivery(number);
@@ -79,4 +79,4 @@ export function DeliveryDetail({ number }: { number: string }) {
       )}
     </article>
   );
-}
+};

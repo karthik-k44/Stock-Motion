@@ -9,7 +9,7 @@ export type SalesSummaryRow = {
 };
 
 /** Order counts and revenue. Revenue counts closed, non-cancelled orders by the day they closed. */
-async function SalesSummary(q: Queryable, businessId: string): Promise<SalesSummaryRow> {
+const SalesSummary = async (q: Queryable, businessId: string): Promise<SalesSummaryRow> => {
   const { rows } = await q.query<SalesSummaryRow>(
     `WITH totals AS (
        SELECT o.id, o.created_at, o.closed_at, o.closed, o.cancelled, COALESCE(SUM(ol.qty * ol.unit_price), 0) AS total
@@ -27,19 +27,19 @@ async function SalesSummary(q: Queryable, businessId: string): Promise<SalesSumm
     [businessId],
   );
   return rows[0];
-}
+};
 
 /** Open orders per status. */
-async function OpenByStatus(q: Queryable, businessId: string): Promise<{ status: string; n: number }[]> {
+const OpenByStatus = async (q: Queryable, businessId: string): Promise<{ status: string; n: number }[]> => {
   const { rows } = await q.query<{ status: string; n: number }>(
     'SELECT status, COUNT(*)::int AS n FROM orders WHERE business_id = $1 AND NOT closed GROUP BY status',
     [businessId],
   );
   return rows;
-}
+};
 
 /** Best sellers this month by quantity, from closed orders. */
-async function TopSellers(q: Queryable, businessId: string, limit: number): Promise<{ sku: string; name: string; qty: number; revenue: number }[]> {
+const TopSellers = async (q: Queryable, businessId: string, limit: number): Promise<{ sku: string; name: string; qty: number; revenue: number }[]> => {
   const { rows } = await q.query<{ sku: string; name: string; qty: number; revenue: number }>(
     `SELECT i.sku, i.name, SUM(ol.qty)::int AS qty, SUM(ol.qty * ol.unit_price)::float8 AS revenue
      FROM order_lines ol JOIN orders o ON o.id = ol.order_id JOIN items i ON i.id = ol.item_id
@@ -48,9 +48,9 @@ async function TopSellers(q: Queryable, businessId: string, limit: number): Prom
     [businessId, limit],
   );
   return rows;
-}
+};
 
-async function Counts(q: Queryable, businessId: string): Promise<{ customers: number; new_customers_month: number; team: number }> {
+const Counts = async (q: Queryable, businessId: string): Promise<{ customers: number; new_customers_month: number; team: number }> => {
   const { rows } = await q.query<{ customers: number; new_customers_month: number; team: number }>(
     `SELECT
        (SELECT COUNT(*)::int FROM customers WHERE business_id = $1) AS customers,
@@ -59,6 +59,6 @@ async function Counts(q: Queryable, businessId: string): Promise<{ customers: nu
     [businessId],
   );
   return rows[0];
-}
+};
 
 export const dashboardRepository = { SalesSummary, OpenByStatus, TopSellers, Counts };

@@ -15,23 +15,23 @@ const DEMO_BUSINESSES = [
   { name: 'Brightwire Trades', type: BusinessTypeEnum.TRADES, currency: 'USD' },
 ];
 
-async function isEmpty(): Promise<boolean> {
+const isEmpty = async (): Promise<boolean> => {
   const { rows } = await db.query<{ n: number }>('SELECT COUNT(*)::int AS n FROM accounts');
   return rows[0].n === 0;
-}
+};
 
 /**
  * Create the demo account with one sample business per template. With `reset`, every row in the
  * database is wiped first; otherwise it only runs on an empty database.
  */
-export async function SeedDatabase(opts: { reset?: boolean } = {}): Promise<boolean> {
+export const SeedDatabase = async (opts: { reset?: boolean } = {}): Promise<boolean> => {
   if (opts.reset) await db.exec(`TRUNCATE ${ALL_TABLES.join(', ')} RESTART IDENTITY CASCADE`);
   else if (!(await isEmpty())) return false;
   const { account } = await authService.Register(DEMO_ACCOUNT);
   for (const b of DEMO_BUSINESSES) await businessesService.Create(account, { ...b, sampleData: true });
   logger.info(`Seeded demo data — sign in as ${DEMO_ACCOUNT.email} / ${DEMO_ACCOUNT.password}`);
   return true;
-}
+};
 
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMain) {

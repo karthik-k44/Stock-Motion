@@ -37,15 +37,15 @@ export type ItemWriteType = {
   supplierId: string | null;
 };
 
-async function FindView(q: Queryable, businessId: string, sku: string): Promise<ItemViewRow | undefined> {
+const FindView = async (q: Queryable, businessId: string, sku: string): Promise<ItemViewRow | undefined> => {
   const { rows } = await q.query<ItemViewRow>(`SELECT ${VIEW_COLUMNS} FROM item_views WHERE business_id = $1 AND sku = $2`, [
     businessId,
     sku,
   ]);
   return rows[0];
-}
+};
 
-async function ListViews(q: Queryable, businessId: string, filters: ItemFiltersType = {}): Promise<ItemViewRow[]> {
+const ListViews = async (q: Queryable, businessId: string, filters: ItemFiltersType = {}): Promise<ItemViewRow[]> => {
   const where = ['business_id = $1'];
   const params: unknown[] = [businessId];
   const add = (sql: string, value: unknown) => {
@@ -64,52 +64,51 @@ async function ListViews(q: Queryable, businessId: string, filters: ItemFiltersT
     params,
   );
   return rows;
-}
+};
 
-async function ListViewsByIds(q: Queryable, ids: string[]): Promise<ItemViewRow[]> {
+const ListViewsByIds = async (q: Queryable, ids: string[]): Promise<ItemViewRow[]> => {
   if (!ids.length) return [];
   const { rows } = await q.query<ItemViewRow>(`SELECT ${VIEW_COLUMNS} FROM item_views WHERE id = ANY($1)`, [ids]);
   return rows;
-}
+};
 
-async function ListViewsBySkus(q: Queryable, businessId: string, skus: string[]): Promise<ItemViewRow[]> {
+const ListViewsBySkus = async (q: Queryable, businessId: string, skus: string[]): Promise<ItemViewRow[]> => {
   if (!skus.length) return [];
   const { rows } = await q.query<ItemViewRow>(`SELECT ${VIEW_COLUMNS} FROM item_views WHERE business_id = $1 AND sku = ANY($2)`, [
     businessId,
     skus,
   ]);
   return rows;
-}
+};
 
-async function LockItem(q: Queryable, businessId: string, sku: string): Promise<ItemLockRow | undefined> {
+const LockItem = async (q: Queryable, businessId: string, sku: string): Promise<ItemLockRow | undefined> => {
   const { rows } = await q.query<ItemLockRow>(
     `SELECT id, sku, name, kind, on_hand, location FROM items
      WHERE business_id = $1 AND sku = $2 AND archived_at IS NULL FOR UPDATE`,
     [businessId, sku],
   );
   return rows[0];
-}
+};
 
 /** Lock stock rows in id order so concurrent orders can't deadlock each other. */
-async function LockItemsByIds(q: Queryable, ids: string[]): Promise<ItemLockRow[]> {
+const LockItemsByIds = async (q: Queryable, ids: string[]): Promise<ItemLockRow[]> => {
   if (!ids.length) return [];
   const { rows } = await q.query<ItemLockRow>(
     'SELECT id, sku, name, kind, on_hand, location FROM items WHERE id = ANY($1) ORDER BY id FOR UPDATE',
     [ids],
   );
   return rows;
-}
+};
 
-async function SkuTaken(q: Queryable, businessId: string, sku: string): Promise<boolean> {
+const SkuTaken = async (q: Queryable, businessId: string, sku: string): Promise<boolean> => {
   const { rows } = await q.query('SELECT 1 FROM items WHERE business_id = $1 AND sku = $2', [businessId, sku]);
   return rows.length > 0;
-}
+};
 
-async function Insert(
+const Insert = async (
   q: Queryable,
   businessId: string,
-  input: ItemWriteType & { sku: string; kind: string; onHand: number; location: string | null },
-): Promise<string> {
+  input: ItemWriteType & { sku: string; kind: string; onHand: number; location: string | null },): Promise<string> => {
   const { rows } = await q.query<{ id: string }>(
     `INSERT INTO items (business_id, sku, name, category, unit, kind, on_hand, reorder_level, cost, price, location, supplier_id)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id`,
@@ -119,44 +118,44 @@ async function Insert(
     ],
   );
   return rows[0].id;
-}
+};
 
-async function Update(q: Queryable, id: string, input: ItemWriteType): Promise<void> {
+const Update = async (q: Queryable, id: string, input: ItemWriteType): Promise<void> => {
   await q.query(
     `UPDATE items SET name = $2, category = $3, unit = $4, reorder_level = $5, cost = $6, price = $7, supplier_id = $8
      WHERE id = $1`,
     [id, input.name, input.category, input.unit, input.reorderLevel, input.cost, input.price, input.supplierId],
   );
-}
+};
 
-async function Archive(q: Queryable, id: string): Promise<void> {
+const Archive = async (q: Queryable, id: string): Promise<void> => {
   // Archived items keep their history but free their location and SKU-visible slot.
   await q.query('UPDATE items SET archived_at = now(), location = NULL WHERE id = $1', [id]);
-}
+};
 
-async function SetOnHand(q: Queryable, id: string, onHand: number): Promise<void> {
+const SetOnHand = async (q: Queryable, id: string, onHand: number): Promise<void> => {
   await q.query('UPDATE items SET on_hand = $2 WHERE id = $1', [id, onHand]);
-}
+};
 
 /** Returns the new on-hand quantity. */
-async function AddOnHand(q: Queryable, id: string, delta: number): Promise<number> {
+const AddOnHand = async (q: Queryable, id: string, delta: number): Promise<number> => {
   const { rows } = await q.query<{ on_hand: number }>('UPDATE items SET on_hand = on_hand + $2 WHERE id = $1 RETURNING on_hand', [id, delta]);
   return rows[0].on_hand;
-}
+};
 
-async function SetLocation(q: Queryable, id: string, location: string | null): Promise<void> {
+const SetLocation = async (q: Queryable, id: string, location: string | null): Promise<void> => {
   await q.query('UPDATE items SET location = $2 WHERE id = $1', [id, location]);
-}
+};
 
-async function FindOccupant(q: Queryable, businessId: string, location: string): Promise<{ sku: string } | undefined> {
+const FindOccupant = async (q: Queryable, businessId: string, location: string): Promise<{ sku: string } | undefined> => {
   const { rows } = await q.query<{ sku: string }>(
     'SELECT sku FROM items WHERE business_id = $1 AND location = $2 AND archived_at IS NULL',
     [businessId, location],
   );
   return rows[0];
-}
+};
 
-async function ListComponents(q: Queryable, parentIds: string[]): Promise<ComponentViewRow[]> {
+const ListComponents = async (q: Queryable, parentIds: string[]): Promise<ComponentViewRow[]> => {
   if (!parentIds.length) return [];
   const { rows } = await q.query<ComponentViewRow>(
     `SELECT c.parent_id, c.component_id, v.sku, v.name, v.unit, c.qty, v.on_hand, v.available
@@ -165,36 +164,35 @@ async function ListComponents(q: Queryable, parentIds: string[]): Promise<Compon
     [parentIds],
   );
   return rows;
-}
+};
 
-async function ReplaceComponents(q: Queryable, parentId: string, components: { componentId: string; qty: number }[]): Promise<void> {
+const ReplaceComponents = async (q: Queryable, parentId: string, components: { componentId: string; qty: number }[]): Promise<void> => {
   await q.query('DELETE FROM item_components WHERE parent_id = $1', [parentId]);
   for (const c of components) {
     await q.query('INSERT INTO item_components (parent_id, component_id, qty) VALUES ($1, $2, $3)', [parentId, c.componentId, c.qty]);
   }
-}
+};
 
-async function ListUsedIn(q: Queryable, componentId: string): Promise<{ sku: string; name: string; qty: number }[]> {
+const ListUsedIn = async (q: Queryable, componentId: string): Promise<{ sku: string; name: string; qty: number }[]> => {
   const { rows } = await q.query<{ sku: string; name: string; qty: number }>(
     `SELECT p.sku, p.name, c.qty FROM item_components c JOIN items p ON p.id = c.parent_id
      WHERE c.component_id = $1 AND p.archived_at IS NULL ORDER BY p.sku`,
     [componentId],
   );
   return rows;
-}
+};
 
-async function InsertMovement(
+const InsertMovement = async (
   q: Queryable,
-  input: { businessId: string; itemId: string; type: string; delta: number; balance: number; ref?: string | null; accountId: string; note: string },
-): Promise<void> {
+  input: { businessId: string; itemId: string; type: string; delta: number; balance: number; ref?: string | null; accountId: string; note: string },): Promise<void> => {
   await q.query(
     `INSERT INTO movements (business_id, item_id, type, delta, balance, ref, account_id, note)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
     [input.businessId, input.itemId, input.type, input.delta, input.balance, input.ref ?? null, input.accountId, input.note],
   );
-}
+};
 
-async function ListMovements(q: Queryable, itemId: string, limit: number): Promise<MovementRow[]> {
+const ListMovements = async (q: Queryable, itemId: string, limit: number): Promise<MovementRow[]> => {
   const { rows } = await q.query<MovementRow>(
     `SELECT m.id, m.at, i.sku, m.type, m.delta, m.balance, m.ref, m.account_id, a.name AS actor_name, m.note
      FROM movements m JOIN items i ON i.id = m.item_id LEFT JOIN accounts a ON a.id = m.account_id
@@ -202,10 +200,10 @@ async function ListMovements(q: Queryable, itemId: string, limit: number): Promi
     [itemId, limit],
   );
   return rows;
-}
+};
 
 /** What still depends on an item: open order lines, open delivery lines, made items built from it. */
-async function CountOpenUses(q: Queryable, itemId: string): Promise<{ orders: number; deliveries: number; parents: number }> {
+const CountOpenUses = async (q: Queryable, itemId: string): Promise<{ orders: number; deliveries: number; parents: number }> => {
   const { rows } = await q.query<{ orders: number; deliveries: number; parents: number }>(
     `SELECT
        (SELECT COUNT(*)::int FROM order_lines ol JOIN orders o ON o.id = ol.order_id WHERE ol.item_id = $1 AND NOT o.closed) AS orders,
@@ -214,7 +212,7 @@ async function CountOpenUses(q: Queryable, itemId: string): Promise<{ orders: nu
     [itemId],
   );
   return rows[0];
-}
+};
 
 export const itemsRepository = {
   FindView,

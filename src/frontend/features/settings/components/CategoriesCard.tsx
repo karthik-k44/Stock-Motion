@@ -4,7 +4,7 @@ import { Card } from '@/frontend/components/card';
 import { categoriesService } from '@/frontend/features/inventory/services';
 import { CategoryColor } from '@/frontend/utils/category';
 
-export function CategoriesCard() {
+export const CategoriesCard = () => {
   const { data: categories = [] } = categoriesService.useCategories();
   const create = categoriesService.useCreateCategoryMutation();
   const remove = categoriesService.useDeleteCategoryMutation();
@@ -29,4 +29,4 @@ export function CategoriesCard() {
       </form>
     </Card>
   );
-}
+};

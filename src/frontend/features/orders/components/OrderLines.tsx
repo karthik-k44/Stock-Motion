@@ -10,7 +10,7 @@ import type { OrderResponseType } from '../types';
 type Props = { order: OrderResponseType; stock: Map<string, ItemResponseType> };
 
 /** Lines with what's available (before reserving) or what's done, and a per-line pick / use button. */
-export function OrderLines({ order, stock }: Props) {
+export const OrderLines = ({ order, stock }: Props) => {
   const business = businessesService.useBusiness();
   const { labels, orderFlow } = business.template;
   const drawer = useItemDrawer();
@@ -77,4 +77,4 @@ export function OrderLines({ order, stock }: Props) {
       </table>
     </div>
   );
-}
+};

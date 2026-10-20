@@ -5,7 +5,7 @@ export const REFRESH_COOKIE = 'sm_refresh';
 /** Must match where the auth router is mounted, or the browser never sends the cookie back. */
 const COOKIE_PATH = '/api/auth';
 
-export function SetRefreshCookie(res: Response, token: string) {
+export const SetRefreshCookie = (res: Response, token: string) => {
   res.cookie(REFRESH_COOKIE, token, {
     httpOnly: true,
     secure: isProduction,
@@ -13,8 +13,8 @@ export function SetRefreshCookie(res: Response, token: string) {
     maxAge: env.REFRESH_TOKEN_DAYS * 24 * 60 * 60 * 1000,
     path: COOKIE_PATH,
   });
-}
+};
 
-export function ClearRefreshCookie(res: Response) {
+export const ClearRefreshCookie = (res: Response) => {
   res.clearCookie(REFRESH_COOKIE, { path: COOKIE_PATH, sameSite: 'lax', secure: isProduction });
-}
+};

@@ -9,7 +9,7 @@ const LABEL: Record<MotionPreferenceTypeEnum, string> = {
 };
 
 /** Lets people turn warehouse animations off regardless of their OS setting. */
-export function MotionToggle() {
+export const MotionToggle = () => {
   const { preference, reduced, setPreference } = useMotion();
   return (
     <label className="topbar-control" title={reduced ? 'Animations are reduced' : 'Animations are on'}>
@@ -28,4 +28,4 @@ export function MotionToggle() {
       </select>
     </label>
   );
-}
+};

@@ -10,7 +10,7 @@ import { KIND_OPTIONS } from './lib/activity-presets';
 import { activityService } from './services';
 import type { ActivityKindTypeEnum } from './types';
 
-export function Activity() {
+export const Activity = () => {
   useDocumentTitle('Activity history');
   const [kind, setKind] = useState<ActivityKindTypeEnum | ''>('');
   const [accountId, setAccountId] = useState('');
@@ -34,4 +34,4 @@ export function Activity() {
       </Card>
     </div>
   );
-}
+};

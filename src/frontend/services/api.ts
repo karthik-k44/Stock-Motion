@@ -31,7 +31,7 @@ let refreshInFlight: Promise<RefreshResultType> | null = null;
 const signedOutListeners = new Set<() => void>();
 
 /** Exchange the refresh cookie for a new access token. Concurrent callers share one request. */
-export function RefreshAccessToken(): Promise<RefreshResultType> {
+export const RefreshAccessToken = (): Promise<RefreshResultType> => {
   refreshInFlight ??= httpClient
     .post<RefreshResultType>('/auth/refresh', undefined, { skipAuthRefresh: true })
     .then(({ data }) => {
@@ -42,15 +42,15 @@ export function RefreshAccessToken(): Promise<RefreshResultType> {
       refreshInFlight = null;
     });
   return refreshInFlight;
-}
+};
 
 /** Called when the session can't be renewed (signed out elsewhere, cookie expired). */
-export function OnSignedOut(fn: () => void) {
+export const OnSignedOut = (fn: () => void) => {
   signedOutListeners.add(fn);
   return () => {
     signedOutListeners.delete(fn);
   };
-}
+};
 
 httpClient.interceptors.response.use(
   (res) => res,

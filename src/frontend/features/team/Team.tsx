@@ -16,7 +16,7 @@ import { FormatDate } from '@/frontend/utils/format';
 import { InvitePanel } from './components/InvitePanel';
 import { teamService } from './services';
 
-export function Team() {
+export const Team = () => {
   useDocumentTitle('Team');
   const qc = useQueryClient();
   const navigate = useNavigate();
@@ -82,4 +82,4 @@ export function Team() {
       </div>
     </div>
   );
-}
+};

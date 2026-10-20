@@ -9,7 +9,7 @@ import { FormatDate } from '@/frontend/utils/format';
 import { invitesService } from '../services';
 
 /** Create a one-time invite link for a role, copy it, and revoke ones not used yet. */
-export function InvitePanel() {
+export const InvitePanel = () => {
   const business = businessesService.useBusiness();
   const roles = business.template.roles.filter((r) => r.code !== BaseRoleTypeEnum.OWNER || business.role === BaseRoleTypeEnum.OWNER);
   const [role, setRole] = useState(roles.find((r) => r.code !== BaseRoleTypeEnum.OWNER && r.code !== BaseRoleTypeEnum.MANAGER)?.code ?? roles[0].code);
@@ -61,4 +61,4 @@ export function InvitePanel() {
       )}
     </Card>
   );
-}
+};

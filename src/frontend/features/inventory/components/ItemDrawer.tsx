@@ -21,7 +21,7 @@ import { RelocateModal } from './RelocateModal';
 import { StockStatusBadge } from './StockStatusBadge';
 
 /** The one item detail panel — opened from any screen via `?item=SKU`. */
-export function ItemDrawer() {
+export const ItemDrawer = () => {
   const { sku, open, close } = useItemDrawer();
   const navigate = useNavigate();
   const business = businessesService.useBusiness();
@@ -114,4 +114,4 @@ export function ItemDrawer() {
       )}
     </Drawer>
   );
-}
+};

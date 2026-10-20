@@ -9,7 +9,7 @@ import type { ImportPreviewResponseType } from '../types';
 const EXAMPLE = 'sku,name,category,unit,on_hand,reorder_level,cost,price,location,supplier';
 
 /** Upload a spreadsheet export, check every row, then import it in one go (all or nothing). */
-export function ImportModal({ onClose }: { onClose: () => void }) {
+export const ImportModal = ({ onClose }: { onClose: () => void }) => {
   const { template } = businessesService.useBusiness();
   const [csv, setCsv] = useState('');
   const [fileName, setFileName] = useState('');
@@ -73,4 +73,4 @@ export function ImportModal({ onClose }: { onClose: () => void }) {
       )}
     </Modal>
   );
-}
+};

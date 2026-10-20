@@ -5,7 +5,7 @@ import { ItemKindTypeEnum, type ItemResponseType } from '../types';
 const TONE = { IN_STOCK: 'good', LOW: 'warning', OUT: 'critical' } as const;
 const ICON = { IN_STOCK: 'check', LOW: 'alert', OUT: 'x' } as const;
 
-export function StockStatusBadge({ item, withExtras = false }: { item: ItemResponseType; withExtras?: boolean }) {
+export const StockStatusBadge = ({ item, withExtras = false }: { item: ItemResponseType; withExtras?: boolean }) => {
   if (item.kind === ItemKindTypeEnum.SERVICE) return <Badge tone="info" icon="clock">Service</Badge>;
   const made = item.kind === ItemKindTypeEnum.MADE;
   return (
@@ -25,4 +25,4 @@ export function StockStatusBadge({ item, withExtras = false }: { item: ItemRespo
       )}
     </span>
   );
-}
+};

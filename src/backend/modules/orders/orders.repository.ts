@@ -13,7 +13,7 @@ export type OrderFiltersType = {
   limit?: number;
 };
 
-async function List(q: Queryable, businessId: string, filters: OrderFiltersType = {}): Promise<OrderRow[]> {
+const List = async (q: Queryable, businessId: string, filters: OrderFiltersType = {}): Promise<OrderRow[]> => {
   const where = ['o.business_id = $1'];
   const params: unknown[] = [businessId];
   const add = (sql: string, value: unknown) => {
@@ -32,19 +32,19 @@ async function List(q: Queryable, businessId: string, filters: OrderFiltersType 
     params,
   );
   return rows;
-}
+};
 
-async function FindByNumber(q: Queryable, businessId: string, number: string): Promise<OrderRow | undefined> {
+const FindByNumber = async (q: Queryable, businessId: string, number: string): Promise<OrderRow | undefined> => {
   const { rows } = await q.query<OrderRow>(`${SELECT} WHERE o.business_id = $1 AND o.number = $2`, [businessId, number]);
   return rows[0];
-}
+};
 
-async function LockByNumber(q: Queryable, businessId: string, number: string): Promise<OrderRow | undefined> {
+const LockByNumber = async (q: Queryable, businessId: string, number: string): Promise<OrderRow | undefined> => {
   const { rows } = await q.query<OrderRow>(`${SELECT} WHERE o.business_id = $1 AND o.number = $2 FOR UPDATE OF o`, [businessId, number]);
   return rows[0];
-}
+};
 
-async function ListLines(q: Queryable, orderIds: string[]): Promise<OrderLineRow[]> {
+const ListLines = async (q: Queryable, orderIds: string[]): Promise<OrderLineRow[]> => {
   if (!orderIds.length) return [];
   const { rows } = await q.query<OrderLineRow>(
     `SELECT ol.order_id, ol.item_id, i.sku, i.name, i.kind, i.unit, i.location, ol.qty, ol.done, ol.unit_price
@@ -53,11 +53,11 @@ async function ListLines(q: Queryable, orderIds: string[]): Promise<OrderLineRow
     [orderIds],
   );
   return rows;
-}
+};
 
 const Next = (q: Queryable, businessId: string, prefix: string) => NextNumber(q, 'orders', businessId, prefix, 1001);
 
-async function Insert(
+const Insert = async (
   q: Queryable,
   input: {
     businessId: string;
@@ -72,8 +72,7 @@ async function Insert(
     notes?: string;
     createdAt?: DbDate;
     closedAt?: DbDate | null;
-  },
-): Promise<string> {
+  },): Promise<string> => {
   const { rows } = await q.query<{ id: string }>(
     `INSERT INTO orders (business_id, number, customer_id, customer_name, status, reserves, closed, due_at, assignee_id, notes, created_at, closed_at)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, COALESCE($11, now()), $12) RETURNING id`,
@@ -83,57 +82,53 @@ async function Insert(
     ],
   );
   return rows[0].id;
-}
+};
 
-async function InsertLine(
+const InsertLine = async (
   q: Queryable,
-  input: { orderId: string; itemId: string; position: number; qty: number; done?: number; unitPrice: number },
-): Promise<void> {
+  input: { orderId: string; itemId: string; position: number; qty: number; done?: number; unitPrice: number },): Promise<void> => {
   await q.query('INSERT INTO order_lines (order_id, item_id, position, qty, done, unit_price) VALUES ($1, $2, $3, $4, $5, $6)', [
     input.orderId, input.itemId, input.position, input.qty, input.done ?? 0, input.unitPrice,
   ]);
-}
+};
 
-async function DeleteLines(q: Queryable, orderId: string): Promise<void> {
+const DeleteLines = async (q: Queryable, orderId: string): Promise<void> => {
   await q.query('DELETE FROM order_lines WHERE order_id = $1', [orderId]);
-}
+};
 
-async function SetStage(
+const SetStage = async (
   q: Queryable,
   id: string,
-  stage: { status: string; reserves: boolean; closed: boolean; cancelled?: boolean },
-): Promise<void> {
+  stage: { status: string; reserves: boolean; closed: boolean; cancelled?: boolean },): Promise<void> => {
   await q.query(
     `UPDATE orders SET status = $2, reserves = $3, closed = $4, cancelled = $5,
        closed_at = CASE WHEN $4 THEN now() ELSE NULL END
      WHERE id = $1`,
     [id, stage.status, stage.reserves, stage.closed, stage.cancelled ?? false],
   );
-}
+};
 
-async function Update(
+const Update = async (
   q: Queryable,
   id: string,
-  input: { customerId: string | null; customerName: string; dueAt: DbDate | null; assigneeId: string | null; notes: string },
-): Promise<void> {
+  input: { customerId: string | null; customerName: string; dueAt: DbDate | null; assigneeId: string | null; notes: string },): Promise<void> => {
   await q.query('UPDATE orders SET customer_id = $2, customer_name = $3, due_at = $4, assignee_id = $5, notes = $6 WHERE id = $1', [
     id, input.customerId, input.customerName, input.dueAt, input.assigneeId, input.notes,
   ]);
-}
+};
 
-async function SetLineDone(q: Queryable, orderId: string, itemId: string, done: number): Promise<void> {
+const SetLineDone = async (q: Queryable, orderId: string, itemId: string, done: number): Promise<void> => {
   await q.query('UPDATE order_lines SET done = $3 WHERE order_id = $1 AND item_id = $2', [orderId, itemId, done]);
-}
+};
 
-async function ClearAssignee(q: Queryable, businessId: string, accountId: string): Promise<void> {
+const ClearAssignee = async (q: Queryable, businessId: string, accountId: string): Promise<void> => {
   await q.query('UPDATE orders SET assignee_id = NULL WHERE business_id = $1 AND assignee_id = $2', [businessId, accountId]);
-}
+};
 
 /** Open orders that include an item, for the item detail panel. */
-async function ListOpenForItem(
+const ListOpenForItem = async (
   q: Queryable,
-  itemId: string,
-): Promise<{ number: string; customer_name: string; status: string; qty: number; done: number }[]> {
+  itemId: string,): Promise<{ number: string; customer_name: string; status: string; qty: number; done: number }[]> => {
   const { rows } = await q.query<{ number: string; customer_name: string; status: string; qty: number; done: number }>(
     `SELECT o.number, o.customer_name, o.status, ol.qty, ol.done
      FROM order_lines ol JOIN orders o ON o.id = ol.order_id
@@ -141,7 +136,7 @@ async function ListOpenForItem(
     [itemId],
   );
   return rows;
-}
+};
 
 export const ordersRepository = {
   List,

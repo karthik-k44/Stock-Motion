@@ -7,17 +7,17 @@ import { TRADES } from './definitions/trades';
 
 const DEFINITIONS: Record<BusinessTypeEnum, TemplateDefinitionType> = { RETAIL, CAFE, TRADES };
 
-function Definition(type: string): TemplateDefinitionType {
+const Definition = (type: string): TemplateDefinitionType => {
   const definition = DEFINITIONS[type as BusinessTypeEnum];
   if (!definition) throw BadRequest(`Unknown business type ${type}`);
   return definition;
-}
+};
 
 const Get = (type: string): TemplateResponseType => Definition(type).template;
 const List = (): TemplateResponseType[] => Object.values(DEFINITIONS).map((d) => d.template);
 
 /** Every storage location a template's zones describe, e.g. A-1-1 (aisle/shelf/bin) or FRIDGE-2 (zone/shelf). */
-function Locations(template: TemplateResponseType): { code: string; zone: string; name: string; position: number }[] {
+const Locations = (template: TemplateResponseType): { code: string; zone: string; name: string; position: number }[] => {
   const out: { code: string; zone: string; name: string; position: number }[] = [];
   for (const z of template.zones) {
     for (let level = 1; level <= z.levels; level++) {
@@ -31,16 +31,16 @@ function Locations(template: TemplateResponseType): { code: string; zone: string
     }
   }
   return out;
-}
+};
 
-function Stage(template: TemplateResponseType, status: string): OrderStageType {
+const Stage = (template: TemplateResponseType, status: string): OrderStageType => {
   const stage = template.orderFlow.find((s) => s.status === status);
   if (!stage) throw BadRequest(`${status} is not a stage of the ${template.name} order flow`);
   return stage;
-}
+};
 
-function RoleLabel(template: TemplateResponseType, role: string): string {
+const RoleLabel = (template: TemplateResponseType, role: string): string => {
   return template.roles.find((r) => r.code === role)?.label ?? role;
-}
+};
 
 export const templatesService = { Definition, Get, List, Locations, Stage, RoleLabel };

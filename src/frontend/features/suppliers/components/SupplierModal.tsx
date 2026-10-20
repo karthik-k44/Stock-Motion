@@ -7,7 +7,7 @@ import { FieldErrors, ToNumber } from '@/frontend/lib/form';
 import { suppliersService } from '../services';
 import { SupplierSchema, type SupplierResponseType } from '../types';
 
-export function SupplierModal({ supplier, onClose }: { supplier?: SupplierResponseType; onClose: () => void }) {
+export const SupplierModal = ({ supplier, onClose }: { supplier?: SupplierResponseType; onClose: () => void }) => {
   const { labels } = businessesService.useBusiness().template;
   const [values, setValues] = useState({
     name: supplier?.name ?? '', contact: supplier?.contact ?? '', email: supplier?.email ?? '', phone: supplier?.phone ?? '', leadDays: String(supplier?.leadDays ?? 2),
@@ -57,4 +57,4 @@ export function SupplierModal({ supplier, onClose }: { supplier?: SupplierRespon
       </form>
     </Modal>
   );
-}
+};

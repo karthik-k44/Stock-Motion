@@ -4,20 +4,20 @@
  */
 const STORAGE_KEY = 'stockmotion:business';
 
-function read(): string | null {
+const read = (): string | null => {
   try {
     return localStorage.getItem(STORAGE_KEY);
   } catch {
     return null;
   }
-}
+};
 
 let businessId = read();
 const listeners = new Set<() => void>();
 
 export const sessionState = {
   GetBusinessId: () => businessId,
-  SetBusinessId(id: string | null) {
+  SetBusinessId: (id: string | null) => {
     if (id === businessId) return;
     businessId = id;
     try {
@@ -28,7 +28,7 @@ export const sessionState = {
     }
     listeners.forEach((l) => l());
   },
-  Subscribe(fn: () => void) {
+  Subscribe: (fn: () => void) => {
     listeners.add(fn);
     return () => {
       listeners.delete(fn);
@@ -37,7 +37,7 @@ export const sessionState = {
 };
 
 /** `/businesses/:id/<path>` for the current business. */
-export function BusinessPath(path: string): string {
+export const BusinessPath = (path: string): string => {
   if (!businessId) throw new Error('No business selected');
   return `/businesses/${businessId}${path}`;
-}
+};

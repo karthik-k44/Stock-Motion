@@ -3,7 +3,7 @@ import { Icon } from '@/frontend/components/icon';
 import { Toaster } from '@/frontend/components/toast';
 
 /** Centred card for sign-in, sign-up, invites and onboarding. */
-export function AuthLayout({ title, subtitle, children, wide }: { title: string; subtitle?: ReactNode; children: ReactNode; wide?: boolean }) {
+export const AuthLayout = ({ title, subtitle, children, wide }: { title: string; subtitle?: ReactNode; children: ReactNode; wide?: boolean }) => {
   return (
     <div className="auth">
       <main className={wide ? 'auth-card auth-card-wide' : 'auth-card'}>
@@ -20,4 +20,4 @@ export function AuthLayout({ title, subtitle, children, wide }: { title: string;
       <Toaster />
     </div>
   );
-}
+};

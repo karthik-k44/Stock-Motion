@@ -11,7 +11,7 @@ import type { OrderResponseType } from '../types';
  * The badge, stepper and lists move on immediately; if the server refuses, they move back and the
  * reason (e.g. which stock is short) shows here.
  */
-export function OrderActions({ order, onEditLines }: { order: OrderResponseType; onEditLines: () => void }) {
+export const OrderActions = ({ order, onEditLines }: { order: OrderResponseType; onEditLines: () => void }) => {
   const business = businessesService.useBusiness();
   const { orderFlow, labels } = business.template;
   const advance = ordersService.useAdvanceMutation();
@@ -82,4 +82,4 @@ export function OrderActions({ order, onEditLines }: { order: OrderResponseType;
       )}
     </div>
   );
-}
+};

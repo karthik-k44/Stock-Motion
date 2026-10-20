@@ -14,7 +14,7 @@ import { SupplierModal } from './components/SupplierModal';
 import { suppliersService } from './services';
 import type { SupplierResponseType } from './types';
 
-export function Suppliers() {
+export const Suppliers = () => {
   const business = businessesService.useBusiness();
   const { labels } = business.template;
   useDocumentTitle(labels.suppliers);
@@ -89,4 +89,4 @@ export function Suppliers() {
       {editing && <SupplierModal supplier={editing === 'new' ? undefined : editing} onClose={() => setEditing(null)} />}
     </div>
   );
-}
+};

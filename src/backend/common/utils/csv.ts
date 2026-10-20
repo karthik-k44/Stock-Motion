@@ -2,7 +2,7 @@
  * Minimal RFC 4180 CSV parser: quoted fields, escaped quotes (""), commas and newlines inside
  * quotes, CRLF or LF line endings. Returns rows of raw string cells; blank lines are dropped.
  */
-export function ParseCsv(text: string): string[][] {
+export const ParseCsv = (text: string): string[][] => {
   const rows: string[][] = [];
   let row: string[] = [];
   let cell = '';
@@ -37,4 +37,4 @@ export function ParseCsv(text: string): string[][] {
   row.push(cell);
   if (row.some((c) => c.trim() !== '')) rows.push(row);
   return rows;
-}
+};

@@ -29,7 +29,7 @@ type SnapshotType = [QueryKey, unknown][];
  * Optimistic mutation: apply the predicted result to the cache at once, roll back to the exact
  * previous cache entries if the server refuses, and always reconcile with the server afterwards.
  */
-export function useOptimisticMutation<TData, TVars>(opts: OptimisticOptionsType<TData, TVars>) {
+export const useOptimisticMutation = <TData, TVars>(opts: OptimisticOptionsType<TData, TVars>) => {
   const qc = useQueryClient();
   return useMutation<TData, ApiError, TVars, SnapshotType>({
     mutationFn: opts.mutationFn,
@@ -55,13 +55,13 @@ export function useOptimisticMutation<TData, TVars>(opts: OptimisticOptionsType<
     },
     onSettled: () => Promise.all(opts.invalidate.map((queryKey) => qc.invalidateQueries({ queryKey }))),
   });
-}
+};
 
 /** Apply `fn` to the matching entries of a cached list or single record; leaves anything else untouched. */
-export function PatchWhere<T>(match: (x: T) => boolean, fn: (x: T) => T) {
+export const PatchWhere = <T>(match: (x: T) => boolean, fn: (x: T) => T) => {
   return (old: unknown): unknown => {
     if (Array.isArray(old)) return old.map((x: T) => (match(x) ? fn(x) : x));
     if (old && typeof old === 'object' && match(old as T)) return fn(old as T);
     return old;
   };
-}
+};

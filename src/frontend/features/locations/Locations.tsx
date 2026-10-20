@@ -6,7 +6,7 @@ import { useDocumentTitle } from '@/frontend/hooks/use-document-title';
 import { ZoneGrid } from './components/ZoneGrid';
 import { locationsService } from './services';
 
-export function Locations() {
+export const Locations = () => {
   const { template } = businessesService.useBusiness();
   useDocumentTitle(template.labels.locations);
   const { data, isPending, isError, error, refetch } = locationsService.useLocations();
@@ -44,4 +44,4 @@ export function Locations() {
       )}
     </div>
   );
-}
+};

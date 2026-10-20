@@ -5,7 +5,7 @@ import type { XZType } from '../../types';
 import { Block } from './Block';
 
 /** Moves its children around a closed loop at `speed` world units per second. */
-export function FollowPath({ route, speed, animate, offset = 0, children }: { route: XZType[]; speed: number; animate: boolean; offset?: number; children: ReactNode }) {
+export const FollowPath = ({ route, speed, animate, offset = 0, children }: { route: XZType[]; speed: number; animate: boolean; offset?: number; children: ReactNode }) => {
   const ref = useRef<Group>(null);
   const curve = useMemo(() => new CatmullRomCurve3(route.map(([x, z]) => new Vector3(x, 0, z)), true, 'catmullrom', 0.1), [route]);
   const length = useMemo(() => curve.getLength(), [curve]);
@@ -19,10 +19,10 @@ export function FollowPath({ route, speed, animate, offset = 0, children }: { ro
     ref.current.lookAt(ahead.x, 0, ahead.z);
   });
   return <group ref={ref}>{children}</group>;
-}
+};
 
 /** A person: vest colour from their team member colour, a gentle walk bob. */
-export function Person({ color, animate }: { color: string; animate: boolean }) {
+export const Person = ({ color, animate }: { color: string; animate: boolean }) => {
   const body = useRef<Group>(null);
   useFrame((state) => {
     if (body.current && animate) body.current.position.y = Math.abs(Math.sin(state.clock.elapsedTime * 7)) * 0.08;
@@ -39,9 +39,9 @@ export function Person({ color, animate }: { color: string; animate: boolean }) 
       </mesh>
     </group>
   );
-}
+};
 
-function Wheels({ xs, z }: { xs: number[]; z: number }) {
+const Wheels = ({ xs, z }: { xs: number[]; z: number }) => {
   return (
     <>
       {xs.flatMap((x) =>
@@ -54,10 +54,10 @@ function Wheels({ xs, z }: { xs: number[]; z: number }) {
       )}
     </>
   );
-}
+};
 
 /** A box truck. Faces +z (the direction it drives along a path). */
-export function Truck({ color }: { color: string }) {
+export const Truck = ({ color }: { color: string }) => {
   return (
     <group rotation={[0, -Math.PI / 2, 0]}>
       <Block size={[3.6, 1.9, 1.7]} position={[-0.6, 0.45, 0]} color="#f4f4f0" radius={0.12} />
@@ -66,10 +66,10 @@ export function Truck({ color }: { color: string }) {
       <Wheels xs={[-1.7, 0.4, 1.9]} z={0.8} />
     </group>
   );
-}
+};
 
 /** A delivery / service van. Faces +z. */
-export function Van({ color }: { color: string }) {
+export const Van = ({ color }: { color: string }) => {
   return (
     <group rotation={[0, -Math.PI / 2, 0]}>
       <Block size={[3, 1.4, 1.5]} position={[-0.2, 0.4, 0]} color={color} radius={0.25} />
@@ -77,4 +77,4 @@ export function Van({ color }: { color: string }) {
       <Wheels xs={[-1.1, 0.9]} z={0.72} />
     </group>
   );
-}
+};

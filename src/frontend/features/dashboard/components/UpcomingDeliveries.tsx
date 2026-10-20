@@ -7,7 +7,7 @@ import { DeliveryStatusBadge } from '@/frontend/features/deliveries/components/D
 import type { DeliveryResponseType } from '@/frontend/features/deliveries/types';
 import { FormatDateTime, FormatNumber } from '@/frontend/utils/format';
 
-export function UpcomingDeliveries({ deliveries }: { deliveries: DeliveryResponseType[] }) {
+export const UpcomingDeliveries = ({ deliveries }: { deliveries: DeliveryResponseType[] }) => {
   const { labels } = businessesService.useBusiness().template;
   return (
     <Card title={labels.deliveries} actions={<Link className="link small" to={paths.deliveries}>See all</Link>}>
@@ -30,4 +30,4 @@ export function UpcomingDeliveries({ deliveries }: { deliveries: DeliveryRespons
       )}
     </Card>
   );
-}
+};

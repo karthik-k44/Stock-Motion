@@ -27,7 +27,7 @@ const toValues = (item: ItemResponseType | undefined, unit: string): ItemFieldVa
 });
 
 /** Add a stock item, made item or service — or edit one. */
-export function ItemFormModal(props: Props) {
+export const ItemFormModal = (props: Props) => {
   const { template } = businessesService.useBusiness();
   const kind = props.item?.kind ?? props.kind!;
   const editing = Boolean(props.item);
@@ -90,4 +90,4 @@ export function ItemFormModal(props: Props) {
       </form>
     </Modal>
   );
-}
+};

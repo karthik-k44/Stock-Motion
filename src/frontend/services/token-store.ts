@@ -7,12 +7,12 @@ let sessionVersion = 0;
 
 export const tokenStore = {
   Get: (): string | null => accessToken,
-  Set(token: string | null) {
+  Set: (token: string | null) => {
     accessToken = token;
   },
   /** Bumped on sign-in, sign-out and business switch: requests started before it are stale. */
   Version: (): number => sessionVersion,
-  Advance() {
+  Advance: () => {
     sessionVersion += 1;
   },
 };

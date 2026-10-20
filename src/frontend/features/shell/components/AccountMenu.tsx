@@ -3,7 +3,7 @@ import { authService } from '@/frontend/features/auth/services';
 import { businessesService } from '@/frontend/features/businesses/services';
 
 /** Who is signed in, their role here, and sign out. */
-export function AccountMenu() {
+export const AccountMenu = () => {
   const { data: account } = authService.useSession();
   const business = businessesService.useBusiness();
   const logout = authService.useLogoutMutation();
@@ -17,4 +17,4 @@ export function AccountMenu() {
       <Button variant="ghost" size="sm" icon="logout" aria-label="Sign out" title="Sign out" loading={logout.isPending} onClick={() => logout.mutate()} />
     </div>
   );
-}
+};

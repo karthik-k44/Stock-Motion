@@ -36,6 +36,11 @@ const PATHS = {
   globe: 'M12 21a9 9 0 100-18 9 9 0 000 18zM3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18',
   edit: 'M4 20h4L19 9l-4-4L4 16zM14 6l4 4',
   trash: 'M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3',
+  rotateLeft: 'M4 11a8 8 0 112.3 5.7M4 4v7h7',
+  rotateRight: 'M20 11a8 8 0 10-2.3 5.7M20 4v7h-7',
+  layers: 'M12 3l9 5-9 5-9-5zM3 13l9 5 9-5',
+  money: 'M12 3v18M17 7.5c0-1.9-2.2-3-5-3s-5 1.1-5 3 2.2 2.6 5 3 5 1.1 5 3-2.2 3-5 3-5-1.1-5-3',
+  arrowUpRight: 'M7 17L17 7M8 7h9v9',
 } as const;
 
 export type IconName = keyof typeof PATHS;
@@ -48,7 +53,7 @@ type IconProps = {
   label?: string;
 };
 
-export function Icon({ name, size = 18, className, label }: IconProps) {
+export const Icon = ({ name, size = 18, className, label }: IconProps) => {
   return (
     <svg
       className={className}
@@ -68,4 +73,4 @@ export function Icon({ name, size = 18, className, label }: IconProps) {
       <path d={PATHS[name]} />
     </svg>
   );
-}
+};

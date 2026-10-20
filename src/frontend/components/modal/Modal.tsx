@@ -14,7 +14,7 @@ type ModalProps = {
   size?: 'sm' | 'md';
 };
 
-export function Modal({ open, title, description, onClose, children, footer, size = 'md' }: ModalProps) {
+export const Modal = ({ open, title, description, onClose, children, footer, size = 'md' }: ModalProps) => {
   const ref = useOverlay<HTMLDivElement>(open, onClose);
   const titleId = useId();
   const descId = useId();
@@ -47,4 +47,4 @@ export function Modal({ open, title, description, onClose, children, footer, siz
     </div>,
     document.body,
   );
-}
+};

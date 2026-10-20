@@ -16,7 +16,7 @@ type Props = { item: ItemResponseType; onClose: () => void };
  * Two steps: enter the change, then review the before/after and confirm. On confirm the new count
  * shows everywhere at once (optimistic); if the server refuses, it rolls back and the reason shows here.
  */
-export function AdjustStockModal({ item, onClose }: Props) {
+export const AdjustStockModal = ({ item, onClose }: Props) => {
   const [mode, setMode] = useState<AdjustModeTypeEnum>(AdjustModeTypeEnum.ADD);
   const [qty, setQty] = useState('');
   const [reason, setReason] = useState<AdjustReasonTypeEnum>(AdjustReasonTypeEnum.CYCLE_COUNT);
@@ -89,4 +89,4 @@ export function AdjustStockModal({ item, onClose }: Props) {
       )}
     </Modal>
   );
-}
+};

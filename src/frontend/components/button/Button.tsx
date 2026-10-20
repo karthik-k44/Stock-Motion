@@ -10,7 +10,7 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   children?: ReactNode;
 };
 
-export function Button({
+export const Button = ({
   variant = 'secondary',
   size = 'md',
   icon,
@@ -20,7 +20,7 @@ export function Button({
   children,
   type = 'button',
   ...rest
-}: ButtonProps) {
+}: ButtonProps) => {
   return (
     <button
       type={type}
@@ -33,4 +33,4 @@ export function Button({
       {children}
     </button>
   );
-}
+};
