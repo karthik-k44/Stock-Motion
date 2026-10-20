@@ -18,3 +18,6 @@ export const HashString = (s: string): number => {
   }
   return h >>> 0;
 };
+
+/** shadcn/ui's name for Cn — keeps generated components (`npx shadcn add …`) working unchanged. */
+export const cn = Cn;

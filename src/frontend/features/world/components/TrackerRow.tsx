@@ -1,14 +1,15 @@
+import type { CSSProperties } from 'react';
 import { Icon } from '@/frontend/components/icon';
 import { Text } from '@/frontend/components/text';
 import { Clamp, Cn } from '@/frontend/lib/utils';
 import { TONE_CLASSES } from '../lib/tones';
 import type { WorldRowType } from '../types';
 
-type Props = { row: WorldRowType; selected: boolean; onSelect: () => void };
+type Props = { row: WorldRowType; index: number; selected: boolean; onSelect: () => void };
 
 /** One record: its number and place, what it is, its status, and progress or timing. */
-export const TrackerRow = ({ row, selected, onSelect }: Props) => (
-  <li>
+export const TrackerRow = ({ row, index, selected, onSelect }: Props) => (
+  <li className="world-row-in" style={{ '--i': Math.min(index, 12) } as CSSProperties}>
     <button
       type="button"
       onClick={onSelect}
@@ -48,7 +49,7 @@ export const TrackerRow = ({ row, selected, onSelect }: Props) => (
           {row.note}
         </Text>
       </span>
-      <Icon name="chevronRight" size={15} className="hidden text-muted @3xl:block" />
+      <Icon name="chevronRight" size={15} className="hidden text-muted-foreground @3xl:block" />
     </button>
   </li>
 );

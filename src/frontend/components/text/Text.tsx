@@ -21,7 +21,7 @@ const VARIANTS = {
 const TONES = {
   ink: 'text-ink',
   secondary: 'text-ink-2',
-  muted: 'text-muted',
+  muted: 'text-muted-foreground',
   primary: 'text-primary-700',
   success: 'text-success',
   warning: 'text-warning',

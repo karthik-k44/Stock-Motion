@@ -9,7 +9,7 @@ const BIN: Record<WorldBinType['status'], string> = {
   IN_STOCK: 'bg-[#f1dcc0] text-[#6b4318]',
   LOW: 'bg-warning-bg text-warning ring-1 ring-inset ring-warning/40',
   OUT: 'bg-danger-bg text-danger ring-1 ring-inset ring-danger/40',
-  EMPTY: 'bg-sunken text-muted',
+  EMPTY: 'bg-sunken text-muted-foreground',
 };
 
 const LEGEND: { status: WorldBinType['status']; label: string }[] = [

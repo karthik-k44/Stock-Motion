@@ -88,7 +88,7 @@ export const InspectItem = (i: ItemResponseType, ctx: WorldContextType): WorldIn
   const deliveries: WorldFactType[] = ctx.deliveries
     .filter((d) => d.lines.some((l) => l.sku === i.sku))
     .slice(0, 3)
-    .map((d) => ({ key: d.number, label: `${d.number} · ${d.supplierName}`, value: `+${d.lines.find((l) => l.sku === i.sku)!.expected}`, tone: 'incoming', select: { kind: 'delivery', number: d.number } }));
+    .map((d) => ({ key: d.number, label: `${d.number} · ${d.supplierName}`, value: `+${d.lines.find((l) => l.sku === i.sku)!.expected}`, tone: 'info', select: { kind: 'delivery', number: d.number } }));
   return {
     ...BLANK,
     icon: 'box',
@@ -100,7 +100,7 @@ export const InspectItem = (i: ItemResponseType, ctx: WorldContextType): WorldIn
     facts: [
       { key: 'on-hand', label: 'On hand', value: FormatQty(i.onHand, i.unit) },
       { key: 'reserved', label: 'Reserved', value: FormatQty(i.reserved, i.unit) },
-      { key: 'incoming', label: 'Incoming', value: FormatQty(i.incoming, i.unit), tone: i.incoming ? 'incoming' : undefined },
+      { key: 'incoming', label: 'Incoming', value: FormatQty(i.incoming, i.unit), tone: i.incoming ? 'info' : undefined },
       { key: 'value', label: 'Value at cost', value: FormatMoney(i.onHand * i.cost, ctx.currency) },
       ...orders,
       ...deliveries,

@@ -43,66 +43,85 @@ export type WorldSelectionType =
   | { kind: 'order'; number: string }
   | { kind: 'item'; sku: string };
 
-export type ModelKindType =
-  | 'rack'
-  | 'shelf'
-  | 'fridge'
-  | 'freezer'
-  | 'display'
-  | 'pallets'
-  | 'truck'
-  | 'van'
-  | 'bench'
-  | 'office'
-  | 'counter'
-  | 'till'
-  | 'coffee'
-  | 'tables'
-  | 'houses';
-
 export type XZType = [number, number];
 
 export type WorldObjectSpecType = {
   id: string;
   label: string;
-  /** Short name on the scene tag (Aisle "A", "Till") */
+  /** Short name on the scene tag (Aisle "A", "Door 1") */
   short: string;
   /** What kind of place it is, above its name in the inspector */
   kind: string;
   icon: IconName;
-  model: ModelKindType;
-  position: XZType;
-  /** Y rotation in radians */
-  rotation?: number;
   /** The storage zone this object stands for (its shelves show that zone's real stock) */
   zone?: string;
   /** Records of this kind belong to this object: selecting one highlights it */
   handles?: 'deliveries' | 'orders';
-  /** A closed loop the model drives along while `moving` says so; otherwise it waits at `position`. */
-  route?: XZType[];
-  moving?: (ctx: WorldContextType) => boolean;
-  /** Vehicles are only drawn when there is a record for them; otherwise just their marked bay */
-  present?: (ctx: WorldContextType) => boolean;
-  /** How many copies to draw (houses), from live data */
-  count?: (ctx: WorldContextType) => number;
+  /** Tracker tabs this object matters to; its tag stays bright while one of them is open */
+  tabs?: WorldTrackerTabType[];
   tag: (ctx: WorldContextType) => WorldTagType;
   stats: (ctx: WorldContextType) => WorldStatType[];
-  /** A warning shown in the inspector, and the object pulses red */
+  /** A warning shown in the inspector, and a dashed red ring around the object */
   alert?: (ctx: WorldContextType) => string | null;
   link?: { label: string; to: string };
-  color?: string;
 };
 
+/** One business type's world: its clickable objects and the scene drawn from its data. */
 export type WorldLayoutType = {
-  size: XZType;
-  palette: { ground: string; floor: string; wall: string; accent: string; trim: string; road: string };
-  /** The building's floor slab (low cut-away walls are drawn on its back and left edges) */
-  building: { center: XZType; size: XZType };
-  /** People walking loops: one per team member, up to the number of loops */
-  walkers: XZType[][];
-  road?: XZType[];
-  trees: XZType[];
   objects: WorldObjectSpecType[];
+  scene: (ctx: WorldContextType, team: string[]) => IsoSceneType;
+};
+
+/** One axis-aligned box: footprint x..x+w by z..z+d on the floor, from height y up by h. */
+export type BoxType = { x: number; z: number; w: number; d: number; h: number; c: string; y: number };
+
+/** Boxes drawn together; `id` makes them a clickable object. */
+export type IsoGroupType = { id: string | null; parts: BoxType[] };
+
+/** Which way a vehicle or person faces on the floor. */
+export type DirType = 'x+' | 'x-' | 'z+' | 'z-';
+
+export type SlotStatusType = 'ok' | 'low' | 'out' | 'empty';
+
+/** Something that moves along a path: a truck on the road, a person at work. */
+export type IsoMoverType = {
+  key: string;
+  /** Floor waypoints, axis-aligned segments */
+  path: XZType[];
+  /** Units per second */
+  speed: number;
+  /** `wrap`: drives off one end and comes back at the start (vehicles); `bounce` (default): there and back (people) */
+  mode?: 'wrap' | 'bounce';
+  /** Where along the path it starts, 0..1 */
+  offset: number;
+  /** Boxes for each heading, centred on the origin */
+  build: (dir: DirType) => BoxType[];
+  /** Selecting it opens this record; its tag shows `tag` */
+  select?: WorldSelectionType;
+  tag?: { short: string; text: string; tone: WorldToneType };
+  /** Height of the tag above the floor */
+  tagY?: number;
+};
+
+/** A clickable place: its floor rectangle (for the ring) and where its tag floats. */
+export type IsoHotspotType = { id: string; rect: [number, number, number, number]; tagAt: [number, number, number] };
+
+/** A map pin over something that needs someone: an empty bin, the door the next truck is heading for. */
+export type IsoPinType = { key: string; at: [number, number, number]; tone: 'critical' | 'primary'; tab: WorldTrackerTabType };
+
+/** Everything the scene draws, built from the business's records. */
+export type IsoSceneType = {
+  size: XZType;
+  label: string;
+  ground: BoxType[];
+  groups: IsoGroupType[];
+  movers: IsoMoverType[];
+  hotspots: IsoHotspotType[];
+  pins: IsoPinType[];
+  /** Objects that stand for one record (a door with its delivery): clicking opens the record */
+  links: Record<string, WorldSelectionType>;
+  /** The object that holds a record (`delivery:DLV-2041` → `door-1`), for the highlight ring */
+  owners: Record<string, string>;
 };
 
 /** A storage slot in the inspector's shelf map. */
@@ -159,7 +178,10 @@ export type WorldRowType = {
   progress: { value: number; max: number } | null;
 };
 
-export type CameraCommandType = { kind: 'zoomIn' | 'zoomOut' | 'rotateLeft' | 'rotateRight'; n: number };
+/** How the scene is viewed: zoom 1 = whole world, quarter turns, pan in px at that zoom. */
+export type ViewType = { zoom: number; turns: number; pan: XZType };
+
+export type CameraCommandType = 'zoomIn' | 'zoomOut' | 'rotateLeft' | 'rotateRight' | 'reset';
 
 /** Space the floating panels cover on each side of the scene, in px. */
 export type InsetsType = { top: number; right: number; bottom: number; left: number };
@@ -171,7 +193,14 @@ export type TWorldType = {
   Tone: WorldToneType;
   Tag: WorldTagType;
   Selection: WorldSelectionType;
-  ModelKind: ModelKindType;
+  Box: BoxType;
+  Group: IsoGroupType;
+  Dir: DirType;
+  Mover: IsoMoverType;
+  Hotspot: IsoHotspotType;
+  Pin: IsoPinType;
+  Scene: IsoSceneType;
+  View: ViewType;
   ObjectSpec: WorldObjectSpecType;
   Layout: WorldLayoutType;
   Bin: WorldBinType;

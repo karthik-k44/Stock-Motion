@@ -46,19 +46,19 @@
 /* sidebar business switcher + topbar account */
 .brand-switch { padding: 0 8px 14px; }
 .switcher { display: grid; gap: 3px; }
-.switcher-type { font-size: 11px; letter-spacing: 0.02em; color: rgba(255, 255, 255, 0.82); }
+.switcher-type { font-size: 11px; letter-spacing: 0.02em; color: rgba(17, 17, 17, 0.72); }
 .switcher-select {
   width: 100%;
   height: 34px;
   padding: 0 8px;
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  border: 1px solid rgba(17, 17, 17, 0.25);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
+  background: rgba(255, 255, 255, 0.35);
+  color: #111;
   font: inherit;
   font-weight: 600;
 }
-.switcher-select:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
+.switcher-select:focus-visible { outline: 2px solid #111; outline-offset: 1px; }
 .switcher-select option { color: var(--ink); background: var(--surface); }
 .account { display: inline-flex; align-items: center; gap: 6px; }
 .account-text { display: grid; line-height: 1.2; text-align: right; }

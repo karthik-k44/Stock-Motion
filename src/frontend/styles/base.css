@@ -6,12 +6,12 @@
   --surface-2: var(--color-sunken);
   --ink: var(--color-ink);
   --ink-2: var(--color-ink-2);
-  --muted: var(--color-muted);
+  --muted: var(--color-muted-foreground);
   --line: var(--color-line);
   --line-strong: var(--color-line-strong);
-  --brand: var(--color-primary-700);
+  --brand: var(--color-primary-500);
   --brand-2: var(--color-primary-600);
-  --accent: var(--color-primary-600);
+  --accent: var(--color-primary-500);
   --accent-ink: var(--color-primary-700);
   --focus: var(--color-primary-600);
 
@@ -130,7 +130,7 @@ table {
   z-index: 200;
   padding: 8px 14px;
   background: var(--brand);
-  color: #fff;
+  color: var(--color-primary-foreground);
   border-radius: var(--radius-sm);
   text-decoration: none;
 }

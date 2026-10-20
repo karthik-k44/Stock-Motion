@@ -1,4 +1,4 @@
-import type { WorldContextType, WorldLayoutType, WorldSelectionType } from '../types';
+import type { IsoSceneType, WorldContextType, WorldLayoutType, WorldSelectionType } from '../types';
 
 export const FindDelivery = (ctx: WorldContextType, number: string) => ctx.deliveries.find((d) => d.number === number);
 export const FindOrder = (ctx: WorldContextType, number: string) => ctx.orders.find((o) => o.number === number);
@@ -42,3 +42,10 @@ export const StillExists = (ctx: WorldContextType, layout: WorldLayoutType, sele
 };
 
 export const SameSelection = (a: WorldSelectionType | null, b: WorldSelectionType | null) => JSON.stringify(a) === JSON.stringify(b);
+
+/** Which object to ring: the one the scene says holds the record (a door with its delivery), else the usual owner. */
+export const HighlightOf = (scene: IsoSceneType, layout: WorldLayoutType, ctx: WorldContextType, selection: WorldSelectionType | null): string | null => {
+  if (selection?.kind === 'delivery') return scene.owners[`delivery:${selection.number}`] ?? ObjectIdOf(layout, ctx, selection);
+  if (selection?.kind === 'order') return scene.owners[`order:${selection.number}`] ?? ObjectIdOf(layout, ctx, selection);
+  return ObjectIdOf(layout, ctx, selection);
+};

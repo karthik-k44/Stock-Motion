@@ -17,8 +17,8 @@
 .btn-sm { height: 30px; padding: 0 10px; font-size: 12.5px; gap: 5px; }
 .btn-icon { padding: 0; width: 36px; }
 .btn-sm.btn-icon { width: 30px; }
-.btn-primary { background: var(--brand); color: #fff; }
-.btn-primary:hover:not(:disabled) { background: var(--color-primary-800); }
+.btn-primary { background: var(--brand); color: var(--color-primary-foreground); }
+.btn-primary:hover:not(:disabled) { background: var(--color-primary-600); }
 .btn-secondary { background: var(--surface); border-color: var(--line-strong); color: var(--ink); box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04); }
 .btn-secondary:hover:not(:disabled) { background: var(--surface-2); border-color: #b9bcb4; }
 .btn-ghost { background: transparent; color: var(--ink-2); }

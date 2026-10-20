@@ -38,7 +38,7 @@ export const AppLayout = ({ nav, badges, topbarEnd, sidebarFooter, brand, busy, 
           <Button
             variant="ghost"
             icon="menu"
-            className="menu-toggle"
+            className="min-[901px]:hidden"
             aria-label="Open navigation"
             aria-expanded={menuOpen}
             aria-controls="app-nav"

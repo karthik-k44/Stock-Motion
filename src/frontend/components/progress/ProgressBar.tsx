@@ -1,19 +1,16 @@
-import { Clamp } from '@/frontend/lib/utils';
+import { Progress } from '@/frontend/components/ui/progress';
+import { Clamp, Cn } from '@/frontend/lib/utils';
 
 type ProgressBarProps = { value: number; max: number; label: string; tone?: 'default' | 'good' };
 
+/** shadcn/ui Progress, as a share of `max`. Full turns green. */
 export const ProgressBar = ({ value, max, label, tone = 'default' }: ProgressBarProps) => {
   const pct = max > 0 ? Clamp((value / max) * 100, 0, 100) : 0;
   return (
-    <div
-      className="progress"
-      role="progressbar"
+    <Progress
+      value={pct}
       aria-label={label}
-      aria-valuemin={0}
-      aria-valuemax={max}
-      aria-valuenow={value}
-    >
-      <span className={tone === 'good' || pct === 100 ? 'progress-fill progress-good' : 'progress-fill'} style={{ width: `${pct}%` }} />
-    </div>
+      className={Cn('h-1.5 bg-sunken', (tone === 'good' || pct === 100) && '**:data-[slot=progress-indicator]:bg-success')}
+    />
   );
 };

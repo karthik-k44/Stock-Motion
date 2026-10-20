@@ -1,45 +1,49 @@
 import type { Ref } from 'react';
 import { Icon, type IconName } from '@/frontend/components/icon';
+import { Button } from '@/frontend/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/frontend/components/ui/tooltip';
 import { Cn } from '@/frontend/lib/utils';
 import type { CameraCommandType } from '../types';
 
 type Props = {
-  onCommand: (kind: CameraCommandType['kind']) => void;
-  onReset: () => void;
+  onCommand: (command: CameraCommandType) => void;
   tags: boolean;
   onToggleTags: () => void;
   ref?: Ref<HTMLDivElement>;
 };
 
-const BUTTON = 'grid size-11 place-items-center rounded-xl border-0 bg-transparent text-ink-2 transition-colors hover:bg-primary-50 hover:text-primary-700';
-
-const MOVES: { kind: CameraCommandType['kind']; icon: IconName; label: string }[] = [
-  { kind: 'zoomIn', icon: 'plus', label: 'Zoom in' },
-  { kind: 'zoomOut', icon: 'minus', label: 'Zoom out' },
-  { kind: 'rotateLeft', icon: 'rotateLeft', label: 'Turn left' },
-  { kind: 'rotateRight', icon: 'rotateRight', label: 'Turn right' },
+const MOVES: { command: CameraCommandType; icon: IconName; label: string }[] = [
+  { command: 'zoomIn', icon: 'plus', label: 'Zoom in' },
+  { command: 'zoomOut', icon: 'minus', label: 'Zoom out' },
+  { command: 'rotateLeft', icon: 'rotateLeft', label: 'Turn left' },
+  { command: 'rotateRight', icon: 'rotateRight', label: 'Turn right' },
+  { command: 'reset', icon: 'warehouse', label: 'Back to the whole view' },
 ];
 
+const ToolButton = ({ icon, label, pressed, onClick }: { icon: IconName; label: string; pressed?: boolean; onClick: () => void }) => (
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <Button
+        variant="ghost"
+        size="icon-lg"
+        aria-label={label}
+        aria-pressed={pressed}
+        onClick={onClick}
+        className={Cn('size-11 rounded-xl text-ink-2 hover:bg-accent hover:text-accent-foreground', pressed && 'bg-accent text-accent-foreground')}
+      >
+        <Icon name={icon} size={18} />
+      </Button>
+    </TooltipTrigger>
+    <TooltipContent side="left">{label}</TooltipContent>
+  </Tooltip>
+);
+
 /** Camera buttons for people who don't drag: zoom, turn, back to the whole view, labels on or off. */
-export const CameraToolbar = ({ onCommand, onReset, tags, onToggleTags, ref }: Props) => (
+export const CameraToolbar = ({ onCommand, tags, onToggleTags, ref }: Props) => (
   <div ref={ref} role="toolbar" aria-label="Camera" className="world-tools flex gap-0.5 rounded-2xl border border-line bg-surface p-1.5 shadow-card xl:flex-col">
     {MOVES.map((m) => (
-      <button key={m.kind} type="button" className={BUTTON} aria-label={m.label} title={m.label} onClick={() => onCommand(m.kind)}>
-        <Icon name={m.icon} size={18} />
-      </button>
+      <ToolButton key={m.command} icon={m.icon} label={m.label} onClick={() => onCommand(m.command)} />
     ))}
-    <button type="button" className={BUTTON} aria-label="Back to the whole view" title="Back to the whole view" onClick={onReset}>
-      <Icon name="warehouse" size={18} />
-    </button>
-    <button
-      type="button"
-      className={Cn(BUTTON, tags && 'bg-primary-50 text-primary-700')}
-      aria-label="Labels in the scene"
-      aria-pressed={tags}
-      title={tags ? 'Hide labels' : 'Show labels'}
-      onClick={onToggleTags}
-    >
-      <Icon name="layers" size={18} />
-    </button>
+    <ToolButton icon="layers" label={tags ? 'Hide labels' : 'Show labels'} pressed={tags} onClick={onToggleTags} />
   </div>
 );

@@ -51,8 +51,8 @@ export const BuildKpis = (ctx: WorldContextType): WorldKpiType[] => {
       value: ctx.deliveries.reduce((s, d) => s + d.totalExpected, 0),
       format: 'number',
       icon: 'truck',
-      tone: 'incoming',
-      chip: ctx.deliveries.length ? { text: `${ctx.deliveries.length} ${labels.deliveries.toLowerCase()}`, tone: 'incoming' } : null,
+      tone: 'info',
+      chip: ctx.deliveries.length ? { text: `${ctx.deliveries.length} ${labels.deliveries.toLowerCase()}`, tone: 'info' } : null,
       sub: next ? `Next: ${next.number} · ${DayLabel(next.expectedAt).toLowerCase()} ${FormatTime(next.expectedAt)}` : `No ${labels.deliveries.toLowerCase()} booked`,
     },
   ];

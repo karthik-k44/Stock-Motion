@@ -2,8 +2,11 @@ import type { Ref } from 'react';
 import { Link } from 'react-router';
 import { Icon } from '@/frontend/components/icon';
 import { Text } from '@/frontend/components/text';
+import { Button } from '@/frontend/components/ui/button';
+import { Input } from '@/frontend/components/ui/input';
+import { ScrollArea } from '@/frontend/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/frontend/components/ui/tabs';
 import { paths } from '@/frontend/config/paths';
-import { Cn } from '@/frontend/lib/utils';
 import { SameSelection } from '../lib/selection';
 import type { WorldContextType, WorldRowType, WorldSelectionType, WorldTrackerTabType } from '../types';
 import { TrackerRow } from './TrackerRow';
@@ -22,72 +25,82 @@ type Props = {
 };
 
 const VIEW_ALL: Record<WorldTrackerTabType, string> = { deliveries: paths.deliveries, orders: paths.orders, alerts: paths.inventory };
+const TABS: WorldTrackerTabType[] = ['deliveries', 'orders', 'alerts'];
 
 /** The records under the scene: deliveries on the way, open orders, stock alerts — or search results across all of them. */
 export const Tracker = ({ ctx, tab, onTab, counts, rows, query, onQuery, selection, onSelect, ref }: Props) => {
   const { labels } = ctx.template;
-  const tabs: { id: WorldTrackerTabType; label: string }[] = [
-    { id: 'deliveries', label: labels.deliveries },
-    { id: 'orders', label: labels.orders },
-    { id: 'alerts', label: 'Stock alerts' },
-  ];
+  const label: Record<WorldTrackerTabType, string> = { deliveries: labels.deliveries, orders: labels.orders, alerts: 'Stock alerts' };
   const searching = query.trim().length > 0;
   const empty = searching
     ? `Nothing matches “${query.trim()}”.`
     : { deliveries: `No ${labels.deliveries.toLowerCase()} on the way.`, orders: `No open ${labels.orders.toLowerCase()}.`, alerts: 'Everything is in stock.' }[tab];
 
+  // Re-keyed on every tab / search so the rows animate in again.
+  const list = (
+    <ScrollArea className="h-52">
+      {rows.length ? (
+        <ul key={searching ? `q:${query}` : tab} className="m-0 grid gap-0.5 pr-2">
+          {rows.map((r, i) => (
+            <TrackerRow key={r.key} index={i} row={r} selected={SameSelection(selection, r.select)} onSelect={() => onSelect(r.select)} />
+          ))}
+        </ul>
+      ) : (
+        <Text variant="small" tone="muted" className="grid h-52 place-items-center text-center">
+          {empty}
+        </Text>
+      )}
+    </ScrollArea>
+  );
+
   return (
     <section ref={ref} aria-label="Tracking" className="world-tracker @container flex flex-col gap-2 rounded-2xl border border-line bg-surface p-3 shadow-card">
-      <div className="flex flex-wrap items-center gap-2">
-        <div role="tablist" aria-label="Track" className="inline-flex rounded-xl bg-sunken p-1">
-          {tabs.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              role="tab"
-              aria-selected={!searching && tab === t.id}
-              aria-controls="world-tracker-panel"
-              onClick={() => (onQuery(''), onTab(t.id))}
-              className={Cn(
-                'inline-flex min-h-9 items-center gap-1.5 rounded-lg border-0 px-3 text-[13px] font-semibold transition-colors',
-                !searching && tab === t.id ? 'bg-surface text-ink shadow-sm' : 'bg-transparent text-ink-2 hover:text-ink',
-              )}
-            >
-              {t.label}
-              <span className={Cn('tabular-nums', !searching && tab === t.id ? 'text-primary-700' : 'text-muted')}>{counts[t.id]}</span>
-            </button>
-          ))}
-        </div>
-        <label className="flex min-h-10 min-w-[180px] flex-1 items-center gap-2 rounded-xl border border-line bg-canvas px-3 focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-200">
-          <Icon name="search" size={16} className="flex-none text-muted" />
-          <span className="sr-only">Search {labels.items.toLowerCase()}, {labels.orders.toLowerCase()} and {labels.deliveries.toLowerCase()}</span>
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => onQuery(e.target.value)}
-            placeholder={`Search ${labels.items.toLowerCase()}, ${labels.orders.toLowerCase()}, ${labels.deliveries.toLowerCase()}…`}
-            className="min-w-0 flex-1 border-0 bg-transparent text-sm text-ink outline-none placeholder:text-muted"
-          />
-        </label>
-        {!searching && (
-          <Link to={VIEW_ALL[tab]} className="inline-flex min-h-10 items-center rounded-xl border border-line-strong px-3 text-[13px] font-semibold text-ink no-underline hover:bg-sunken">
-            View all
-          </Link>
-        )}
-      </div>
-      <div id="world-tracker-panel" role="tabpanel" aria-label={searching ? 'Search results' : tabs.find((t) => t.id === tab)!.label} className="h-[208px] overflow-y-auto">
-        {rows.length ? (
-          <ul className="m-0 grid gap-0.5">
-            {rows.map((r) => (
-              <TrackerRow key={r.key} row={r} selected={SameSelection(selection, r.select)} onSelect={() => onSelect(r.select)} />
+      <Tabs value={tab} onValueChange={(v) => (onQuery(''), onTab(v as WorldTrackerTabType))}>
+        <div className="flex flex-wrap items-center gap-2">
+          <TabsList aria-label="Track" className="h-10 rounded-xl bg-sunken p-1">
+            {TABS.map((id) => (
+              <TabsTrigger
+                key={id}
+                value={id}
+                onClick={() => onQuery('')}
+                className="h-8 rounded-lg px-3 text-[13px] font-semibold data-[state=active]:bg-surface data-[state=active]:text-ink"
+              >
+                {label[id]}
+                <span className={tab === id && !searching ? 'text-primary-700 tabular-nums' : 'text-muted-foreground tabular-nums'}>{counts[id]}</span>
+              </TabsTrigger>
             ))}
-          </ul>
+          </TabsList>
+          <label className="relative min-w-45 flex-1">
+            <span className="sr-only">
+              Search {labels.items.toLowerCase()}, {labels.orders.toLowerCase()} and {labels.deliveries.toLowerCase()}
+            </span>
+            <Icon name="search" size={16} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="search"
+              value={query}
+              onChange={(e) => onQuery(e.target.value)}
+              placeholder={`Search ${labels.items.toLowerCase()}, ${labels.orders.toLowerCase()}, ${labels.deliveries.toLowerCase()}…`}
+              className="h-10 rounded-xl bg-canvas pl-9"
+            />
+          </label>
+          {!searching && (
+            <Button asChild variant="outline" className="h-10 rounded-xl font-semibold">
+              <Link to={VIEW_ALL[tab]}>View all</Link>
+            </Button>
+          )}
+        </div>
+        {searching ? (
+          <div role="region" aria-label="Search results" className="mt-2">
+            {list}
+          </div>
         ) : (
-          <Text variant="small" tone="muted" className="grid h-full place-items-center text-center">
-            {empty}
-          </Text>
+          TABS.map((id) => (
+            <TabsContent key={id} value={id} className="mt-2">
+              {list}
+            </TabsContent>
+          ))
         )}
-      </div>
+      </Tabs>
     </section>
   );
 };

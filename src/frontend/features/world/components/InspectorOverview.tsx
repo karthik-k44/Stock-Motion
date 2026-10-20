@@ -50,7 +50,7 @@ export const InspectorOverview = ({ businessName, objects, ctx, onSelect }: Prop
                   </Text>
                 </span>
                 {alert && <Icon name="alert" size={15} label="Needs attention" className="flex-none text-danger" />}
-                <Icon name="chevronRight" size={15} className="flex-none text-muted" />
+                <Icon name="chevronRight" size={15} className="flex-none text-muted-foreground" />
               </button>
             </li>
           );

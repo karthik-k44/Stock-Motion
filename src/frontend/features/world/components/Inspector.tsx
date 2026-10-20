@@ -61,7 +61,7 @@ export const Inspector = ({ model, currency, animate, onSelect, onClose }: Props
         type="button"
         onClick={onClose}
         aria-label="Close details"
-        className="grid size-9 flex-none place-items-center rounded-lg border-0 bg-transparent text-muted hover:bg-sunken hover:text-ink"
+        className="grid size-9 flex-none place-items-center rounded-lg border-0 bg-transparent text-muted-foreground hover:bg-sunken hover:text-ink"
       >
         <Icon name="x" size={16} />
       </button>

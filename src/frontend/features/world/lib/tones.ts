@@ -6,7 +6,7 @@ export const TONE_CLASSES: Record<WorldToneType, { solid: string; soft: string; 
   good: { solid: 'bg-success text-white', soft: 'bg-success-bg text-success', text: 'text-success', bar: 'bg-success' },
   warning: { solid: 'bg-warning text-white', soft: 'bg-warning-bg text-warning', text: 'text-warning', bar: 'bg-warning' },
   critical: { solid: 'bg-danger text-white', soft: 'bg-danger-bg text-danger', text: 'text-danger', bar: 'bg-danger' },
-  info: { solid: 'bg-info text-white', soft: 'bg-info-bg text-info', text: 'text-info', bar: 'bg-info' },
+  info: { solid: 'bg-primary text-primary-foreground', soft: 'bg-info-bg text-info', text: 'text-info', bar: 'bg-primary' },
   reserved: { solid: 'bg-reserved text-white', soft: 'bg-reserved-bg text-reserved', text: 'text-reserved', bar: 'bg-reserved' },
   incoming: { solid: 'bg-incoming text-white', soft: 'bg-incoming-bg text-incoming', text: 'text-incoming', bar: 'bg-incoming' },
 };

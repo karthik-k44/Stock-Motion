@@ -9,7 +9,7 @@ import { ZoneItems } from './world-stats';
 
 const SEVERITY: Record<StockStatusTypeEnum, number> = { OUT: 0, LOW: 1, IN_STOCK: 2 };
 export const STOCK_TONE: Record<StockStatusTypeEnum, WorldToneType> = { IN_STOCK: 'good', LOW: 'warning', OUT: 'critical' };
-export const DELIVERY_TONE = { SCHEDULED: 'neutral', IN_TRANSIT: 'info', ARRIVED: 'incoming', RECEIVED: 'good' } as const;
+export const DELIVERY_TONE = { SCHEDULED: 'neutral', IN_TRANSIT: 'info', ARRIVED: 'warning', RECEIVED: 'good' } as const;
 const MAX_FACTS = 8;
 
 const worst = (items: ItemResponseType[]) => items.reduce<StockStatusTypeEnum | null>((w, i) => (w === null || SEVERITY[i.status] < SEVERITY[w] ? i.status : w), null);

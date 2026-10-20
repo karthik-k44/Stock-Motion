@@ -1,3 +1,4 @@
+import type { DeliveryResponseType } from '@/frontend/features/deliveries/types';
 import { StockStatusTypeEnum, type ItemResponseType } from '@/frontend/features/inventory/types';
 import { FormatTime, IsPast, RelativeTime } from '@/frontend/utils/format';
 import type { WorldContextType, WorldStatType, WorldTagType } from '../types';
@@ -55,16 +56,18 @@ export const NextDeliveryMinutes = (ctx: WorldContextType): number => {
   return Math.max(0, Math.round((new Date(next.expectedAt).getTime() - Date.now()) / 60_000));
 };
 
-/** "DLV-2041 due 14:30" for the next delivery, or that nothing is booked. */
-export const NextDeliveryTag = (ctx: WorldContextType): WorldTagType => {
-  const next = ctx.deliveries[0];
-  if (!next) return { text: `No ${ctx.template.labels.deliveries.toLowerCase()} booked`, tone: 'neutral' };
+/** "DLV-2041 due 14:30", "… on the way", "… arrived" or "… late". */
+export const DeliveryTag = (next: DeliveryResponseType): WorldTagType => {
   if (next.status === 'ARRIVED') return { text: `${next.number} arrived`, tone: 'warning' };
   if (next.status === 'IN_TRANSIT') return { text: `${next.number} on the way`, tone: 'info' };
   if (IsPast(next.expectedAt)) return { text: `${next.number} late`, tone: 'warning' };
   const today = new Date(next.expectedAt).toDateString() === new Date().toDateString();
   return { text: `${next.number} due ${today ? FormatTime(next.expectedAt) : RelativeTime(next.expectedAt)}`, tone: 'neutral' };
 };
+
+/** The tag for the next delivery, or that nothing is booked. */
+export const NextDeliveryTag = (ctx: WorldContextType): WorldTagType =>
+  ctx.deliveries[0] ? DeliveryTag(ctx.deliveries[0]) : { text: `No ${ctx.template.labels.deliveries.toLowerCase()} booked`, tone: 'neutral' };
 
 /** "3 open · 1 packed" for the orders an object works on. */
 export const OrdersTag = (ctx: WorldContextType, statuses?: string[]): WorldTagType => {

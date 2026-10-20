@@ -1,6 +1,7 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { ErrorState } from '@/frontend/components/feedback';
+import { Skeleton } from '@/frontend/components/ui/skeleton';
 import { businessesService } from '@/frontend/features/businesses/services';
 import { dashboardService } from '@/frontend/features/dashboard/services';
 import { deliveriesService } from '@/frontend/features/deliveries/services';
@@ -17,22 +18,22 @@ import { useMotion } from '@/frontend/hooks/use-motion';
 import { CameraToolbar } from './components/CameraToolbar';
 import { Inspector } from './components/Inspector';
 import { InspectorOverview } from './components/InspectorOverview';
+import { IsoScene } from './components/IsoScene';
 import { KpiBar } from './components/KpiBar';
 import { LiveBadge } from './components/LiveBadge';
 import { Tracker } from './components/Tracker';
-import { WorldCanvas } from './components/WorldCanvas';
-import { InspectObject } from './lib/inspect';
-import { InspectDelivery, InspectItem, InspectOrder } from './lib/inspect-records';
+import { InspectorFor } from './lib/inspector-for';
 import { BuildKpis } from './lib/kpis';
-import { FindDelivery, FindItem, FindOrder, ObjectIdOf, StillExists } from './lib/selection';
+import { FindItem, HighlightOf, StillExists } from './lib/selection';
 import { SearchRows, TRACKER_ROWS } from './lib/tracker';
+import { ApplyCommand, HOME_VIEW } from './lib/view';
 import { WORLDS } from './lib/worlds';
-import type { CameraCommandType, WorldContextType, WorldInspectorType, WorldSelectionType, WorldTrackerTabType } from './types';
+import type { ViewType, WorldContextType, WorldSelectionType, WorldTrackerTabType } from './types';
 
 const OPEN_ORDERS = { open: true };
 const UPCOMING = { view: DeliveryViewTypeEnum.UPCOMING };
 
-/** The live 3D world of the business. Every label, number and row is the business's own data. */
+/** The live world of the business. Every shelf, vehicle, label, number and row is the business's own data. */
 export const World = () => {
   useDocumentTitle('Live world');
   const business = businessesService.useBusiness();
@@ -53,8 +54,7 @@ export const World = () => {
   const [query, setQuery] = useState('');
   const search = useDeferredValue(query);
   const [tags, setTags] = useState(true);
-  const [resetKey, setResetKey] = useState(0);
-  const [command, setCommand] = useState<CameraCommandType>({ kind: 'zoomIn', n: 0 });
+  const [view, setView] = useState<ViewType>(HOME_VIEW);
 
   const stage = useRef<HTMLDivElement>(null);
   const kpiRef = useRef<HTMLElement>(null);
@@ -74,6 +74,8 @@ export const World = () => {
     };
   }, [dashboard.data, locations.data, orders.data, deliveries.data, items.data, business.template, business.currency]);
 
+  const teamColors = useMemo(() => members.map((m) => m.color), [members]);
+  const scene = useMemo(() => (ctx ? layout.scene(ctx, teamColors) : null), [layout, ctx, teamColors]);
   const insets = useCoveredInsets(stage, { top: kpiRef, right: toolsRef, bottom: trackerRef }, Boolean(ctx));
 
   // "Show in world" from an item: select it, which rings the shelf that holds it.
@@ -93,57 +95,46 @@ export const World = () => {
 
   // A record that was received, closed or archived meanwhile simply drops out of the selection.
   const active = ctx && selection && StillExists(ctx, layout, selection) ? selection : null;
+  const inspector = useMemo(() => (ctx ? InspectorFor(layout, ctx, active) : null), [layout, ctx, active]);
 
-  const inspector = useMemo<WorldInspectorType | null>(() => {
-    if (!ctx || !active) return null;
-    switch (active.kind) {
-      case 'object':
-        return InspectObject(layout.objects.find((o) => o.id === active.id)!, ctx);
-      case 'delivery':
-        return InspectDelivery(FindDelivery(ctx, active.number)!, ctx);
-      case 'order':
-        return InspectOrder(FindOrder(ctx, active.number)!, ctx);
-      case 'item':
-        return InspectItem(FindItem(ctx, active.sku)!, ctx);
-    }
-  }, [ctx, active, layout]);
-
-  const failed = [dashboard, locations, orders, deliveries, items].find((q) => q.isError);
-  if (failed?.error) {
-    return <ErrorState message={failed.error.message} onRetry={() => [dashboard, locations, orders, deliveries, items].forEach((q) => q.isError && q.refetch())} />;
-  }
+  const queries = [dashboard, locations, orders, deliveries, items];
+  const failed = queries.find((q) => q.isError);
+  if (failed?.error) return <ErrorState message={failed.error.message} onRetry={() => queries.forEach((q) => q.isError && q.refetch())} />;
 
   const counts = ctx ? { deliveries: ctx.deliveries.length, orders: ctx.orders.length, alerts: TRACKER_ROWS.alerts(ctx).length } : { deliveries: 0, orders: 0, alerts: 0 };
   const rows = ctx ? (search.trim() ? SearchRows(ctx, search) : TRACKER_ROWS[tab](ctx)) : [];
+  const pickObject = (id: string) => setSelection(scene?.links[id] ?? { kind: 'object', id });
 
   return (
     <div className="page page-world">
       <div ref={stage} className="world-stage">
-        {ctx && <KpiBar ref={kpiRef} kpis={BuildKpis(ctx)} currency={business.currency} animate={!reduced} />}
-        {ctx && (
-          <CameraToolbar
-            ref={toolsRef}
-            onCommand={(kind) => setCommand((c) => ({ kind, n: c.n + 1 }))}
-            onReset={() => setResetKey((k) => k + 1)}
-            tags={tags}
-            onToggleTags={() => setTags((t) => !t)}
-          />
+        {ctx ? (
+          <KpiBar ref={kpiRef} kpis={BuildKpis(ctx)} currency={business.currency} animate={!reduced} />
+        ) : (
+          <div className="world-kpis grid grid-cols-2 gap-3 xl:grid-cols-4" aria-hidden>
+            {[0, 1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-23 rounded-2xl" />
+            ))}
+          </div>
         )}
+        {ctx && <CameraToolbar ref={toolsRef} onCommand={(c) => setView((v) => ApplyCommand(v, c))} tags={tags} onToggleTags={() => setTags((t) => !t)} />}
         <div className="world-scene">
-          {ctx ? (
+          {ctx && scene ? (
             <>
-              <WorldCanvas
-                layout={layout}
+              <IsoScene
+                scene={scene}
+                objects={layout.objects}
                 ctx={ctx}
-                highlighted={ObjectIdOf(layout, ctx, active)}
-                onSelect={(id) => setSelection(id ? { kind: 'object', id } : null)}
-                animate={!reduced}
-                lite={lite}
-                teamColors={members.map((m) => m.color)}
+                view={view}
+                onView={setView}
+                highlighted={HighlightOf(scene, layout, ctx, active)}
+                tab={tab}
                 tags={tags}
+                compact={lite}
+                animate={!reduced}
                 insets={insets}
-                resetKey={resetKey}
-                command={command}
+                onSelect={setSelection}
+                onClear={() => setSelection(null)}
               />
               <div className="pointer-events-none absolute z-20" style={{ top: insets.top || 12, left: (insets.left || 0) + 12 }}>
                 <LiveBadge updatedAt={dashboard.dataUpdatedAt} connected={connected} />
@@ -156,27 +147,18 @@ export const World = () => {
           )}
         </div>
         {ctx && (
-          <aside className="world-inspector" aria-label="Details" aria-live="polite" key={active ? JSON.stringify(active) : 'overview'}>
-            {inspector ? (
-              <Inspector model={inspector} currency={business.currency} animate={!reduced} onSelect={setSelection} onClose={() => setSelection(null)} />
-            ) : (
-              <InspectorOverview businessName={business.name} objects={layout.objects} ctx={ctx} onSelect={(id) => setSelection({ kind: 'object', id })} />
-            )}
+          <aside className="world-inspector" aria-label="Details" aria-live="polite">
+            <div key={active ? JSON.stringify(active) : 'overview'} className="world-swap flex min-h-0 flex-1 flex-col">
+              {inspector ? (
+                <Inspector model={inspector} currency={business.currency} animate={!reduced} onSelect={setSelection} onClose={() => setSelection(null)} />
+              ) : (
+                <InspectorOverview businessName={business.name} objects={layout.objects} ctx={ctx} onSelect={pickObject} />
+              )}
+            </div>
           </aside>
         )}
         {ctx && (
-          <Tracker
-            ref={trackerRef}
-            ctx={ctx}
-            tab={tab}
-            onTab={setTab}
-            counts={counts}
-            rows={rows}
-            query={query}
-            onQuery={setQuery}
-            selection={active}
-            onSelect={setSelection}
-          />
+          <Tracker ref={trackerRef} ctx={ctx} tab={tab} onTab={setTab} counts={counts} rows={rows} query={query} onQuery={setQuery} selection={active} onSelect={setSelection} />
         )}
       </div>
     </div>
