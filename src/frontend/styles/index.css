@@ -48,12 +48,14 @@
 
   --color-success: #15803d;
   --color-success-bg: #e8f6ed;
-  --color-warning: #a35a00;
-  --color-warning-bg: #fff3dc;
+  /* Yellow-amber, kept clearly apart from the orange primary */
+  --color-warning: #a16207;
+  --color-warning-bg: #fef6d6;
   --color-danger: #c42b2b;
   --color-danger-bg: #fdecec;
-  --color-info: #1d5fc7;
-  --color-info-bg: #e9f1fd;
+  /* "In progress / on the way": the brand orange, never blue */
+  --color-info: var(--color-primary-700);
+  --color-info-bg: var(--color-primary-50);
   --color-incoming: #0b6283;
   --color-incoming-bg: #e3f3f9;
   --color-reserved: #4b3bb3;
