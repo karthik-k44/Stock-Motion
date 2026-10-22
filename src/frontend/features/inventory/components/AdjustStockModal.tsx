@@ -2,15 +2,21 @@ import { useState } from 'react';
 import { Button } from '@/frontend/components/button';
 import { describedBy, Field, SegmentedControl, Select } from '@/frontend/components/form';
 import { Modal } from '@/frontend/components/modal';
+import { FieldErrors, ToNumber } from '@/frontend/lib/form';
+import { FormatQty } from '@/frontend/utils/format';
 import { HumanizeReason } from '@/frontend/utils/humanize';
-import { ADJUST_MODES, NextOnHand, REASON_OPTIONS } from '../lib/inventory-options';
+import { ADJUST_MODES, REASON_OPTIONS } from '../lib/inventory-options';
+import { NextOnHand } from '../lib/stock-math';
 import { inventoryService } from '../services';
 import { AdjustModeTypeEnum, AdjustReasonTypeEnum, AdjustStockSchema, type ItemResponseType } from '../types';
 
-type Props = { item: ItemResponseType; open: boolean; onClose: () => void; onDone: () => void };
+type Props = { item: ItemResponseType; onClose: () => void };
 
-/** Two steps: enter the change, then review the before/after and confirm. */
-export function AdjustStockModal({ item, open, onClose, onDone }: Props) {
+/**
+ * Two steps: enter the change, then review the before/after and confirm. On confirm the new count
+ * shows everywhere at once (optimistic); if the server refuses, it rolls back and the reason shows here.
+ */
+export const AdjustStockModal = ({ item, onClose }: Props) => {
   const [mode, setMode] = useState<AdjustModeTypeEnum>(AdjustModeTypeEnum.ADD);
   const [qty, setQty] = useState('');
   const [reason, setReason] = useState<AdjustReasonTypeEnum>(AdjustReasonTypeEnum.CYCLE_COUNT);
@@ -18,84 +24,59 @@ export function AdjustStockModal({ item, open, onClose, onDone }: Props) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [reviewing, setReviewing] = useState(false);
   const adjust = inventoryService.useAdjustStockMutation();
-
-  const qtyNum = qty === '' ? NaN : Number(qty);
+  const qtyNum = ToNumber(qty);
   const next = Number.isFinite(qtyNum) ? NextOnHand(item.onHand, mode, qtyNum) : item.onHand;
+  const u = (n: number) => FormatQty(n, item.unit);
 
   const validate = () => {
-    const parsed = AdjustStockSchema.safeParse({ mode, qty: Number.isFinite(qtyNum) ? qtyNum : undefined, reason, note });
-    const errs: Record<string, string> = {};
-    if (!parsed.success) parsed.error.issues.forEach((i) => (errs[String(i.path[0])] ??= i.message));
-    else if (next < 0) errs.qty = `Only ${item.onHand} on hand`;
-    else if (next < item.reserved) errs.qty = `${item.reserved} are reserved for picking — on hand can’t go below that`;
-    else if (next === item.onHand) errs.qty = 'That would not change the quantity';
+    const parsed = AdjustStockSchema.safeParse({ mode, qty: qtyNum, reason, note });
+    const errs = parsed.success ? {} : FieldErrors(parsed.error);
+    if (parsed.success && next < 0) errs.qty = `Only ${u(item.onHand)} on hand`;
+    else if (parsed.success && next < item.reserved) errs.qty = `${u(item.reserved)} are reserved — on hand can’t go below that`;
+    else if (parsed.success && next === item.onHand) errs.qty = 'That would not change the quantity';
     setErrors(errs);
-    return Object.keys(errs).length === 0 && parsed.success ? parsed.data : null;
+    return parsed.success && !Object.keys(errs).length ? parsed.data : null;
   };
 
   const submit = () => {
     const input = validate();
     if (!input) return setReviewing(false);
-    adjust.mutate(
-      { sku: item.sku, input },
-      {
-        onSuccess: () => onDone(),
-        onError: (err) => {
-          setErrors({ form: err.message, ...err.fieldErrors() });
-          setReviewing(false);
-        },
-      },
-    );
+    // Close at once: the new count already shows everywhere. A refusal rolls it back and toasts why.
+    adjust.mutate({ sku: item.sku, input });
+    onClose();
   };
 
   const footer = reviewing ? (
     <>
       <Button onClick={() => setReviewing(false)}>Back</Button>
-      <Button variant="primary" data-autofocus loading={adjust.isPending} onClick={submit}>
-        Confirm adjustment
-      </Button>
+      <Button variant="primary" data-autofocus onClick={submit}>Confirm adjustment</Button>
     </>
   ) : (
     <>
       <Button onClick={onClose}>Cancel</Button>
-      <Button variant="primary" onClick={() => validate() && setReviewing(true)}>
-        Review change
-      </Button>
+      <Button variant="primary" onClick={() => validate() && setReviewing(true)}>Review change</Button>
     </>
   );
 
   return (
-    <Modal open={open} onClose={onClose} title={reviewing ? 'Confirm stock adjustment' : `Adjust stock · ${item.name}`} footer={footer}>
+    <Modal open onClose={onClose} title={reviewing ? 'Confirm stock adjustment' : `Adjust stock · ${item.name}`} footer={footer}>
       {reviewing ? (
         <div className="review">
           <p>
-            <strong>{item.name}</strong> <span className="mono muted">{item.sku}</span> in bin <span className="mono">{item.location}</span>
+            <strong>{item.name}</strong> <span className="mono muted">{item.sku}</span>
+            {item.location && <> in <span className="mono">{item.location}</span></>}
           </p>
           <p className="review-change" aria-live="polite">
-            On hand <strong>{item.onHand}</strong> → <strong>{next}</strong> · Available {item.available} → {next - item.reserved}
+            On hand <strong>{u(item.onHand)}</strong> → <strong>{u(next)}</strong> · Available {u(item.available)} → {u(Math.max(next - item.reserved, 0))}
           </p>
-          <p className="muted">
-            Reason: {HumanizeReason(reason)}
-            {note && ` — ${note}`}
-          </p>
+          <p className="muted">Reason: {HumanizeReason(reason)}{note && ` — ${note}`}</p>
         </div>
       ) : (
         <form className="form" onSubmit={(e) => (e.preventDefault(), validate() && setReviewing(true))} noValidate>
           {errors.form && <p className="form-error" role="alert">{errors.form}</p>}
           <SegmentedControl label="Adjustment type" value={mode} options={ADJUST_MODES} onChange={setMode} />
-          <Field id="adj-qty" label={mode === AdjustModeTypeEnum.SET ? 'Counted quantity' : 'Quantity'} error={errors.qty} hint={`Currently ${item.onHand} on hand, ${item.reserved} reserved`}>
-            <input
-              id="adj-qty"
-              data-autofocus
-              className="input"
-              type="number"
-              inputMode="numeric"
-              min={0}
-              value={qty}
-              aria-invalid={Boolean(errors.qty)}
-              aria-describedby={describedBy('adj-qty', errors.qty, true)}
-              onChange={(e) => setQty(e.target.value)}
-            />
+          <Field id="adj-qty" label={mode === AdjustModeTypeEnum.SET ? `Counted quantity (${item.unit})` : `Quantity (${item.unit})`} error={errors.qty} hint={`Currently ${u(item.onHand)} on hand, ${u(item.reserved)} reserved`}>
+            <input id="adj-qty" data-autofocus className="input" type="number" inputMode="numeric" min={0} value={qty} aria-invalid={Boolean(errors.qty)} aria-describedby={describedBy('adj-qty', errors.qty, true)} onChange={(e) => setQty(e.target.value)} />
           </Field>
           <Field id="adj-reason" label="Reason">
             <Select id="adj-reason" value={reason} options={REASON_OPTIONS} onChange={(v) => setReason(v as AdjustReasonTypeEnum)} />
@@ -108,4 +89,4 @@ export function AdjustStockModal({ item, open, onClose, onDone }: Props) {
       )}
     </Modal>
   );
-}
+};

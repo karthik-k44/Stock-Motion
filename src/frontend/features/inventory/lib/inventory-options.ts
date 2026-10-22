@@ -1,23 +1,6 @@
-import { HumanizeCategory, HumanizeReason } from '@/frontend/utils/humanize';
-import {
-  AdjustModeTypeEnum,
-  AdjustReasonTypeEnum,
-  CategoryTypeEnum,
-  ItemFilterStatusTypeEnum,
-} from '../types';
-
-export const CATEGORY_OPTIONS = [
-  { value: '', label: 'All categories' },
-  ...Object.values(CategoryTypeEnum).map((c) => ({ value: c, label: HumanizeCategory(c) })),
-];
-
-export const AISLE_OPTIONS = [
-  { value: '', label: 'All aisles' },
-  { value: 'A', label: 'Aisle A · Electronics & Office' },
-  { value: 'B', label: 'Aisle B · Home & Kitchen' },
-  { value: 'C', label: 'Aisle C · Apparel' },
-  { value: 'D', label: 'Aisle D · Outdoor & Health' },
-];
+import type { TemplateLabelsType } from '@/frontend/features/businesses/types';
+import { HumanizeReason } from '@/frontend/utils/humanize';
+import { AdjustModeTypeEnum, AdjustReasonTypeEnum, ItemFilterStatusTypeEnum, ItemKindTypeEnum } from '../types';
 
 export const STATUS_FILTERS: { value: ItemFilterStatusTypeEnum | 'ALL'; label: string }[] = [
   { value: 'ALL', label: 'All' },
@@ -28,6 +11,16 @@ export const STATUS_FILTERS: { value: ItemFilterStatusTypeEnum | 'ALL'; label: s
   { value: ItemFilterStatusTypeEnum.INCOMING, label: 'Incoming' },
 ];
 
+/** The three kinds of things a business sells or stocks, in its own words. */
+export const KindOptions = (labels: TemplateLabelsType) => [
+  { value: ItemKindTypeEnum.STOCK, label: labels.items },
+  { value: ItemKindTypeEnum.MADE, label: labels.madePlural },
+  { value: ItemKindTypeEnum.SERVICE, label: 'Services' },
+];
+
+export const KindLabel = (labels: TemplateLabelsType, kind: ItemKindTypeEnum) =>
+  kind === ItemKindTypeEnum.STOCK ? labels.item : kind === ItemKindTypeEnum.MADE ? labels.made : 'Service';
+
 export const ADJUST_MODES = [
   { value: AdjustModeTypeEnum.ADD, label: 'Add' },
   { value: AdjustModeTypeEnum.REMOVE, label: 'Remove' },
@@ -35,10 +28,3 @@ export const ADJUST_MODES = [
 ];
 
 export const REASON_OPTIONS = Object.values(AdjustReasonTypeEnum).map((r) => ({ value: r, label: HumanizeReason(r) }));
-
-/** On-hand quantity after an adjustment. */
-export function NextOnHand(onHand: number, mode: AdjustModeTypeEnum, qty: number): number {
-  if (mode === AdjustModeTypeEnum.ADD) return onHand + qty;
-  if (mode === AdjustModeTypeEnum.REMOVE) return onHand - qty;
-  return qty;
-}

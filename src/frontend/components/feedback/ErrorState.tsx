@@ -1,7 +1,7 @@
 import { Button } from '@/frontend/components/button';
 import { Icon } from '@/frontend/components/icon';
 
-export function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
+export const ErrorState = ({ message, onRetry }: { message: string; onRetry?: () => void }) => {
   return (
     <div className="empty empty-error" role="alert">
       <span className="empty-icon" aria-hidden>
@@ -16,4 +16,4 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry?: ()
       )}
     </div>
   );
-}
+};

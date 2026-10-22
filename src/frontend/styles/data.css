@@ -84,7 +84,7 @@
 .table-compact th, .table-compact td { padding: 8px 10px; }
 .row-click { cursor: pointer; }
 .row-click:hover { background: #f6f7f3; }
-.row-selected { background: #eef3fb !important; }
+.row-selected { background: var(--color-primary-50) !important; }
 .row-title { display: grid; text-align: left; background: none; border: 0; padding: 0; }
 .cell-strong { font-weight: 600; }
 .cell-sub { color: var(--muted); font-size: 12px; }
@@ -131,7 +131,7 @@
 .alert { display: grid; gap: 6px; padding: 12px 14px; border-radius: 8px; }
 .alert ul { list-style: disc; padding-left: 18px; }
 .alert-critical { background: var(--critical-bg); color: var(--critical-ink); }
-.alert-info { background: var(--info-bg); color: #18407a; }
+.alert-info { background: var(--info-bg); color: var(--color-primary-900); }
 
 .filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--line); }
 .filters .select { width: auto; min-width: 170px; }

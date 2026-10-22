@@ -1,24 +1,34 @@
 import type { Request, Response } from 'express';
-import { ActorOf } from '@/backend/middleware/auth.middleware';
+import { ScopeOf } from '@/backend/modules/businesses/rest-api/businesses.middleware';
 import { deliveriesService } from '../deliveries.service';
-import { DeliveryIdParamSchema, ListDeliveriesQuerySchema, ReceiveDeliverySchema } from '../deliveries.validators';
+import {
+  CreateDeliverySchema,
+  DeliveryNumberParamSchema,
+  ListDeliveriesQuerySchema,
+  ReceiveDeliverySchema,
+  ReorderSchema,
+  UpdateDeliveryStatusSchema,
+} from '../deliveries.validators';
 
-const idOf = (req: Request) => DeliveryIdParamSchema.parse(req.params).id;
+const numberOf = (req: Request) => DeliveryNumberParamSchema.parse(req.params).number;
 
 export const deliveriesController = {
   List: async (req: Request, res: Response) => {
-    res.json(await deliveriesService.List(ListDeliveriesQuerySchema.parse(req.query)));
+    res.json(await deliveriesService.List(ScopeOf(req), ListDeliveriesQuerySchema.parse(req.query)));
   },
   Get: async (req: Request, res: Response) => {
-    res.json(await deliveriesService.Get(idOf(req)));
+    res.json(await deliveriesService.Get(ScopeOf(req), numberOf(req)));
   },
-  Book: async (req: Request, res: Response) => {
-    res.status(201).json(await deliveriesService.Book(ActorOf(req)));
+  Create: async (req: Request, res: Response) => {
+    res.status(201).json(await deliveriesService.Create(ScopeOf(req), CreateDeliverySchema.parse(req.body)));
   },
-  StartUnloading: async (req: Request, res: Response) => {
-    res.json(await deliveriesService.StartUnloading(ActorOf(req), idOf(req)));
+  Reorder: async (req: Request, res: Response) => {
+    res.status(201).json(await deliveriesService.Reorder(ScopeOf(req), ReorderSchema.parse(req.body ?? {})));
+  },
+  UpdateStatus: async (req: Request, res: Response) => {
+    res.json(await deliveriesService.UpdateStatus(ScopeOf(req), numberOf(req), UpdateDeliveryStatusSchema.parse(req.body)));
   },
   Receive: async (req: Request, res: Response) => {
-    res.json(await deliveriesService.Receive(ActorOf(req), idOf(req), ReceiveDeliverySchema.parse(req.body ?? {})));
+    res.json(await deliveriesService.Receive(ScopeOf(req), numberOf(req), ReceiveDeliverySchema.parse(req.body ?? {})));
   },
 };

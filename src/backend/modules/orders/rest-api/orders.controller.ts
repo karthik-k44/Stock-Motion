@@ -1,34 +1,41 @@
 import type { Request, Response } from 'express';
-import { ActorOf } from '@/backend/middleware/auth.middleware';
+import { ScopeOf } from '@/backend/modules/businesses/rest-api/businesses.middleware';
 import { ordersService } from '../orders.service';
-import { ListOrdersQuerySchema, OrderIdParamSchema, OrderLineParamSchema, UpdateOrderSchema } from '../orders.validators';
+import {
+  AdvanceOrderSchema,
+  ConsumeSchema,
+  CreateOrderSchema,
+  ListOrdersQuerySchema,
+  OrderNumberParamSchema,
+  SetLinesSchema,
+  UpdateOrderSchema,
+} from '../orders.validators';
 
-const idOf = (req: Request) => OrderIdParamSchema.parse(req.params).id;
+const numberOf = (req: Request) => OrderNumberParamSchema.parse(req.params).number;
 
 export const ordersController = {
   List: async (req: Request, res: Response) => {
-    res.json(await ordersService.List(ListOrdersQuerySchema.parse(req.query)));
+    res.json(await ordersService.List(ScopeOf(req), ListOrdersQuerySchema.parse(req.query)));
   },
   Get: async (req: Request, res: Response) => {
-    res.json(await ordersService.Get(idOf(req)));
+    res.json(await ordersService.Get(ScopeOf(req), numberOf(req)));
+  },
+  Create: async (req: Request, res: Response) => {
+    res.status(201).json(await ordersService.Create(ScopeOf(req), CreateOrderSchema.parse(req.body)));
   },
   Update: async (req: Request, res: Response) => {
-    res.json(await ordersService.Update(ActorOf(req), idOf(req), UpdateOrderSchema.parse(req.body)));
+    res.json(await ordersService.Update(ScopeOf(req), numberOf(req), UpdateOrderSchema.parse(req.body)));
   },
-  StartPicking: async (req: Request, res: Response) => {
-    res.json(await ordersService.StartPicking(ActorOf(req), idOf(req)));
+  SetLines: async (req: Request, res: Response) => {
+    res.json(await ordersService.SetLines(ScopeOf(req), numberOf(req), SetLinesSchema.parse(req.body)));
   },
-  PickLine: async (req: Request, res: Response) => {
-    const { id, sku } = OrderLineParamSchema.parse(req.params);
-    res.json(await ordersService.PickLine(ActorOf(req), id, sku));
+  Advance: async (req: Request, res: Response) => {
+    res.json(await ordersService.Advance(ScopeOf(req), numberOf(req), AdvanceOrderSchema.parse(req.body)));
   },
-  PickAll: async (req: Request, res: Response) => {
-    res.json(await ordersService.PickAll(ActorOf(req), idOf(req)));
+  Consume: async (req: Request, res: Response) => {
+    res.json(await ordersService.Consume(ScopeOf(req), numberOf(req), ConsumeSchema.parse(req.body ?? {})));
   },
-  Pack: async (req: Request, res: Response) => {
-    res.json(await ordersService.Pack(ActorOf(req), idOf(req)));
-  },
-  Ship: async (req: Request, res: Response) => {
-    res.json(await ordersService.Ship(ActorOf(req), idOf(req)));
+  Cancel: async (req: Request, res: Response) => {
+    res.json(await ordersService.Cancel(ScopeOf(req), numberOf(req)));
   },
 };

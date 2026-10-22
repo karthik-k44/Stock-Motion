@@ -1,74 +1,101 @@
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ToastManager } from '@/frontend/components/toast/toast-manager';
-import { inventoryService } from '@/frontend/features/inventory/services';
-import type { ApiError } from '@/frontend/services/api-error';
-import { Get, Post } from '@/frontend/services/request';
-import type { DeliveryResponseType, ListDeliveriesParams, ReceiveDeliveryInput } from '../types';
+import { keepPreviousData, useQuery, type QueryKey } from '@tanstack/react-query';
+import { PatchWhere, useOptimisticMutation } from '@/frontend/services/optimistic';
+import { Biz } from '@/frontend/services/request';
+import {
+  DeliveryStatusTypeEnum,
+  type DeliveryResponseType,
+  type ListDeliveriesParams,
+  type NewDeliveryInput,
+  type ReceiveDeliveryInput,
+} from '../types';
 
-const ListDeliveries = (params: ListDeliveriesParams): Promise<DeliveryResponseType[]> =>
-  Get<DeliveryResponseType[]>('/deliveries', { params });
-const GetDelivery = (id: string): Promise<DeliveryResponseType> => Get<DeliveryResponseType>(`/deliveries/${id}`);
-const BookDelivery = (): Promise<DeliveryResponseType> => Post<DeliveryResponseType>('/deliveries');
-const StartUnloading = (id: string) => Post<DeliveryResponseType>(`/deliveries/${id}/start-unloading`);
-const ReceiveDelivery = (id: string, input: ReceiveDeliveryInput) => Post<DeliveryResponseType>(`/deliveries/${id}/receive`, input);
+const path = (number: string) => `/deliveries/${encodeURIComponent(number)}`;
+
+const ListDeliveries = (params: ListDeliveriesParams) => Biz.Get<DeliveryResponseType[]>('/deliveries', { params });
+const GetDelivery = (number: string) => Biz.Get<DeliveryResponseType>(path(number));
+const CreateDelivery = (input: NewDeliveryInput) =>
+  Biz.Post<DeliveryResponseType>('/deliveries', { ...input, expectedAt: new Date(input.expectedAt).toISOString() });
+const Reorder = (supplierId: string | null) => Biz.Post<DeliveryResponseType[]>('/deliveries/reorder', { supplierId });
+const UpdateStatus = (number: string, to: DeliveryStatusTypeEnum) => Biz.Post<DeliveryResponseType>(`${path(number)}/status`, { to });
+const ReceiveDelivery = (number: string, input: ReceiveDeliveryInput) => Biz.Post<DeliveryResponseType>(`${path(number)}/receive`, input);
 
 const deliveriesKeys = {
   all: ['deliveries'] as const,
   listPrefix: ['deliveries', 'list'] as const,
   list: (params: ListDeliveriesParams) => ['deliveries', 'list', params] as const,
-  detail: (id: string) => ['deliveries', 'detail', id] as const,
+  detail: (number: string) => ['deliveries', 'detail', number] as const,
 };
+
+const DELIVERY_KEYS: QueryKey[] = [['deliveries'], ['items'], ['locations'], ['dashboard'], ['activity'], ['suppliers']];
 
 const useDeliveries = (params: ListDeliveriesParams = {}) =>
   useQuery({ queryKey: deliveriesKeys.list(params), queryFn: () => ListDeliveries(params), placeholderData: keepPreviousData });
 
-const useDelivery = (id: string | undefined) =>
-  useQuery({ queryKey: deliveriesKeys.detail(id ?? ''), queryFn: () => GetDelivery(id!), enabled: Boolean(id) });
+const useDelivery = (number: string | undefined) =>
+  useQuery({ queryKey: deliveriesKeys.detail(number ?? ''), queryFn: () => GetDelivery(number!), enabled: Boolean(number) });
 
-const useBookDeliveryMutation = () => {
-  const qc = useQueryClient();
-  return useMutation<DeliveryResponseType, ApiError, void>({
-    mutationFn: BookDelivery,
-    onSuccess: async (d) => {
-      await Promise.all([qc.invalidateQueries({ queryKey: deliveriesKeys.all }), inventoryService.InvalidateStock(qc)]);
-      ToastManager.Info(`${d.id} booked`, `${d.truck} from ${d.supplier} is on its way`);
-    },
-    onError: (err) => ToastManager.Error('Could not book a delivery', err.message),
-  });
-};
+const patchDelivery = (number: string, fn: (d: DeliveryResponseType) => DeliveryResponseType) => [
+  { queryKey: deliveriesKeys.all, update: PatchWhere<DeliveryResponseType>((d) => d.number === number, fn) },
+];
 
-const useStartUnloadingMutation = () => {
-  const qc = useQueryClient();
-  return useMutation<DeliveryResponseType, ApiError, string>({
-    mutationFn: StartUnloading,
-    onSuccess: () => qc.invalidateQueries({ queryKey: deliveriesKeys.all }),
-    onError: (err) => ToastManager.Error('Could not start unloading', err.message),
+const useCreateDeliveryMutation = () =>
+  useOptimisticMutation({
+    mutationFn: CreateDelivery,
+    invalidate: DELIVERY_KEYS,
+    errorTitle: 'Not booked',
+    quietError: true,
+    successToast: (d) => ({ title: `${d.number} booked`, message: `${d.supplierName} · ${d.totalExpected} units` }),
   });
-};
 
-const useReceiveDeliveryMutation = () => {
-  const qc = useQueryClient();
-  return useMutation<DeliveryResponseType, ApiError, { id: string; input: ReceiveDeliveryInput }>({
-    mutationFn: ({ id, input }) => ReceiveDelivery(id, input),
-    onSuccess: async (d) => {
-      await Promise.all([qc.invalidateQueries({ queryKey: deliveriesKeys.all }), inventoryService.InvalidateStock(qc)]);
-      const units = d.lines.reduce((s, l) => s + (l.received ?? 0), 0);
-      ToastManager.Success(`${d.id} received`, `${units} units from ${d.supplier} added to stock`);
-    },
-    onError: (err) => ToastManager.Error('Delivery not received', err.message),
+const useReorderMutation = () =>
+  useOptimisticMutation({
+    mutationFn: Reorder,
+    invalidate: DELIVERY_KEYS,
+    errorTitle: 'Nothing reordered',
+    successToast: (list) => ({
+      title: `Booked ${list.length} reorder${list.length === 1 ? '' : 's'}`,
+      message: list.map((d) => `${d.number} · ${d.supplierName}`).join(', '),
+    }),
   });
-};
+
+const useUpdateStatusMutation = () =>
+  useOptimisticMutation({
+    mutationFn: ({ number, to }: { number: string; to: DeliveryStatusTypeEnum }) => UpdateStatus(number, to),
+    optimistic: ({ number, to }) => patchDelivery(number, (d) => ({ ...d, status: to })),
+    invalidate: DELIVERY_KEYS,
+    errorTitle: 'Status not changed',
+  });
+
+const useReceiveMutation = () =>
+  useOptimisticMutation({
+    mutationFn: ({ number, input }: { number: string; input: ReceiveDeliveryInput }) => ReceiveDelivery(number, input),
+    optimistic: ({ number, input }) =>
+      patchDelivery(number, (d) => ({
+        ...d,
+        status: DeliveryStatusTypeEnum.RECEIVED,
+        receivedAt: new Date().toISOString(),
+        lines: d.lines.map((l) => ({ ...l, received: input.lines.find((x) => x.sku === l.sku)?.received ?? l.expected })),
+      })),
+    invalidate: DELIVERY_KEYS,
+    errorTitle: 'Not received',
+    successToast: (d) => ({
+      title: `${d.number} received`,
+      message: `${d.lines.reduce((s, l) => s + (l.received ?? 0), 0)} units from ${d.supplierName} added to stock`,
+    }),
+  });
 
 export const deliveriesService = {
   keys: deliveriesKeys,
   ListDeliveries,
   GetDelivery,
-  BookDelivery,
-  StartUnloading,
+  CreateDelivery,
+  Reorder,
+  UpdateStatus,
   ReceiveDelivery,
   useDeliveries,
   useDelivery,
-  useBookDeliveryMutation,
-  useStartUnloadingMutation,
-  useReceiveDeliveryMutation,
+  useCreateDeliveryMutation,
+  useReorderMutation,
+  useUpdateStatusMutation,
+  useReceiveMutation,
 };

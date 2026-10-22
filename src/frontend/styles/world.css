@@ -1,0 +1,100 @@
+/*
+ * Live world layout, by window width:
+ *   < 1024   everything stacks: numbers, camera buttons, scene, details, tracker
+ *   1024–1439 a grid: numbers on top, scene with the details beside it, tracker below
+ *   ≥ 1440   the scene fills the screen and the panels float over it; the scene is fitted into the part
+ *            they leave free (useCoveredInsets + IsoScene). Panel looks are Tailwind classes in the components.
+ */
+.page-world { padding: 0; max-width: none; gap: 0; }
+
+.world-stage {
+  --inspector-w: 368px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  background: #f6f2ee;
+}
+
+.world-scene {
+  position: relative;
+  height: min(62dvh, 540px);
+  min-height: 340px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  touch-action: none;
+}
+
+.world-loading { height: 100%; display: grid; place-content: center; justify-items: center; gap: 10px; color: var(--ink-2); }
+
+.world-inspector {
+  display: flex;
+  flex-direction: column;
+  padding: 18px;
+  border-radius: 16px;
+  border: 1px solid var(--color-line);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+}
+
+.world-tools { align-self: flex-start; }
+
+@media (min-width: 1024px) and (max-width: 1439px) {
+  .world-stage {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    grid-template-areas: 'kpis kpis' 'tools inspector' 'scene inspector' 'tracker tracker';
+    align-items: start;
+  }
+  .world-kpis { grid-area: kpis; }
+  .world-tools { grid-area: tools; }
+  .world-scene { grid-area: scene; height: min(64dvh, 560px); }
+  .world-inspector { grid-area: inspector; align-self: stretch; max-height: calc(min(64dvh, 560px) + 64px); overflow-y: auto; }
+  .world-tracker { grid-area: tracker; }
+}
+
+@media (min-width: 1440px) {
+  .world-stage { height: calc(100dvh - var(--topbar-h)); min-height: 760px; padding: 0; }
+  .world-scene { position: absolute; inset: 0; height: auto; border: 0; border-radius: 0; }
+  .world-kpis,
+  .world-tools,
+  .world-inspector,
+  .world-tracker { position: absolute; z-index: 20; }
+  .world-kpis { top: 16px; left: 16px; right: calc(var(--inspector-w) + 32px); }
+  .world-inspector { top: 16px; right: 16px; bottom: 16px; width: var(--inspector-w); overflow-y: auto; }
+  .world-tools { top: 50%; right: calc(var(--inspector-w) + 28px); transform: translateY(-50%); }
+  .world-tracker { left: 16px; bottom: 16px; right: calc(var(--inspector-w) + 32px); }
+}
+
+@media (min-width: 1600px) {
+  .world-stage { --inspector-w: 392px; }
+}
+
+/* ---- isometric scene ---- */
+.iso-host { position: absolute; inset: 0; overflow: hidden; touch-action: none; user-select: none; background: #f6f2ee; }
+.iso-camera { position: absolute; transform-origin: center; will-change: transform; }
+.iso-camera-ease { transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.iso-svg { display: block; width: 100%; height: 100%; overflow: visible; animation: scene-in 0.45s ease-out both; }
+@keyframes scene-in { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: none; } }
+
+.iso-ring-on { fill: rgb(255 121 0 / 0.16); stroke: var(--color-primary-500); stroke-width: 2.5; stroke-linejoin: round; }
+.iso-ring-alert { fill: rgb(229 72 77 / 0.08); stroke: rgb(229 72 77 / 0.75); stroke-width: 2; stroke-dasharray: 6 5; stroke-linejoin: round; }
+.iso-ring-march { animation: ring-march 0.9s linear infinite; }
+@keyframes ring-march { to { stroke-dashoffset: -22; } }
+
+/* Pins drop in when their tab opens, then bob gently */
+.iso-pin { display: block; filter: drop-shadow(0 4px 6px rgb(28 25 23 / 0.25)); animation: pin-drop 0.55s cubic-bezier(0.3, 1.5, 0.5, 1) both, pin-bob 1.8s ease-in-out 0.6s infinite; }
+@keyframes pin-drop { from { opacity: 0; translate: 0 -28px; } to { opacity: 1; translate: 0 0; } }
+@keyframes pin-bob { 0%, 100% { translate: 0 0; } 50% { translate: 0 -5px; } }
+
+/* Tags that belong to the open tab pop once */
+.iso-tag-focus > span:first-child { animation: tag-pop 0.5s ease-out both; }
+@keyframes tag-pop { 0% { transform: scale(0.85); } 60% { transform: scale(1.08); } 100% { transform: scale(1); } }
+
+/* Tracker rows slide in one after another; the inspector cross-fades */
+.world-row-in { animation: row-in 0.32s ease-out both; animation-delay: calc(var(--i, 0) * 28ms); }
+@keyframes row-in { from { opacity: 0; translate: 0 6px; } to { opacity: 1; translate: 0 0; } }
+.world-swap { animation: swap-in 0.25s ease-out both; }
+@keyframes swap-in { from { opacity: 0; translate: 8px 0; } to { opacity: 1; translate: 0 0; } }

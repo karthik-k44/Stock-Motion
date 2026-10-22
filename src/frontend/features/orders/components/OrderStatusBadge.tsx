@@ -1,14 +1,13 @@
 import { Badge } from '@/frontend/components/badge';
-import { HumanizeOrderStatus } from '@/frontend/utils/humanize';
-import { STATUS_TONE } from '../lib/order-flow';
-import type { OrderStatusTypeEnum } from '../types';
+import { businessesService } from '@/frontend/features/businesses/services';
+import { StatusLabel, StatusLook } from '../lib/order-flow';
 
-const ICON = { NEW: 'orders', PICKING: 'box', PACKED: 'package', SHIPPED: 'check' } as const;
-
-export function OrderStatusBadge({ status }: { status: OrderStatusTypeEnum }) {
+export const OrderStatusBadge = ({ status }: { status: string }) => {
+  const { template } = businessesService.useBusiness();
+  const look = StatusLook(template.orderFlow, status);
   return (
-    <Badge tone={STATUS_TONE[status]} icon={ICON[status]}>
-      {HumanizeOrderStatus(status)}
+    <Badge tone={look.tone} icon={look.icon}>
+      {StatusLabel(template.orderFlow, status)}
     </Badge>
   );
-}
+};

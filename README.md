@@ -1,69 +1,116 @@
 # StockMotion
 
-Warehouse inventory management with a live, animated warehouse floor. Trucks back into Dock 1 and unload, cartons on the shelves reflect real stock, and the warehouse staff walk the floor as work happens — picking, packing, shipping, counting and moving stock.
+Inventory and orders for any small business, with a live 3D world of the business. An owner signs up, picks what kind of business they run, and the whole app adapts to it: its words, its order flow, its storage, and the 3D world.
+
+| Business type | Stock | Sells | Order flow | Storage | 3D world |
+| --- | --- | --- | --- | --- | --- |
+| Retail / e-commerce warehouse | Products | Products and bundles | New → Picking → Packed → Shipped | Aisles × shelves × bins | Warehouse with racks, Dock 1 truck, packing bench, outbound van |
+| Café / restaurant | Ingredients & stock (g, ml, ea) | Menu items made from recipes | New → Preparing → Served | Dry store, fridge, freezer, bar, front counter | Café with counter, coffee machine, till, storage and tables |
+| Trades / agency | Materials | Job kits and labour / fees | Quoted → Scheduled → In progress → Done | Depot shelves, vans, site store | Depot, two vans on the road, job-site houses |
+
+## What it does
+
+- **Accounts and teams.** Owners sign up, and one account can own or join several businesses. Owners invite staff with one-time links and a role from the template (Picker, Barista, Technician …). Managers run the catalogue and settings; everyone works orders and stock.
+- **Items of three kinds.**
+  - Stock items are counted on a shelf.
+  - Made items are built from stock items: menu recipes, job kits, bundles. The app shows how many can be made right now.
+  - Services (labour, call-out fee) are sold but never stocked.
+- **Orders follow the business's flow.** Entering a reserving stage checks that stock is available and reserves it. Work stages take stock line by line, or all at once (a ticket is served). Closing counts the order towards revenue. Selling a made item uses up its components.
+- **Deliveries.** Book incoming stock from suppliers, or let *Reorder low stock* book one delivery per supplier. Mark it on the way or arrived, then count it in.
+- **Also:** customers (with spend and order history), suppliers, storage locations, categories, CSV import with a per-row preview, and an activity log of who did what.
+- **Optimistic updates.** Stock adjustments, moves, order stage changes, receiving, and edits to items, customers and suppliers show at once. If the server refuses, the screen rolls back and a toast says why.
+- **Live everywhere.** Changes reach every open tab of the same business over socket.io.
+- **Live world.** An isometric drawing of the business made only from its own records: racks coloured bin by bin, trucks at the dock doors or on the road, orders on the packing bench, one person per team member. Every label is live; click anything (or any tracker row) for its details. The tracker tabs — deliveries, orders, stock alerts — each bring their own pins and highlights. Zoom, pan and turn the view in quarter turns.
+- **Marketing pages:** the front page at `/` (pitch, use cases, how it works), plus `/features`, `/pricing` (Starter $19, Pro $49 a month — no billing in the app yet) and `/faq`. The hero shows illustrated everyday scenarios as a stack of cards in depth. Style: `docs/design/style-reference.md`.
 
 ## Run it
 
-Requires Node 20+ (tested on Node 24). No database install needed.
+Requires Node 20.12+ (tested on Node 24).
 
 ```bash
 npm install
 npm run dev          # http://localhost:3000 — API + frontend (Vite HMR) on one port
 ```
 
-### Database
-
-Settings are read from `.env` in the project root (git-ignored). Real environment variables override it. Create it with:
+In development an empty database gets a demo login with one sample business of each type:
 
 ```
-# Leave empty to use the embedded Postgres instead
+demo@stockmotion.local / stockmotion-demo
+```
+
+Or create your own account at `/signup`.
+
+### Settings
+
+Settings are read from `.env` in the project root (git-ignored). Real environment variables override it.
+
+```
+# Leave empty to use the embedded Postgres (PGlite) in .data/pglite instead
 DATABASE_URL=postgres://postgres:YOUR_PASSWORD@localhost:5432/stockmotion
-# Embedded Postgres folder (only used when DATABASE_URL is empty)
 PGLITE_DIR=.data/pglite
 PORT=3000
-# debug | info | warn | error
-LOG_LEVEL=info
+LOG_LEVEL=info              # debug | info | warn | error
+JWT_SECRET=                 # 32+ characters; required in production, random per run in development
+ACCESS_TOKEN_TTL=15m
+REFRESH_TOKEN_DAYS=30
+TRUST_PROXY=loopback        # "1" behind one load balancer (most hosts), "true", or a list of addresses
+SHUTDOWN_TIMEOUT_MS=10000   # grace period for open requests on SIGTERM
 ```
 
-- **Your local PostgreSQL** — set `DATABASE_URL` in `.env`:
-  ```
-  DATABASE_URL=postgres://postgres:YOUR_PASSWORD@localhost:5432/stockmotion
-  ```
-  The `stockmotion` database is created on first start, then migrations run and demo data is seeded. A wrong password or a stopped service is reported in one line at startup.
-- **No database install** — leave `DATABASE_URL` empty and an embedded Postgres (PGlite) is stored in `.data/pglite`. Only one server can use that folder at a time; a second one is refused with a clear message.
+- **Your local PostgreSQL:** the database is created on first start and migrations run automatically.
+- **No database install:** leave `DATABASE_URL` empty and an embedded Postgres is stored in `.data/pglite`.
+
+Sessions use a short-lived access token held in memory, plus a rotating, httpOnly refresh cookie. Replaying an already-used refresh token ends every session of that account.
 
 | Script | What it does |
 | --- | --- |
 | `npm run dev` | API + Vite dev server with HMR on `PORT` (default 3000) |
 | `npm run build` | Typecheck both projects and build the frontend to `dist/` |
-| `npm start` | Production server — serves `dist/` and the API |
-| `npm test` | Backend integration tests (in-memory Postgres) |
-| `npm run lint` | ESLint — import cycles, frontend/backend boundary, hook rules |
+| `npm start` | Production server: serves `dist/` and the API (needs `JWT_SECRET`) |
+| `npm test` | Backend integration tests (in-memory Postgres, one file at a time) |
+| `npm run lint` | ESLint: import cycles, frontend/backend boundary, hook rules |
 | `npm run typecheck` | `tsc -b --noEmit` |
-| `npm run db:seed` | Wipe and re-seed the demo data (the **Reset** button in the app does the same) |
+| `npm run illustrations` | Re-render the landing page's scenario illustrations into `public/landing/scenarios/` (uses your installed Chrome) |
+| `npm run db:seed` | Wipe the database and recreate the demo login (refuses in production) |
 
-Environment variables (validated in `src/backend/config/env.ts`): `PORT`, `DATABASE_URL`, `PGLITE_DIR`, `LOG_LEVEL`, `NODE_ENV`.
+## Deploy
 
-## What to try
+Production runs one Node process that serves the API, the realtime socket and the built frontend. Any host that runs a Docker image or Node 20.12+ works (Render, Railway, Fly.io, a VPS …).
 
-- **Warehouse floor** — scroll down: the camera travels from the loading yard through aisles A–D to packing, and shelves fill with cartons as they come into view. Hover a carton for stock details; click it for the item panel. Your own character (tagged **You**) walks over to the bin you inspect.
-- **Simulate delivery** (Dock 1 panel) — the next expected truck reverses into the bay, the dock door opens, Ana and Marcus unload cartons to staging, stock increases on the server, and the forklift puts stock away. **Replay arrival** re-runs the last arrival without changing stock.
-- **Incoming deliveries** — open a delivery, adjust counted quantities (short/over is recorded), then **Receive & unload** to watch the same sequence.
-- **Orders** — release a New order to picking (stock becomes reserved, available drops), pick lines (on-hand drops, the picker walks to the bin and carries the box to packing), mark packed, ship (Tom takes it out the outbound door).
-- **Inventory** — search and filter; open an item to adjust stock (two-step confirm), relocate it to an empty bin, or **Show in warehouse** to pan the floor to its spotlighted bin.
-- **Acting as** (top bar) — every change is recorded under the chosen user. Open two tabs: changes, the activity log and the moving characters sync live.
-- **Motion** (top bar) — System / On / Off. With reduced motion the truck and people jump between positions and shelves are shown immediately; everything stays usable.
+**With Docker**
+
+```bash
+docker build -t stockmotion .
+docker run -p 3000:3000   -e JWT_SECRET="$(openssl rand -hex 48)"   -e DATABASE_URL="postgres://user:pass@host:5432/stockmotion"   -e TRUST_PROXY=1   stockmotion
+```
+
+Leave `DATABASE_URL` empty to use the embedded Postgres instead, and mount a volume at `/app/.data` to keep it. The image has a health check on `/api/system/health` and stops gracefully on SIGTERM.
+
+**Without Docker:** `npm ci && npm run build && npm start` with the same environment variables (`.env.example` lists them all).
+
+Checklist:
+- Serve over **HTTPS** (the refresh cookie is `Secure` in production and HSTS is on).
+- Set a strong `JWT_SECRET` (32+ characters) — the server refuses to start without one.
+- Behind a load balancer, set `TRUST_PROXY` so rate limits see real client addresses.
+- Use a managed Postgres for anything beyond one instance; migrations run on start.
+- What production adds: a strict Content-Security-Policy and security headers (helmet), Brotli/gzip compression, year-long caching for hashed assets and `no-cache` for the app shell.
 
 ## Stock model
 
-- **On hand** — physically in the bin.
-- **Reserved** — open quantity on orders released to picking (`PICKING`). Allocation happens on release and is checked against available stock.
-- **Available** = on hand − reserved.
-- **Incoming** — expected quantity on deliveries not yet received.
-- **Status** — *Out* when on hand is 0, *Low* when available ≤ reorder level.
+- **On hand:** physically there, in the item's unit (whole numbers: g, ml, ea …).
+- **Reserved:** open quantity on orders in a reserving stage. A made item reserves its components.
+- **Available:** on hand − reserved. For a made item, how many can be made from available components.
+- **Incoming:** expected on deliveries not yet received.
+- **Status:** *Out* when nothing is on hand (or nothing can be made), *Low* when available ≤ reorder level.
 
-These are derived in one place, the `item_views` SQL view (`src/backend/db/migrations/001_init.sql`).
+All of these are derived in one place, the `item_views` SQL view (`src/backend/db/migrations/002_multi_business.sql`).
 
 ## Structure
 
-Follows `docs/STRUCTURE.md`: an Express + Postgres backend (`src/backend`, one folder per domain module) and a React 19 + Vite + React Query frontend (`src/frontend`, one folder per feature, each with a single service object). Realtime updates go over socket.io.
+See `docs/STRUCTURE.md`:
+- **Backend** (`src/backend`): Express + Postgres, one folder per domain module. SQL lives only in each module's `*.repository.ts`.
+- **Frontend** (`src/frontend`): React 19 + Vite + React Query, one folder per feature, each with a single service object. Business templates live in `src/backend/modules/templates`; the frontend reads them from the API.
+
+## Credits
+
+3D icons on the landing page: [3dicons](https://github.com/realvjy/3dicons) by realvjy, CC0. Font: Inter (SIL Open Font License), self-hosted via Fontsource. Animation: [GSAP](https://gsap.com) (free under its standard license).

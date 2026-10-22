@@ -1,19 +1,20 @@
-import { HumanizeOrderStatus } from '@/frontend/utils/humanize';
-import { ORDER_STEPS } from '../lib/order-flow';
-import type { OrderStatusTypeEnum } from '../types';
+import { businessesService } from '@/frontend/features/businesses/services';
+import { CANCELLED_STATUS } from '../types';
 
-export function OrderStepper({ status }: { status: OrderStatusTypeEnum }) {
-  const at = ORDER_STEPS.indexOf(status);
+export const OrderStepper = ({ status }: { status: string }) => {
+  const { orderFlow } = businessesService.useBusiness().template;
+  const at = orderFlow.findIndex((s) => s.status === status);
+  const finished = orderFlow[at]?.closed;
   return (
-    <ol className="steps steps-lg" aria-label="Order progress">
-      {ORDER_STEPS.map((s, i) => {
-        const state = i < at || status === 'SHIPPED' ? 'done' : i === at ? 'current' : 'todo';
+    <ol className="steps steps-lg" aria-label="Progress">
+      {orderFlow.map((s, i) => {
+        const state = status === CANCELLED_STATUS ? 'todo' : i < at || finished ? 'done' : i === at ? 'current' : 'todo';
         return (
-          <li key={s} className={`step step-${state}`} aria-current={i === at ? 'step' : undefined}>
-            {HumanizeOrderStatus(s)}
+          <li key={s.status} className={`step step-${state}`} aria-current={i === at ? 'step' : undefined}>
+            {s.label}
           </li>
         );
       })}
     </ol>
   );
-}
+};

@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react';
 
-export function useMediaQuery(query: string): boolean {
+export const useMediaQuery = (query: string): boolean => {
   return useSyncExternalStore(
     (cb) => {
       const mql = window.matchMedia(query);
@@ -10,4 +10,4 @@ export function useMediaQuery(query: string): boolean {
     () => window.matchMedia(query).matches,
     () => false,
   );
-}
+};

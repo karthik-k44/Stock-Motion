@@ -3,19 +3,19 @@ import { EmptyState } from '@/frontend/components/feedback';
 import { paths } from '@/frontend/config/paths';
 import { useDocumentTitle } from '@/frontend/hooks/use-document-title';
 
-export function NotFound() {
+export const NotFound = () => {
   useDocumentTitle('Not found');
   return (
     <div className="page">
-      <EmptyState icon="search" title="That page isn’t on the floor plan" action={<Link className="btn btn-primary" to={paths.warehouse}>Back to the warehouse</Link>}>
+      <EmptyState icon="search" title="That page doesn’t exist" action={<Link className="btn btn-primary" to={paths.home}>Back to the start</Link>}>
         The address may be mistyped or the record may no longer exist.
       </EmptyState>
     </div>
   );
-}
+};
 
 /** Route-level error boundary (failed lazy chunk, render crash). */
-export function RouteError() {
+export const RouteError = () => {
   const err = useRouteError();
   const message = isRouteErrorResponse(err) ? `${err.status} ${err.statusText}` : err instanceof Error ? err.message : 'Unknown error';
   return (
@@ -25,4 +25,4 @@ export function RouteError() {
       </EmptyState>
     </div>
   );
-}
+};

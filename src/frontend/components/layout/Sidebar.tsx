@@ -10,20 +10,20 @@ type SidebarProps = {
   open: boolean;
   onNavigate: () => void;
   footer?: ReactNode;
+  /** Under the brand name: the business switcher */
+  brand?: ReactNode;
 };
 
-export function Sidebar({ nav, badges, open, onNavigate, footer }: SidebarProps) {
+export const Sidebar = ({ nav, badges, open, onNavigate, footer, brand }: SidebarProps) => {
   return (
     <nav id="app-nav" className={Cn('sidebar', open && 'sidebar-open')} aria-label="Main">
       <div className="brand">
         <span className="brand-mark" aria-hidden>
           <Icon name="package" size={20} />
         </span>
-        <span>
-          <span className="brand-name">StockMotion</span>
-          <span className="brand-sub">Dock 1 · Main warehouse</span>
-        </span>
+        <span className="brand-name">StockMotion</span>
       </div>
+      {brand && <div className="brand-switch">{brand}</div>}
       <ul className="nav-list">
         {nav.map((item) => {
           const count = item.badge ? badges[item.badge] : undefined;
@@ -45,4 +45,4 @@ export function Sidebar({ nav, badges, open, onNavigate, footer }: SidebarProps)
       {footer && <div className="sidebar-foot">{footer}</div>}
     </nav>
   );
-}
+};

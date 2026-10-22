@@ -11,7 +11,7 @@ type SegmentedControlProps<T extends string> = {
 };
 
 /** A radio group styled as segmented tabs; arrow keys move between options. */
-export function SegmentedControl<T extends string>({ label, value, options, onChange, size = 'md' }: SegmentedControlProps<T>) {
+export const SegmentedControl = <T extends string>({ label, value, options, onChange, size = 'md' }: SegmentedControlProps<T>) => {
   const move = (dir: 1 | -1) => {
     const i = options.findIndex((o) => o.value === value);
     onChange(options[(i + dir + options.length) % options.length].value);
@@ -51,4 +51,4 @@ export function SegmentedControl<T extends string>({ label, value, options, onCh
       })}
     </div>
   );
-}
+};

@@ -1,42 +1,44 @@
 import type { Queryable } from '@/backend/db/client';
-import type { ActivityRow } from '@/backend/db/schema';
-import { ACTIVITY_COLUMNS, ToActivityResponse } from '@/backend/modules/activity/activity.mapper';
+import { ToActivityResponse } from '@/backend/modules/activity/activity.mapper';
+import { activityRepository } from '@/backend/modules/activity/activity.repository';
+import { itemsRepository } from '@/backend/modules/items/items.repository';
 import type {
   ActivityKindTypeEnum,
   ActivityMetaType,
   ActivityRefTypeEnum,
   ActivityResponseType,
 } from '@/backend/types/activity';
+import type { ScopeType } from '@/backend/types/business';
 import type { MovementTypeEnum } from '@/backend/types/item';
 
 /**
  * The activity log and stock ledger are written by several modules (items,
  * orders, deliveries), always inside the caller's transaction.
  */
-export async function RecordActivity(
+export const RecordActivity = async (
   tx: Queryable,
+  scope: ScopeType,
   input: {
     kind: ActivityKindTypeEnum;
-    userId: string;
     message: string;
     ref?: { type: ActivityRefTypeEnum; id: string };
     meta?: ActivityMetaType;
-  },
-): Promise<ActivityResponseType> {
-  const { rows } = await tx.query<ActivityRow>(
-    `INSERT INTO activity (kind, user_id, message, ref_type, ref_id, meta)
-     VALUES ($1, $2, $3, $4, $5, $6) RETURNING ${ACTIVITY_COLUMNS}`,
-    [input.kind, input.userId, input.message, input.ref?.type ?? null, input.ref?.id ?? null, JSON.stringify(input.meta ?? {})],
-  );
-  return ToActivityResponse(rows[0]);
-}
+  },): Promise<ActivityResponseType> => {
+  const row = await activityRepository.Insert(tx, {
+    businessId: scope.businessId,
+    kind: input.kind,
+    accountId: scope.actor.id,
+    message: input.message,
+    refType: input.ref?.type,
+    refId: input.ref?.id,
+    meta: input.meta,
+  });
+  return ToActivityResponse({ ...row, actor_name: scope.actor.name });
+};
 
-export async function RecordMovement(
+export const RecordMovement = async (
   tx: Queryable,
-  input: { sku: string; type: MovementTypeEnum; delta: number; balance: number; ref?: string | null; userId: string; note: string },
-): Promise<void> {
-  await tx.query(
-    'INSERT INTO movements (sku, type, delta, balance, ref, user_id, note) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-    [input.sku, input.type, input.delta, input.balance, input.ref ?? null, input.userId, input.note],
-  );
-}
+  scope: ScopeType,
+  input: { itemId: string; type: MovementTypeEnum; delta: number; balance: number; ref?: string | null; note: string },): Promise<void> => {
+  await itemsRepository.InsertMovement(tx, { businessId: scope.businessId, accountId: scope.actor.id, ...input });
+};

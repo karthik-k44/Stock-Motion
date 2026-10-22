@@ -21,6 +21,11 @@ export default tseslint.config(
       'import-x/no-duplicates': 'error',
       '@typescript-eslint/consistent-type-imports': ['error', { fixStyle: 'inline-type-imports' }],
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      // Arrow functions everywhere: `const Foo = () => …`, never `function Foo() {}` or `{ foo() {} }`.
+      'func-style': ['error', 'expression'],
+      'prefer-arrow-callback': 'error',
+      // Also catches object methods (`{ Get() {} }`); class methods and constructors are allowed.
+      'no-restricted-syntax': ['error', { selector: 'FunctionExpression:not(MethodDefinition > FunctionExpression)', message: 'Use an arrow function.' }],
     },
   },
   {

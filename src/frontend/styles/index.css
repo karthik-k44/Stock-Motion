@@ -1,0 +1,130 @@
+/*
+ * The one stylesheet entry. Layer order decides who wins, not selector weight:
+ *   theme       design tokens (Tailwind @theme)
+ *   base        the reset for shadcn/ui elements ([data-slot]) only
+ *   components  the app's own CSS files (buttons, tables, shell …)
+ *   utilities   Tailwind classes — always beat component CSS, so `className` overrides work
+ * Tailwind's global preflight is left out on purpose: base.css is the reset the existing screens are built on.
+ */
+@layer theme, base, components, utilities;
+
+@import '@fontsource-variable/inter';
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities) source('..');
+@import 'tw-animate-css';
+
+@import './base.css' layer(components);
+@import './layout.css' layer(components);
+@import './controls.css' layer(components);
+@import './data.css' layer(components);
+@import './overlay.css' layer(components);
+@import './pages.css' layer(components);
+@import './app.css' layer(components);
+@import './world.css' layer(components);
+@import './landing.css' layer(components);
+@import './depth-carousel.css' layer(components);
+
+/*
+ * Orange and white. Brand orange is #ff7900; it carries near-black text (6.5:1), never white (2.6:1).
+ * Orange text on white uses 700+ (#b35500 is 5:1). Every colour in the app comes from these tokens.
+ */
+@theme static {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, 'SFMono-Regular', 'Cascadia Mono', Menlo, Consolas, monospace;
+
+  --color-primary-50: #fff5eb;
+  --color-primary-100: #ffe7d1;
+  --color-primary-200: #ffcda3;
+  --color-primary-300: #ffae6b;
+  --color-primary-400: #ff9433;
+  --color-primary-500: #ff7900;
+  --color-primary-600: #e66d00;
+  --color-primary-700: #b35500;
+  --color-primary-800: #8c4300;
+  --color-primary-900: #6b3300;
+
+  --color-surface: #ffffff;
+  --color-canvas: #faf8f6;
+  --color-sunken: #f4f1ee;
+  --color-line: #ebe6e1;
+  --color-line-strong: #d6cfc8;
+  --color-ink: #1c1917;
+  --color-ink-2: #44403c;
+
+  --color-success: #15803d;
+  --color-success-bg: #e8f6ed;
+  /* Yellow-amber, kept clearly apart from the orange primary */
+  --color-warning: #a16207;
+  --color-warning-bg: #fef6d6;
+  --color-danger: #c42b2b;
+  --color-danger-bg: #fdecec;
+  /* "In progress / on the way": the brand orange, never blue */
+  --color-info: var(--color-primary-700);
+  --color-info-bg: var(--color-primary-50);
+  /* "On its way" stays in the orange family: deeper and calmer than the primary */
+  --color-incoming: var(--color-primary-800);
+  --color-incoming-bg: var(--color-primary-50);
+  --color-reserved: #4b3bb3;
+  --color-reserved-bg: #eeebfb;
+  /* Marketing pages: dark frames and muted chrome (docs/design/style-reference.md) */
+  --color-abyss: #000710;
+  --color-carbon: #15191e;
+  --color-steel: #8b8d98;
+  --color-neutral: #57534e;
+  --color-neutral-bg: #f1eeeb;
+
+  /* shadcn/ui's semantic names, pointed at the same palette */
+  --color-background: var(--color-surface);
+  --color-foreground: var(--color-ink);
+  --color-card: var(--color-surface);
+  --color-card-foreground: var(--color-ink);
+  --color-popover: var(--color-surface);
+  --color-popover-foreground: var(--color-ink);
+  --color-primary: var(--color-primary-500);
+  --color-primary-foreground: #111111;
+  --color-secondary: var(--color-sunken);
+  --color-secondary-foreground: var(--color-ink);
+  --color-muted: var(--color-sunken);
+  --color-muted-foreground: #6f6862;
+  --color-accent: var(--color-primary-50);
+  --color-accent-foreground: var(--color-primary-900);
+  --color-destructive: var(--color-danger);
+  --color-border: var(--color-line);
+  --color-input: var(--color-line-strong);
+  --color-ring: var(--color-primary-600);
+
+  --shadow-card: 0 1px 2px rgb(28 25 23 / 0.05), 0 8px 24px rgb(28 25 23 / 0.07);
+  --shadow-float: 0 4px 14px rgb(107 51 0 / 0.18);
+}
+
+/* What Tailwind's preflight would give shadcn/ui elements, without touching the rest of the app. */
+@layer base {
+  [data-slot],
+  [data-slot] *,
+  [data-slot]::before,
+  [data-slot]::after {
+    box-sizing: border-box;
+    border: 0 solid var(--color-border);
+  }
+  button[data-slot],
+  [data-slot] button {
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+  }
+  [data-slot] svg {
+    display: block;
+    flex-shrink: 0;
+  }
+  a[data-slot],
+  [data-slot] a {
+    text-decoration: none;
+  }
+  [data-slot='card-title'],
+  [data-slot='card-description'] {
+    margin: 0;
+  }
+}

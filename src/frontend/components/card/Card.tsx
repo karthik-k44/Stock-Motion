@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Card as UiCard, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/frontend/components/ui/card';
 import { Cn } from '@/frontend/lib/utils';
 
 type CardProps = {
@@ -7,22 +8,20 @@ type CardProps = {
   actions?: ReactNode;
   children: ReactNode;
   className?: string;
+  /** Content runs edge to edge (tables) */
   flush?: boolean;
 };
 
-export function Card({ title, subtitle, actions, children, className, flush }: CardProps) {
-  return (
-    <section className={Cn('card', flush && 'card-flush', className)}>
-      {(title || actions) && (
-        <header className="card-head">
-          <div>
-            {title && <h2 className="card-title">{title}</h2>}
-            {subtitle && <p className="card-subtitle">{subtitle}</p>}
-          </div>
-          {actions && <div className="card-actions">{actions}</div>}
-        </header>
-      )}
-      <div className="card-body">{children}</div>
-    </section>
-  );
-}
+/** The app's card: shadcn/ui's Card with an optional header (title, subtitle, actions). */
+export const Card = ({ title, subtitle, actions, children, className, flush }: CardProps) => (
+  <UiCard className={Cn('min-w-0 gap-4 rounded-2xl border-line bg-surface py-5 shadow-card', flush && 'overflow-hidden', className)}>
+    {(title || actions) && (
+      <CardHeader className="px-5">
+        {title && <CardTitle className="text-[15px] leading-snug font-semibold text-ink">{title}</CardTitle>}
+        {subtitle && <CardDescription className="text-[13px] text-muted-foreground">{subtitle}</CardDescription>}
+        {actions && <CardAction className="flex items-center gap-2">{actions}</CardAction>}
+      </CardHeader>
+    )}
+    <CardContent className={Cn('min-w-0', flush ? 'px-0' : 'px-5')}>{children}</CardContent>
+  </UiCard>
+);

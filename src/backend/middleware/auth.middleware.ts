@@ -1,24 +1,26 @@
 import type { NextFunction, Request, Response } from 'express';
 import { Unauthorized } from '@/backend/common/errors';
-import { usersService } from '@/backend/modules/users/users.service';
-import type { UserResponseType } from '@/backend/types/user';
+import { VerifyAccessToken } from '@/backend/common/utils/jwt';
+import { authService } from '@/backend/modules/auth/auth.service';
+import type { AccountResponseType } from '@/backend/types/account';
 
-export const ACTOR_HEADER = 'x-user-id';
-
-/**
- * Identifies which warehouse user is acting. This demo has no passwords: the
- * client sends the chosen user's id and it is validated against the users table.
- */
-export async function RequireActor(req: Request, _res: Response, next: NextFunction) {
-  const id = req.header(ACTOR_HEADER);
-  if (!id) return next(Unauthorized());
-  const user = await usersService.Find(id);
-  if (!user) return next(Unauthorized(`Unknown user ${id}`));
-  req.actor = user;
+/** Reads `Authorization: Bearer <access token>` and loads the account into `req.account`. */
+export const RequireAuth = async (req: Request, _res: Response, next: NextFunction) => {
+  const header = req.header('authorization');
+  if (!header?.startsWith('Bearer ')) return next(Unauthorized());
+  let accountId: string;
+  try {
+    accountId = VerifyAccessToken(header.slice('Bearer '.length));
+  } catch {
+    return next(Unauthorized('Your session has expired — please sign in again'));
+  }
+  const account = await authService.FindAccount(accountId);
+  if (!account) return next(Unauthorized('This account no longer exists'));
+  req.account = account;
   next();
-}
+};
 
-export function ActorOf(req: Request): UserResponseType {
-  if (!req.actor) throw Unauthorized();
-  return req.actor;
-}
+export const AccountOf = (req: Request): AccountResponseType => {
+  if (!req.account) throw Unauthorized();
+  return req.account;
+};

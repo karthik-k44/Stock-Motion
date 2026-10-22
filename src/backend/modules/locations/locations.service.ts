@@ -1,25 +1,32 @@
+import { Conflict } from '@/backend/common/errors';
 import { db } from '@/backend/db/client';
-import type { ItemViewRow } from '@/backend/db/schema';
 import { ToItemResponse } from '@/backend/modules/items/items.mapper';
-import type { LocationResponseType } from '@/backend/types/dashboard';
+import { itemsRepository } from '@/backend/modules/items/items.repository';
+import { BroadcastChange } from '@/backend/realtime/socket';
+import type { ScopeType } from '@/backend/types/business';
+import { ResourceTypeEnum, type LocationResponseType } from '@/backend/types/dashboard';
+import { locationsRepository } from './locations.repository';
+import type { CreateLocationInput } from './locations.validators';
 
-type LocationRow = { code: string; aisle: string; level: number; bin: number } & Partial<ItemViewRow>;
-
-async function List(): Promise<LocationResponseType[]> {
-  const { rows } = await db.query<LocationRow>(
-    `SELECT l.code, l.aisle, l.level, l.bin,
-            v.sku, v.name, v.category, v.unit, v.on_hand, v.reorder_level, v.location,
-            v.reserved, v.available, v.incoming, v.status
-     FROM locations l LEFT JOIN item_views v ON v.location = l.code
-     ORDER BY l.aisle, l.level, l.bin`,
-  );
-  return rows.map((r) => ({
-    code: r.code,
-    aisle: r.aisle,
-    level: r.level,
-    bin: r.bin,
-    item: r.sku ? ToItemResponse(r as ItemViewRow) : null,
+/** Every location of the business with the items stored there (shared shelves can hold several). */
+const List = async (scope: ScopeType): Promise<LocationResponseType[]> => {
+  const [locations, items] = await Promise.all([
+    locationsRepository.List(db, scope.businessId),
+    itemsRepository.ListViews(db, scope.businessId),
+  ]);
+  return locations.map((l) => ({
+    code: l.code,
+    zone: l.zone,
+    name: l.name,
+    items: items.filter((i) => i.location === l.code).map(ToItemResponse),
   }));
-}
+};
 
-export const locationsService = { List };
+const Create = async (scope: ScopeType, input: CreateLocationInput): Promise<LocationResponseType[]> => {
+  if (await locationsRepository.Find(db, scope.businessId, input.code)) throw Conflict(`${input.code} already exists`);
+  await locationsRepository.Insert(db, scope.businessId, input);
+  BroadcastChange(scope.businessId, [ResourceTypeEnum.LOCATIONS, ResourceTypeEnum.DASHBOARD]);
+  return List(scope);
+};
+
+export const locationsService = { List, Create };

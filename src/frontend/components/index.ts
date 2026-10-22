@@ -9,4 +9,5 @@ export * from './icon';
 export * from './layout';
 export * from './modal';
 export * from './progress';
+export * from './text';
 export * from './toast';

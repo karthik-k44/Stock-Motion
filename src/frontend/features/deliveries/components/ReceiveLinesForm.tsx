@@ -1,23 +1,18 @@
 import { useState } from 'react';
 import { Button } from '@/frontend/components/button';
-import { ReceiveDeliverySchema, type DeliveryResponseType, type ReceiveDeliveryInput } from '../types';
+import { ConfirmManager } from '@/frontend/components/modal';
+import { FormatNumber } from '@/frontend/utils/format';
+import { deliveriesService } from '../services';
+import { ReceiveDeliverySchema, type DeliveryResponseType } from '../types';
 
-type Props = {
-  delivery: DeliveryResponseType;
-  busy: boolean;
-  onSubmit: (input: ReceiveDeliveryInput, watch: boolean) => void;
-};
-
-/** Counted quantities per line (defaults to expected), validated before the truck is unloaded. */
-export function ReceiveLinesForm({ delivery, busy, onSubmit }: Props) {
-  const [counts, setCounts] = useState<Record<string, string>>(() =>
-    Object.fromEntries(delivery.lines.map((l) => [l.sku, String(l.expected)])),
-  );
+/** Counted quantities per line (defaults to expected), checked, confirmed, then added to stock. */
+export const ReceiveLinesForm = ({ delivery }: { delivery: DeliveryResponseType }) => {
+  const [counts, setCounts] = useState<Record<string, string>>(() => Object.fromEntries(delivery.lines.map((l) => [l.sku, String(l.expected)])));
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [watch, setWatch] = useState(true);
+  const receive = deliveriesService.useReceiveMutation();
 
-  const submit = () => {
-    const input = { lines: delivery.lines.map((l) => ({ sku: l.sku, received: counts[l.sku] === '' ? NaN : Number(counts[l.sku]) })) };
+  const submit = async () => {
+    const input = { lines: delivery.lines.map((l) => ({ sku: l.sku, received: counts[l.sku] === '' ? Number.NaN : Number(counts[l.sku]) })) };
     const parsed = ReceiveDeliverySchema.safeParse(input);
     if (!parsed.success) {
       const errs: Record<string, string> = {};
@@ -28,20 +23,27 @@ export function ReceiveLinesForm({ delivery, busy, onSubmit }: Props) {
       return setErrors(errs);
     }
     setErrors({});
-    onSubmit(parsed.data, watch);
+    const total = parsed.data.lines.reduce((s, l) => s + l.received, 0);
+    const diffs = parsed.data.lines.filter((l) => l.received !== delivery.lines.find((x) => x.sku === l.sku)?.expected).length;
+    const ok = await ConfirmManager.Ask({
+      title: `Receive ${delivery.number}?`,
+      message: `${FormatNumber(total)} units will be added to stock${diffs ? ` (${diffs} line${diffs > 1 ? 's' : ''} differ from expected)` : ''}.`,
+      confirmLabel: 'Receive',
+    });
+    if (ok) receive.mutate({ number: delivery.number, input: parsed.data });
   };
 
   return (
-    <form className="form" onSubmit={(e) => (e.preventDefault(), submit())} noValidate>
+    <form className="form" onSubmit={(e) => (e.preventDefault(), void submit())} noValidate>
       <div className="table-wrap">
         <table className="table table-compact">
           <caption className="sr-only">Expected and counted quantities</caption>
           <thead>
             <tr>
               <th scope="col">Item</th>
-              <th scope="col">Bin</th>
+              <th scope="col">Goes to</th>
               <th scope="col" className="num">Expected</th>
-              <th scope="col" className="num">Counted at dock</th>
+              <th scope="col" className="num">Counted</th>
             </tr>
           </thead>
           <tbody>
@@ -52,40 +54,29 @@ export function ReceiveLinesForm({ delivery, busy, onSubmit }: Props) {
                   <span className="cell-sub mono">{l.sku}</span>
                 </th>
                 <td className="mono">{l.location ?? '—'}</td>
-                <td className="num">{l.expected}</td>
+                <td className="num">{FormatNumber(l.expected)} {l.unit}</td>
                 <td className="num">
                   <input
                     className="input input-num"
                     type="number"
                     min={0}
                     inputMode="numeric"
-                    aria-label={`Counted quantity for ${l.name}`}
+                    aria-label={`Counted ${l.name} (${l.unit})`}
                     aria-invalid={Boolean(errors[l.sku])}
                     aria-describedby={errors[l.sku] ? `err-${l.sku}` : undefined}
                     value={counts[l.sku]}
                     onChange={(e) => setCounts((c) => ({ ...c, [l.sku]: e.target.value }))}
                   />
-                  {errors[l.sku] && (
-                    <span id={`err-${l.sku}`} className="field-error" role="alert">
-                      {errors[l.sku]}
-                    </span>
-                  )}
+                  {errors[l.sku] && <span id={`err-${l.sku}`} className="field-error" role="alert">{errors[l.sku]}</span>}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      <label className="check">
-        <input type="checkbox" checked={watch} onChange={(e) => setWatch(e.target.checked)} />
-        Watch the truck arrive on the warehouse floor
-      </label>
       <div className="form-actions">
-        <Button type="submit" variant="primary" icon="truck" disabled={busy}>
-          Receive &amp; unload
-        </Button>
-        {busy && <span className="muted small">Dock 1 is busy with another truck.</span>}
+        <Button type="submit" variant="primary" icon="check" loading={receive.isPending}>Receive into stock</Button>
       </div>
     </form>
   );
-}
+};

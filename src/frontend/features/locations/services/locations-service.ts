@@ -1,8 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import { Get } from '@/frontend/services/request';
-import type { LocationResponseType } from '../types';
+import { useOptimisticMutation } from '@/frontend/services/optimistic';
+import { Biz } from '@/frontend/services/request';
+import type { CreateLocationInput, LocationResponseType } from '../types';
 
-const ListLocations = (): Promise<LocationResponseType[]> => Get<LocationResponseType[]>('/locations');
+const ListLocations = () => Biz.Get<LocationResponseType[]>('/locations');
+const CreateLocation = (input: CreateLocationInput) => Biz.Post<LocationResponseType[]>('/locations', input);
 
 const locationsKeys = {
   all: ['locations'] as const,
@@ -11,4 +13,15 @@ const locationsKeys = {
 
 const useLocations = () => useQuery({ queryKey: locationsKeys.list(), queryFn: ListLocations });
 
-export const locationsService = { keys: locationsKeys, ListLocations, useLocations };
+const useCreateLocationMutation = () =>
+  useOptimisticMutation({
+    mutationFn: CreateLocation,
+    optimistic: (input: CreateLocationInput) => [
+      { queryKey: locationsKeys.all, update: (old) => (Array.isArray(old) ? [...old, { ...input, items: [] }] : old) },
+    ],
+    invalidate: [locationsKeys.all, ['dashboard']],
+    errorTitle: 'Location not added',
+    successToast: (_, input) => ({ title: `${input.code} added`, message: input.name }),
+  });
+
+export const locationsService = { keys: locationsKeys, ListLocations, CreateLocation, useLocations, useCreateLocationMutation };

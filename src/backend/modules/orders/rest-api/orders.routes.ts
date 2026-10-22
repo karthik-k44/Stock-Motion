@@ -1,14 +1,15 @@
 import { Router } from 'express';
-import { RequireActor } from '@/backend/middleware/auth.middleware';
+import { RequireRole } from '@/backend/modules/businesses/rest-api/businesses.middleware';
+import { MANAGEMENT_ROLES } from '@/backend/types/business';
 import { ordersController } from './orders.controller';
 
 export const ordersRoutes = Router();
 
 ordersRoutes.get('/', ordersController.List);
-ordersRoutes.get('/:id', ordersController.Get);
-ordersRoutes.patch('/:id', RequireActor, ordersController.Update);
-ordersRoutes.post('/:id/start-picking', RequireActor, ordersController.StartPicking);
-ordersRoutes.post('/:id/lines/:sku/pick', RequireActor, ordersController.PickLine);
-ordersRoutes.post('/:id/pick-all', RequireActor, ordersController.PickAll);
-ordersRoutes.post('/:id/pack', RequireActor, ordersController.Pack);
-ordersRoutes.post('/:id/ship', RequireActor, ordersController.Ship);
+ordersRoutes.post('/', ordersController.Create);
+ordersRoutes.get('/:number', ordersController.Get);
+ordersRoutes.patch('/:number', ordersController.Update);
+ordersRoutes.put('/:number/lines', ordersController.SetLines);
+ordersRoutes.post('/:number/advance', ordersController.Advance);
+ordersRoutes.post('/:number/consume', ordersController.Consume);
+ordersRoutes.post('/:number/cancel', RequireRole(...MANAGEMENT_ROLES), ordersController.Cancel);

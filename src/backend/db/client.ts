@@ -22,7 +22,7 @@ interface Driver extends Queryable {
 
 let driver: Driver | null = null;
 
-function postgresDriver(url: string): Driver {
+const postgresDriver = (url: string): Driver => {
   const pool = new pg.Pool({ connectionString: url, max: 10 });
   return {
     kind: 'postgres',
@@ -54,9 +54,9 @@ function postgresDriver(url: string): Driver {
     },
     close: () => pool.end(),
   };
-}
+};
 
-async function pgliteDriver(dataDir?: string): Promise<Driver> {
+const pgliteDriver = async (dataDir?: string): Promise<Driver> => {
   let release = () => {};
   if (dataDir) {
     mkdirSync(dataDir, { recursive: true });
@@ -90,13 +90,13 @@ async function pgliteDriver(dataDir?: string): Promise<Driver> {
       release();
     },
   };
-}
+};
 
 /**
  * Connect once at startup. `url` → real Postgres; otherwise embedded Postgres
  * persisted to `dataDir` (or in memory when `dataDir` is omitted — used by tests).
  */
-export async function ConnectDb(opts: { url?: string; dataDir?: string }): Promise<void> {
+export const ConnectDb = async (opts: { url?: string; dataDir?: string }): Promise<void> => {
   if (driver) return;
   if (opts.url) {
     await EnsureDatabase(opts.url);
@@ -106,12 +106,12 @@ export async function ConnectDb(opts: { url?: string; dataDir?: string }): Promi
     driver = await pgliteDriver(opts.dataDir);
     logger.info(`Database connected (embedded pglite: ${opts.dataDir ?? 'in-memory'})`);
   }
-}
+};
 
-function current(): Driver {
+const current = (): Driver => {
   if (!driver) throw new Error('Database not connected — call ConnectDb() first');
   return driver;
-}
+};
 
 export const db = {
   query: <T extends Row = Row>(text: string, params?: unknown[]) => current().query<T>(text, params),

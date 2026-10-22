@@ -1,0 +1,131 @@
+/*
+ * Marketing pages (landing, pricing) — docs/design/style-reference.md. Gradient rule: the page is one continuous canvas (no section has its own background), every glow
+ * fades to zero before it meets an edge, and large gradient surfaces carry a faint grain so 8-bit colour
+ * never shows as bands. Looks live in Tailwind classes; this file holds what classes can't express well.
+ */
+html:has(.landing) { scroll-behavior: smooth; }
+
+/*
+ * The reference's palette, scoped to marketing pages so the signed-in app keeps its own: Paper canvas, Fog for
+ * banded sections, Ink headings, Graphite body, Pewter captions, Mist hairlines. Tailwind classes read these vars.
+ */
+.landing {
+  --color-canvas: #ffffff;
+  --color-surface: #ffffff;
+  --color-sunken: #f3f3f7;
+  --color-muted: #f3f3f7;
+  --color-ink: #000000;
+  --color-ink-2: #60646c;
+  --color-muted-foreground: #6f737b;
+  --color-line: #e6e7ec;
+  --color-line-strong: #b9bbc6;
+  --color-input: #b9bbc6;
+  --color-steel: #8b8d98;
+  --color-abyss: #000710;
+  --color-carbon: #15191e;
+  background: #fff;
+  color: #000;
+  letter-spacing: -0.01em;
+  font-feature-settings: 'calt' 0, 'liga' 0, 'ss03', 'cv01', 'cv05' 0, 'cv10', 'ss01' 0, 'zero' 0;
+}
+
+.landing-rise { animation: landing-rise 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes landing-rise { from { opacity: 0; translate: 0 18px; } to { opacity: 1; translate: 0 0; } }
+
+/* Grain: fine noise over a gradient breaks up banding. Sits above the background, below the content. */
+.landing-grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.1;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+
+/* Hero panel: white with a very soft warm glow (kept light, per the reference's white canvas), and a hairline edge. */
+.landing-hero-panel {
+  background:
+    radial-gradient(55% 50% at 88% -6%, rgb(255 154 61 / 0.22) 0%, rgb(255 154 61 / 0.08) 40%, rgb(255 154 61 / 0) 72%),
+    radial-gradient(50% 45% at 6% 10%, rgb(255 201 163 / 0.32) 0%, rgb(255 201 163 / 0.12) 40%, rgb(255 201 163 / 0) 72%),
+    radial-gradient(65% 50% at 50% 108%, rgb(255 121 0 / 0.12) 0%, rgb(255 121 0 / 0.04) 40%, rgb(255 121 0 / 0) 72%),
+    linear-gradient(180deg, #ffffff 0%, #fffaf6 100%);
+  box-shadow: inset 0 0 0 1px var(--color-line);
+}
+.landing-hero-panel.landing-grain::after { opacity: 0.05; }
+/* The active scenario's caption: re-keyed on every change, so it rises in with the new card. */
+.landing-caption { animation: landing-caption 520ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes landing-caption { from { opacity: 0; translate: 0 6px; } to { opacity: 1; translate: 0 0; } }
+
+/*
+ * Pricing: the Starter card's "glass" artwork — a glossy streak of light in the brand orange across a dark field,
+ * drawn with gradients (no image). Every layer fades to zero, so there are no visible bands.
+ */
+.pricing-glass {
+  background:
+    radial-gradient(70% 55% at 92% 4%, rgb(255 255 255 / 0.95) 0%, rgb(255 222 190 / 0.75) 10%, rgb(255 121 0 / 0.55) 26%, rgb(255 121 0 / 0) 52%),
+    linear-gradient(203deg, rgb(255 121 0 / 0) 34%, rgb(255 121 0 / 0.35) 45%, rgb(255 236 214 / 0.85) 49%, rgb(255 121 0 / 0.4) 53%, rgb(255 121 0 / 0) 64%),
+    linear-gradient(203deg, rgb(255 166 77 / 0) 52%, rgb(255 166 77 / 0.22) 60%, rgb(255 166 77 / 0) 68%),
+    radial-gradient(90% 90% at 0% 100%, rgb(255 121 0 / 0.18) 0%, rgb(255 121 0 / 0) 60%),
+    linear-gradient(180deg, #0d1118 0%, #05070d 100%);
+}
+
+/* Flat cards (no elevation shadows): a hairline that darkens on hover. */
+.landing-card { transition: border-color 0.2s ease; }
+.landing-card:hover { border-color: var(--color-line-strong); }
+
+/*
+ * Closing call to action: a warm wash behind the copy, masked so it melts into the page above and below,
+ * and 3D icon tiles floating like app icons.
+ */
+.landing-cta-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(55% 50% at 50% 50%, #fff 0%, rgb(255 255 255 / 0) 75%),
+    radial-gradient(40% 50% at 12% 50%, rgb(255 154 61 / 0.2) 0%, rgb(255 154 61 / 0) 75%),
+    radial-gradient(40% 50% at 88% 50%, rgb(255 121 0 / 0.16) 0%, rgb(255 121 0 / 0) 75%);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 22%, #000 78%, transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 22%, #000 78%, transparent 100%);
+}
+.landing-tile {
+  translate: -50% -50%;
+  rotate: var(--tilt, 0deg);
+  border-radius: 28%;
+  /* Pure white: the icon renders sit on white, so the tile and picture read as one glossy app icon. */
+  background: #fff;
+  box-shadow: 0 0 0 1px rgb(28 25 23 / 0.04), 0 1px 2px rgb(28 25 23 / 0.06), 0 18px 40px -14px rgb(107 51 0 / 0.35);
+  animation: tile-float 7s ease-in-out infinite;
+}
+@keyframes tile-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+
+/* Footer: Abyss, a half-ellipse left edge (the Watts layout), and the wordmark cropped along the bottom. */
+.landing-footer {
+  border-radius: min(15vw, 230px) 12px 12px min(15vw, 230px) / 50% 12px 12px 50%;
+  background: radial-gradient(60% 80% at 85% 110%, rgb(255 255 255 / 0.05) 0%, rgb(255 255 255 / 0) 75%), var(--color-abyss);
+}
+.landing-footer-mark {
+  position: relative;
+  margin: clamp(32px, 5vw, 64px) 0 0;
+  padding-right: clamp(16px, 3vw, 48px);
+  text-align: right;
+  font-family: var(--font-sans);
+  font-weight: 900;
+  font-size: clamp(36px, 14.5vw, 224px);
+  line-height: 0.8;
+  letter-spacing: -0.065em;
+  color: #ffffff;
+  translate: 0 0.14em;
+  user-select: none;
+}
+
+@media (max-width: 767px) {
+  .landing-footer { border-radius: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:has(.landing) { scroll-behavior: auto; }
+  .landing-caption { animation: none; }
+}

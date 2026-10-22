@@ -1,12 +1,12 @@
-export const CategoryTypeEnum = {
-  ELECTRONICS: 'ELECTRONICS',
-  OFFICE: 'OFFICE',
-  HOME_KITCHEN: 'HOME_KITCHEN',
-  APPAREL: 'APPAREL',
-  OUTDOOR: 'OUTDOOR',
-  HEALTH_BEAUTY: 'HEALTH_BEAUTY',
+export const ItemKindTypeEnum = {
+  /** Counted on a shelf */
+  STOCK: 'STOCK',
+  /** Built from components: a menu item, job kit or bundle */
+  MADE: 'MADE',
+  /** Sold but never stocked: labour, call-out fee, delivery charge */
+  SERVICE: 'SERVICE',
 } as const;
-export type CategoryTypeEnum = (typeof CategoryTypeEnum)[keyof typeof CategoryTypeEnum];
+export type ItemKindTypeEnum = (typeof ItemKindTypeEnum)[keyof typeof ItemKindTypeEnum];
 
 export const StockStatusTypeEnum = {
   IN_STOCK: 'IN_STOCK',
@@ -17,7 +17,7 @@ export type StockStatusTypeEnum = (typeof StockStatusTypeEnum)[keyof typeof Stoc
 
 export const MovementTypeEnum = {
   RECEIPT: 'RECEIPT',
-  PICK: 'PICK',
+  CONSUME: 'CONSUME',
   ADJUSTMENT: 'ADJUSTMENT',
   RELOCATION: 'RELOCATION',
 } as const;
@@ -33,6 +33,7 @@ export type AdjustModeTypeEnum = (typeof AdjustModeTypeEnum)[keyof typeof Adjust
 export const AdjustReasonTypeEnum = {
   CYCLE_COUNT: 'CYCLE_COUNT',
   DAMAGED: 'DAMAGED',
+  WASTE: 'WASTE',
   FOUND: 'FOUND',
   RETURN: 'RETURN',
   OTHER: 'OTHER',
@@ -40,15 +41,21 @@ export const AdjustReasonTypeEnum = {
 export type AdjustReasonTypeEnum = (typeof AdjustReasonTypeEnum)[keyof typeof AdjustReasonTypeEnum];
 
 export type ItemResponseType = {
+  id: string;
   sku: string;
   name: string;
-  category: CategoryTypeEnum;
+  category: string;
   unit: string;
+  kind: ItemKindTypeEnum;
   onHand: number;
   reorderLevel: number;
+  cost: number;
+  price: number;
   location: string | null;
-  /** Allocated to orders that are being picked */
+  supplierId: string | null;
+  /** Allocated to orders in a reserving stage */
   reserved: number;
+  /** Stock: on hand − reserved. Made items: how many can be made from available components. */
   available: number;
   /** Expected on deliveries that have not been received */
   incoming: number;
@@ -63,12 +70,26 @@ export type MovementResponseType = {
   delta: number;
   balance: number;
   ref: string | null;
-  userId: string;
+  accountId: string | null;
+  actorName: string | null;
   note: string;
 };
 
+export type ComponentResponseType = {
+  sku: string;
+  name: string;
+  unit: string;
+  qty: number;
+  available: number;
+};
+
 export type ItemDetailResponseType = ItemResponseType & {
+  supplierName: string | null;
+  /** What a made item is built from */
+  components: ComponentResponseType[];
+  /** Made items that use this stock item */
+  usedIn: { sku: string; name: string; qty: number }[];
   movements: MovementResponseType[];
-  openOrders: { orderId: string; customer: string; status: string; qty: number; picked: number }[];
-  incomingDeliveries: { deliveryId: string; supplier: string; expectedAt: string; expected: number }[];
+  openOrders: { number: string; customerName: string; status: string; qty: number; done: number }[];
+  incomingDeliveries: { number: string; supplierName: string; expectedAt: string; expected: number }[];
 };

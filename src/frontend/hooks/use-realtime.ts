@@ -3,10 +3,10 @@ import { useQueryClient } from '@tanstack/react-query';
 import { realtime } from '@/frontend/services/socket';
 
 /**
- * Keep every open tab in sync: the server broadcasts which resources changed
- * and each one's query keys start with that resource name.
+ * Keep every open tab in sync: the server broadcasts which resources of the current business
+ * changed, and each one's query keys start with that resource name.
  */
-export function useRealtime() {
+export const useRealtime = () => {
   const qc = useQueryClient();
   const [connected, setConnected] = useState(realtime.IsConnected());
 
@@ -15,6 +15,7 @@ export function useRealtime() {
     const offStatus = realtime.OnStatus(setConnected);
     const offData = realtime.OnDataChanged((e) => {
       e.resources.forEach((resource) => qc.invalidateQueries({ queryKey: [resource] }));
+      if (e.resources.includes('business')) qc.invalidateQueries({ queryKey: ['businesses'] });
     });
     return () => {
       offStatus();
@@ -23,4 +24,4 @@ export function useRealtime() {
   }, [qc]);
 
   return { connected };
-}
+};

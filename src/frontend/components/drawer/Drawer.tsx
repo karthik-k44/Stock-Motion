@@ -13,7 +13,7 @@ type DrawerProps = {
 };
 
 /** Right-hand side panel (full screen on phones). */
-export function Drawer({ open, title, subtitle, onClose, children, footer }: DrawerProps) {
+export const Drawer = ({ open, title, subtitle, onClose, children, footer }: DrawerProps) => {
   const ref = useOverlay<HTMLElement>(open, onClose);
   const titleId = useId();
   if (!open) return null;
@@ -35,4 +35,4 @@ export function Drawer({ open, title, subtitle, onClose, children, footer }: Dra
     </div>,
     document.body,
   );
-}
+};

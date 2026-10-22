@@ -1,18 +1,9 @@
 import { db } from '@/backend/db/client';
-import { SeedDatabase } from '@/backend/db/seed';
-import { BroadcastChange } from '@/backend/realtime/socket';
-import { ResourceTypeEnum } from '@/backend/types/dashboard';
+import { systemRepository } from './system.repository';
 
-async function Health() {
-  await db.query('SELECT 1');
+const Health = async () => {
+  await systemRepository.Ping(db);
   return { ok: true, at: new Date().toISOString() };
-}
+};
 
-/** Restore the demo data set. */
-async function Reset() {
-  await SeedDatabase({ reset: true });
-  BroadcastChange(Object.values(ResourceTypeEnum));
-  return { ok: true };
-}
-
-export const systemService = { Health, Reset };
+export const systemService = { Health };
