@@ -21,6 +21,7 @@ export const Signup = () => {
     <AuthLayout title="Create your account" subtitle="Then pick your kind of business — retail, café or trades — and you're set up in a minute.">
       <AccountForm
         mode="register"
+        initialEmail={params.get('email') ?? ''}
         submitLabel="Create account"
         busy={register.isPending}
         error={register.error}

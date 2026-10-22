@@ -40,7 +40,7 @@ const Tag = ({ short, text, tone, selected, focus, compact, label, onClick }: Ta
     aria-pressed={selected}
     onPointerDown={(e) => e.stopPropagation()}
     onClick={(e) => (e.stopPropagation(), onClick())}
-    className={Cn('iso-tag group flex -translate-x-1/2 -translate-y-full cursor-pointer flex-col items-center p-0 outline-none', focus && 'iso-tag-focus')}
+    className={Cn('iso-tag group flex -translate-x-1/2 -translate-y-full cursor-pointer flex-col items-center border-0 bg-transparent p-0 outline-none', focus && 'iso-tag-focus')}
   >
     <span
       className={Cn(
@@ -76,19 +76,28 @@ export const SceneTags = ({ prepared, objects, ctx, poses, highlighted, tab, tag
           </span>
         ))}
       {tags &&
-        prepared.hotspots.map((h) => {
+        // Lower on screen = nearer the viewer, so drawn later (on top); the selection and the open tab's tags sit
+        // above the rest, and hovering or focusing any tag lifts it so overlapping tags never block a click.
+        [...prepared.hotspots]
+          .sort((a, b) => a.tag[1] - b.tag[1])
+          .map((h) => {
           const spec = objects.find((o) => o.id === h.id);
           if (!spec) return null;
           const tag = spec.tag(ctx);
+          const layer = highlighted === h.id ? 'z-30' : spec.tabs?.includes(tab) ? 'z-20' : 'z-10';
           return (
-            <span key={`${h.id}-${tab}`} className="pointer-events-auto absolute" style={{ left: pct(h.tag[0], proj.W), top: pct(h.tag[1], proj.H), ...keep }}>
+            <span
+              key={`${h.id}-${tab}`}
+              className={Cn('pointer-events-auto absolute hover:z-40 focus-within:z-40', layer)}
+              style={{ left: pct(h.tag[0], proj.W), top: pct(h.tag[1], proj.H), ...keep }}
+            >
               <Tag
                 short={spec.short}
                 text={tag.text}
                 tone={tag.tone}
                 selected={highlighted === h.id}
                 focus={Boolean(spec.tabs?.includes(tab))}
-                compact={compact}
+                compact={compact || (!spec.tabs?.includes(tab) && highlighted !== h.id)}
                 label={`${spec.label}: ${tag.text}`}
                 onClick={() => onPick(h.id)}
               />
@@ -104,7 +113,7 @@ export const SceneTags = ({ prepared, objects, ctx, poses, highlighted, tab, tag
             <span
               key={m.key}
               ref={(el) => void (el ? tagEls.set(m.key, el) : tagEls.delete(m.key))}
-              className="pointer-events-auto absolute"
+              className="pointer-events-auto absolute z-20 hover:z-40 focus-within:z-40"
               style={{ left: pct(x, proj.W), top: pct(y, proj.H), ...keep }}
             >
               <Tag

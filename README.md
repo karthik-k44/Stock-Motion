@@ -20,11 +20,12 @@ Inventory and orders for any small business, with a live 3D world of the busines
 - **Also:** customers (with spend and order history), suppliers, storage locations, categories, CSV import with a per-row preview, and an activity log of who did what.
 - **Optimistic updates.** Stock adjustments, moves, order stage changes, receiving, and edits to items, customers and suppliers show at once. If the server refuses, the screen rolls back and a toast says why.
 - **Live everywhere.** Changes reach every open tab of the same business over socket.io.
-- **Live 3D world** (Three.js). Click any object for a frosted stats card of real numbers that animate when they change. A LIVE dot shows when the data was last updated and turns grey after 30 minutes. Shelves pulse red when stock is low.
+- **Live world.** An isometric drawing of the business made only from its own records: racks coloured bin by bin, trucks at the dock doors or on the road, orders on the packing bench, one person per team member. Every label is live; click anything (or any tracker row) for its details. The tracker tabs — deliveries, orders, stock alerts — each bring their own pins and highlights. Zoom, pan and turn the view in quarter turns.
+- **Marketing pages:** the front page at `/` (pitch, use cases, how it works), plus `/features`, `/pricing` (Starter $19, Pro $49 a month — no billing in the app yet) and `/faq`. The hero shows illustrated everyday scenarios as a stack of cards in depth. Style: `docs/design/style-reference.md`.
 
 ## Run it
 
-Requires Node 20+ (tested on Node 24).
+Requires Node 20.12+ (tested on Node 24).
 
 ```bash
 npm install
@@ -52,6 +53,8 @@ LOG_LEVEL=info              # debug | info | warn | error
 JWT_SECRET=                 # 32+ characters; required in production, random per run in development
 ACCESS_TOKEN_TTL=15m
 REFRESH_TOKEN_DAYS=30
+TRUST_PROXY=loopback        # "1" behind one load balancer (most hosts), "true", or a list of addresses
+SHUTDOWN_TIMEOUT_MS=10000   # grace period for open requests on SIGTERM
 ```
 
 - **Your local PostgreSQL:** the database is created on first start and migrations run automatically.
@@ -67,7 +70,30 @@ Sessions use a short-lived access token held in memory, plus a rotating, httpOnl
 | `npm test` | Backend integration tests (in-memory Postgres, one file at a time) |
 | `npm run lint` | ESLint: import cycles, frontend/backend boundary, hook rules |
 | `npm run typecheck` | `tsc -b --noEmit` |
+| `npm run illustrations` | Re-render the landing page's scenario illustrations into `public/landing/scenarios/` (uses your installed Chrome) |
 | `npm run db:seed` | Wipe the database and recreate the demo login (refuses in production) |
+
+## Deploy
+
+Production runs one Node process that serves the API, the realtime socket and the built frontend. Any host that runs a Docker image or Node 20.12+ works (Render, Railway, Fly.io, a VPS …).
+
+**With Docker**
+
+```bash
+docker build -t stockmotion .
+docker run -p 3000:3000   -e JWT_SECRET="$(openssl rand -hex 48)"   -e DATABASE_URL="postgres://user:pass@host:5432/stockmotion"   -e TRUST_PROXY=1   stockmotion
+```
+
+Leave `DATABASE_URL` empty to use the embedded Postgres instead, and mount a volume at `/app/.data` to keep it. The image has a health check on `/api/system/health` and stops gracefully on SIGTERM.
+
+**Without Docker:** `npm ci && npm run build && npm start` with the same environment variables (`.env.example` lists them all).
+
+Checklist:
+- Serve over **HTTPS** (the refresh cookie is `Secure` in production and HSTS is on).
+- Set a strong `JWT_SECRET` (32+ characters) — the server refuses to start without one.
+- Behind a load balancer, set `TRUST_PROXY` so rate limits see real client addresses.
+- Use a managed Postgres for anything beyond one instance; migrations run on start.
+- What production adds: a strict Content-Security-Policy and security headers (helmet), Brotli/gzip compression, year-long caching for hashed assets and `no-cache` for the app shell.
 
 ## Stock model
 
@@ -84,3 +110,7 @@ All of these are derived in one place, the `item_views` SQL view (`src/backend/d
 See `docs/STRUCTURE.md`:
 - **Backend** (`src/backend`): Express + Postgres, one folder per domain module. SQL lives only in each module's `*.repository.ts`.
 - **Frontend** (`src/frontend`): React 19 + Vite + React Query, one folder per feature, each with a single service object. Business templates live in `src/backend/modules/templates`; the frontend reads them from the API.
+
+## Credits
+
+3D icons on the landing page: [3dicons](https://github.com/realvjy/3dicons) by realvjy, CC0. Font: Inter (SIL Open Font License), self-hosted via Fontsource. Animation: [GSAP](https://gsap.com) (free under its standard license).

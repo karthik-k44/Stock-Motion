@@ -18,16 +18,16 @@ src/
 │   ├── realtime/           # socket.io server: token-authenticated, one room per business
 │   ├── tests/              # vitest integration tests (in-memory Postgres)
 │   └── types/              # backend domain types, one file per domain + index.ts barrel
-└── frontend/               # React 19 + Vite + React Query + Three.js (react-three-fiber)
+└── frontend/               # React 19 + Vite + React Query + Tailwind CSS v4 + shadcn/ui
     ├── components/          # shared UI (button/, card/, form/, modal/, drawer/, toast/, layout/, …)
     ├── config/              # paths.ts, navigation.ts (built from the template's labels), router.tsx
-    ├── features/<feature>/  # auth, onboarding, shell, businesses, world, dashboard, inventory, orders, deliveries,
+    ├── features/<feature>/  # landing, auth, onboarding, shell, businesses, world, dashboard, inventory, orders, deliveries,
     │                        # locations, customers, suppliers, team, settings, activity, system, not-found
     ├── hooks/               # cross-cutting hooks (use-realtime, use-connection, use-item-drawer, use-motion, …)
     ├── lib/                 # helpers with no domain meaning (utils.ts, form.ts, motion-preference.ts)
     ├── providers/           # query-client, AppProviders
     ├── services/            # request.ts (Get/Post… and Biz.*), api.ts, token-store.ts, session-state.ts, optimistic.ts, socket.ts
-    ├── styles/              # plain CSS, split by area (app.css: auth, onboarding, world, team, settings)
+    ├── styles/              # index.css (the one entry: Tailwind layers + theme tokens) and the legacy CSS, split by area
     ├── types/               # app-wide types (MotionPreferenceTypeEnum)
     └── utils/               # domain helpers shared across features (format.ts, humanize.ts, category.ts)
 ```
@@ -88,15 +88,33 @@ Predictions mirror the server's rules in pure helpers (`inventory/lib/stock-math
 
 There is no `ApiResponse<T>` envelope; the API returns resources directly. Errors are `{ error: { code, message, details } }` and surface as `ApiError`.
 
-## Live 3D world
+## UI: Tailwind, shadcn/ui and the theme
 
-`features/world` draws the business with react-three-fiber.
-- **Layouts:** `lib/<type>-world.ts` lists the clickable objects. Each object gives its model kind, position, optional storage zone, optional route (vehicles drive it while `moving(ctx)` is true), and its `stats(ctx)` / `alert(ctx)`.
-- **Live numbers:** `ctx` is the dashboard + locations data, so every card number is live and nothing is hard-coded.
-- **Storage models** (`components/models/StorageModels.tsx`) draw a zone's real levels × bins, with each item's carton coloured by its stock status.
-- **The stats card** is plain DOM positioned every frame by `CardTracker`, beside the object and inside the canvas.
-- **Accessibility:** `ObjectList` offers the same objects as buttons for keyboard and screen-reader users.
-- **Motion and phones:** reduced motion stops animation; phones get no shadows and a lower pixel ratio.
+- **One stylesheet entry**, `styles/index.css`. Cascade layers decide who wins: `theme` (tokens) → `base` (a reset for shadcn elements only) → `components` (the older CSS files) → `utilities` (Tailwind). So a Tailwind class always beats component CSS. Tailwind's global preflight is not loaded; `base.css` is the reset the older screens rely on.
+- **Theme**: orange (`#ff7900`, `primary-500`) and white. It carries near-black text (`primary-foreground`), never white. Orange text on white uses `primary-700`+. Status tones: `success`, `warning`, `danger`, `info` (orange), `reserved`, `incoming`, `neutral`. shadcn's semantic names (`primary`, `muted`, `ring` …) map onto the same palette. Muted *text* is `text-muted-foreground`.
+- **shadcn/ui** lives in `components/ui/` (generated, then converted to arrow functions). The app's own `Button`, `Card`, `Badge`, `Select` and `ProgressBar` wrap it and keep their old props. `npx shadcn add <name>` works, but check the result: the CLI has imported `cn` from a package called "cn" instead of `@/frontend/lib/utils`.
+- **Text**: every piece of text uses `<Text variant tone weight>` (`components/text`) instead of its own sizes. Marketing pages use the `banner` / `hero` / `section` / `feature` / `lead` variants (Inter, on the reference scale).
+- **`Cn`** merges classes with tailwind-merge, so a `className` override replaces a conflicting class.
+- **Arrow functions everywhere** (`const Foo = () => …`). ESLint enforces it (`func-style`, `prefer-arrow-callback`, no function expressions); class methods are the only exception.
+
+## Marketing pages
+
+`features/landing` holds the public pages — `Landing.tsx` (`/`), `Features.tsx` (`/features`), `Pricing.tsx` (`/pricing`) and `Faq.tsx` (`/faq`) — as children of one layout route, `MarketingLayout.tsx` (navbar, footer, scroll restoration). They follow `docs/design/style-reference.md` — the palette is scoped to `.landing` in `styles/landing.css`, so the app keeps its own.
+- **Copy and plans** live in `lib/landing-content.ts` and `lib/pricing-content.ts`; components only lay them out. Nothing there is invented: features are real, prices are the owner's, there are no fake customer logos or counts.
+- **Hero:** the pitch on the left, the scenario illustrations on the right in `components/ui/depth-carousel` (cards stacked back in 3D, eased by GSAP; drag, horizontal wheel, arrow keys, arrows and dots; follows the app's motion setting). Styles in `styles/depth-carousel.css`.
+- **Illustrations:** `scripts/illustrations/` draws each scenario with the live world's isometric kit and renders it to `public/landing/scenarios/` — `npm run illustrations`.
+- **Navbar:** shadcn NavigationMenu with a full-width mega menu; Features, Pricing and FAQ are pages, and `/#…` links (How it works, the use cases) scroll to a section of the front page from any page.
+
+## Live world
+
+`features/world` draws the business as an isometric SVG scene (no WebGL), built from records only.
+- **Data:** `ctx` holds the dashboard, locations, open orders, deliveries not yet received and every item. Nothing in the scene is invented: racks show real slots, vehicles appear only for real deliveries or orders, there is one walker per team member.
+- **Layouts:** `lib/<type>-world.ts` lists the clickable objects (label, tag, stats, alert, the tracker tabs it belongs to) and points at its scene, `lib/scenes/<type>-scene.ts`, which builds boxes from `ctx` with the kit in `lib/iso/kit.ts`.
+- **Renderer:** `lib/iso/prepare.ts` turns the scene by quarter turns, projects it (`project.ts`) and sorts boxes in painter's order; `components/IsoScene.tsx` draws it as SVG. Moving trucks and people (`lib/iso/movers.ts`) are moved every frame by transform without re-rendering the static scene.
+- **Doors:** the app does not book dock doors, so retail doors 1–3 show the next deliveries in arrival order (`DockDoors`); door 4 shows the next packed order.
+- **Inspector and tracker:** selecting an object or a record (`WorldSelectionType`) fills the inspector from `lib/inspect*.ts`; the tracker lists deliveries, open orders and stock alerts, or search results across all records.
+- **Tabs:** each tracker tab drops its own pins, lifts its objects' tags to full text and animates its rows in.
+- **Accessibility:** tags are real buttons; the inspector's overview lists every object; reduced motion stops all animation.
 
 ## Types
 

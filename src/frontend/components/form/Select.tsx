@@ -23,7 +23,7 @@ const fromUi = (v: string) => (v === EMPTY ? '' : v);
 /** The app's select: shadcn/ui's Select (Radix) behind the same `options` / `onChange(value)` API as before. */
 export const Select = ({ options, value, onChange, id, disabled, className, ...aria }: SelectProps) => (
   <UiSelect value={toUi(value)} onValueChange={(v) => onChange(fromUi(v))} disabled={disabled}>
-    <SelectTrigger id={id} className={Cn('w-full bg-surface', className)} {...aria}>
+    <SelectTrigger id={id} className={Cn('w-full bg-surface in-[.filters]:w-auto in-[.filters]:min-w-44', className)} {...aria}>
       <SelectValue />
     </SelectTrigger>
     {/* Above modals and drawers (z-index 100–150 in overlay.css) */}

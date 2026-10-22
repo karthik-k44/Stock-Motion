@@ -111,7 +111,7 @@ export const World = () => {
         {ctx ? (
           <KpiBar ref={kpiRef} kpis={BuildKpis(ctx)} currency={business.currency} animate={!reduced} />
         ) : (
-          <div className="world-kpis grid grid-cols-2 gap-3 xl:grid-cols-4" aria-hidden>
+          <div className="world-kpis grid grid-cols-2 gap-3 lg:grid-cols-4" aria-hidden>
             {[0, 1, 2, 3].map((i) => (
               <Skeleton key={i} className="h-23 rounded-2xl" />
             ))}

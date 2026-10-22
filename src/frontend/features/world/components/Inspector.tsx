@@ -21,7 +21,7 @@ const ACTION = 'inline-flex min-h-10 flex-1 items-center justify-center gap-2 ro
 const Action = ({ action }: { action: WorldActionType }) => {
   const drawer = useItemDrawer();
   const look = action.primary
-    ? Cn(ACTION, 'border border-primary-700 bg-primary-700 text-white hover:bg-primary-800')
+    ? Cn(ACTION, 'border border-primary bg-primary text-primary-foreground hover:bg-primary-600')
     : Cn(ACTION, 'border border-line-strong bg-surface text-ink hover:bg-sunken');
   if ('item' in action) {
     return (

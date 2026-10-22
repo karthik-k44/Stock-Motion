@@ -6,6 +6,16 @@ import { Cn } from '@/frontend/lib/utils';
  * so headings, labels and numbers look the same on every screen.
  */
 const VARIANTS = {
+  /** Marketing pages (docs/design/style-reference.md): display 72px, −0.03em */
+  banner: 'text-[clamp(2.5rem,6vw,4.5rem)] leading-none font-semibold tracking-[-0.03em]',
+  /** Marketing: heading-lg 48px, −0.025em */
+  hero: 'text-[clamp(2.25rem,5vw,3rem)] leading-[1.2] font-semibold tracking-[-0.025em]',
+  /** Marketing: section heading 36–48px */
+  section: 'text-[clamp(2rem,4vw,3rem)] leading-[1.2] font-semibold tracking-[-0.025em]',
+  /** Marketing: card and FAQ titles, 20px */
+  feature: 'text-xl leading-[1.4] font-semibold tracking-[-0.01em]',
+  /** Marketing: subheading 20px under headlines */
+  lead: 'text-[17px] leading-[1.5] tracking-[-0.01em] sm:text-xl sm:leading-[1.4]',
   display: 'text-[28px] leading-tight font-extrabold tracking-tight',
   title: 'text-[22px] leading-snug font-bold tracking-tight',
   heading: 'text-lg leading-snug font-bold tracking-tight',
@@ -46,6 +56,11 @@ export type TextWeight = keyof typeof WEIGHTS;
 
 /** The element each variant renders by default; `as` overrides it (an `h2` styled as a title, a `span` in a row). */
 const ELEMENTS: Record<TextVariant, ElementType> = {
+  banner: 'h1',
+  hero: 'h1',
+  section: 'h2',
+  feature: 'h3',
+  lead: 'p',
   display: 'h1',
   title: 'h1',
   heading: 'h2',

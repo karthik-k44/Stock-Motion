@@ -28,7 +28,7 @@
   --reserved: #6250d6;
   --reserved-ink: var(--color-reserved);
   --reserved-bg: var(--color-reserved-bg);
-  --incoming: #0e7fa6;
+  --incoming: var(--color-primary-600);
   --incoming-ink: var(--color-incoming);
   --incoming-bg: var(--color-incoming-bg);
   --info-bg: var(--color-primary-50);

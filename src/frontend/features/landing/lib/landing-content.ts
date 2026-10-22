@@ -1,0 +1,81 @@
+import { Activity, Boxes, Building2, Coffee, FileSpreadsheet, RadioTower, Store, Truck, Users, Workflow, Wrench, Zap, type LucideIcon } from 'lucide-react';
+
+/** Every word on the landing page. Only what the product really does — nothing here is a placeholder. */
+
+export type UseCaseType = { id: string; icon: LucideIcon; title: string; text: string };
+export type FeatureType = { icon: LucideIcon; title: string; text: string };
+export type StepType = { title: string; text: string };
+export type FaqType = { q: string; a: string };
+
+export const USE_CASES: UseCaseType[] = [
+  { id: 'retail', icon: Store, title: 'For Retail & E-commerce', text: 'Aisles, bins and pick lists. Orders picked, packed and shipped on time.' },
+  { id: 'cafes', icon: Coffee, title: 'For Cafés & Restaurants', text: 'Recipes that use up ingredients, tickets from counter to served.' },
+  { id: 'trades', icon: Wrench, title: 'For Trades & Field Service', text: 'Depot, vans and job sites. Materials logged against every job.' },
+  { id: 'owners', icon: Building2, title: 'For Multi-business Owners', text: 'Run every business from one login, each in its own words.' },
+  { id: 'teams', icon: Users, title: 'For Growing Teams', text: 'Invite staff with a role and see who did what, and when.' },
+  { id: 'operations', icon: Activity, title: 'For Operations Leads', text: 'One live view of stock, orders and deliveries as they happen.' },
+];
+
+/** Features, pricing and FAQ are pages; `/#…` links scroll to a section of the front page from anywhere. */
+export const NAV_LINKS = [
+  { label: 'Features', href: '/features' },
+  { label: 'How it works', href: '/#how-it-works' },
+  { label: 'Pricing', href: '/pricing' },
+  { label: 'FAQ', href: '/faq' },
+];
+
+export const FEATURES: FeatureType[] = [
+  { icon: Boxes, title: 'A live world of your business', text: 'Every shelf, truck and ticket is drawn from your own records and moves as your team works.' },
+  { icon: RadioTower, title: 'Everyone in sync', text: 'Changes reach every open screen of your business the moment they happen. No refresh button.' },
+  { icon: Zap, title: 'Instant, and honest about it', text: 'Stock moves and order steps show at once. If the server says no, the screen rolls back and tells you why.' },
+  { icon: Workflow, title: 'Orders that follow your flow', text: 'New → Picking → Packed → Shipped, or Quoted → Scheduled → Done. Stock is reserved and used at the right step.' },
+  { icon: Truck, title: 'Deliveries and reordering', text: 'Book incoming stock, or reorder everything that is running low in one go, grouped by supplier.' },
+  { icon: FileSpreadsheet, title: 'Import and a full history', text: 'Bring your catalogue in from a CSV with a row-by-row preview. Every change is logged with who made it.' },
+];
+
+export const STEPS: StepType[] = [
+  { title: 'Pick your kind of business', text: 'Retail, café or trades. StockMotion takes on your words, your order flow and your storage — aisles, fridges or vans.' },
+  { title: 'Add what you stock', text: 'Import a spreadsheet or add items by hand, and give each one a home on a shelf, in a fridge or in a van.' },
+  { title: 'Run the day', text: 'Take orders, receive deliveries and invite your team. Watch it all move in the live world.' },
+];
+
+export const FAQS: FaqType[] = [
+  {
+    q: 'Which businesses is StockMotion built for?',
+    a: 'Retail and e-commerce warehouses, cafés and restaurants, and trades or field-service teams. Each gets its own vocabulary, order flow, storage layout and live world.',
+  },
+  { q: 'Can I run more than one business?', a: 'Yes. One account can own or join several businesses and switch between them in a click. Each business keeps its own stock, team and settings.' },
+  { q: 'How do I bring my existing stock in?', a: 'Upload a CSV. You see a preview of every row — what will be created, updated or rejected and why — before anything is saved.' },
+  { q: 'Does my team see changes live?', a: 'Yes. When someone picks an order, receives a delivery or adjusts stock, every open screen of that business updates straight away.' },
+  { q: 'What do my staff get access to?', a: 'Owners invite staff with a one-time link and a role from your business type — picker, barista, technician and so on. Managers run the catalogue and settings; everyone works orders and stock.' },
+  { q: 'Do I need to install anything?', a: 'No. StockMotion runs in the browser on desktops, tablets and phones.' },
+];
+
+export type FooterColumnType = { title: string; links: { label: string; href: string }[] };
+
+export const FOOTER_COLUMNS: FooterColumnType[] = [
+  {
+    title: 'Product',
+    links: [
+      { label: 'Features', href: '/features' },
+      { label: 'How it works', href: '/#how-it-works' },
+      { label: 'Pricing', href: '/pricing' },
+      { label: 'FAQ', href: '/faq' },
+    ],
+  },
+  { title: 'Built for', links: USE_CASES.slice(0, 4).map((u) => ({ label: u.title.replace(/^For /, ''), href: `/#${u.id}` })) },
+];
+
+/** Illustrated moments (scripts/illustrations), each an everyday problem StockMotion handles: the hero's carousel and the features page. */
+export type ScenarioType = { image: string; area: string; title: string; text: string; alt: string };
+
+export const SCENARIOS: ScenarioType[] = [
+  { image: 'shortages', area: 'Stock alerts', title: 'Shortages caught before a sale is lost', text: 'Items that drop below their reorder point are flagged the moment it happens, and everything running low can be reordered in one go, grouped by supplier.', alt: 'Illustration: a warehouse aisle with an empty bin pinned in red and a notice that a reorder has been booked.' },
+  { image: 'dock', area: 'Deliveries', title: 'Every truck tracked to its dock door', text: 'Incoming deliveries line up at the dock doors in the order they are due — scheduled, in transit or arrived — so the team knows what is next.', alt: 'Illustration: a truck backed into door 1 while the next delivery is on the road, each labelled with its status.' },
+  { image: 'cafe', area: 'Cafés', title: 'Tickets and ingredients kept in step', text: 'Tickets move from the counter to served, and the ingredients their recipes use come off the fridge and pantry counts as they go.', alt: 'Illustration: a café counter preparing a ticket, a fridge flagged low on oat milk, and a served-ticket notice.' },
+  { image: 'trades', area: 'Trades', title: 'Materials on the van, jobs on the map', text: 'The depot, every van and every job site sit on one map, and the materials used are logged against the job they went to.', alt: 'Illustration: a van parked at a job site under scaffolding, a second van on the road, and materials logged to the job.' },
+  { image: 'picking', area: 'Orders', title: 'Pick, pack and ship without paper', text: 'Orders step through your own flow, from new to shipped, with stock reserved when it is picked and used when it leaves.', alt: 'Illustration: a packer at the bench with one order being picked and another packed and ready to ship.' },
+  { image: 'history', area: 'History', title: 'Every stock change — who and why', text: 'Every count, move and adjustment is written to the history with who made it and when — nothing changes without a trace.', alt: 'Illustration: a shelf count being updated beside a history panel listing each change, who made it and when.' },
+  { image: 'receiving', area: 'Receiving', title: 'Deliveries counted in, line by line', text: 'Deliveries are counted in line by line. Anything short or over is noted, and what arrived goes straight onto the shelf.', alt: 'Illustration: pallets counted in at the dock door from a delivery truck, with a delivery-received notice.' },
+  { image: 'today', area: 'Dashboard', title: 'Today’s numbers at a glance', text: 'The dashboard sums up the day: orders and revenue, what is low or out, and the deliveries on their way.', alt: 'Illustration: a warehouse with an order shipping, beside a panel of today’s revenue, orders, low stock and arrivals.' },
+];

@@ -40,7 +40,7 @@ const ToolButton = ({ icon, label, pressed, onClick }: { icon: IconName; label: 
 
 /** Camera buttons for people who don't drag: zoom, turn, back to the whole view, labels on or off. */
 export const CameraToolbar = ({ onCommand, tags, onToggleTags, ref }: Props) => (
-  <div ref={ref} role="toolbar" aria-label="Camera" className="world-tools flex gap-0.5 rounded-2xl border border-line bg-surface p-1.5 shadow-card xl:flex-col">
+  <div ref={ref} role="toolbar" aria-label="Camera" className="world-tools flex gap-0.5 rounded-2xl border border-line bg-surface p-1.5 shadow-card min-[1440px]:flex-col">
     {MOVES.map((m) => (
       <ToolButton key={m.command} icon={m.icon} label={m.label} onClick={() => onCommand(m.command)} />
     ))}

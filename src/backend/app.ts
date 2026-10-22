@@ -1,9 +1,12 @@
+import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import express, { type Express } from 'express';
+import { env } from './config/env';
 import { RequireAuth } from './middleware/auth.middleware';
 import { ErrorHandler } from './middleware/error.middleware';
 import { NotFoundHandler } from './middleware/not-found.middleware';
 import { RateLimitWrites } from './middleware/rate-limit.middleware';
+import { SecurityHeaders } from './middleware/security.middleware';
 import { activityRoutes } from './modules/activity/rest-api/activity.routes';
 import { authRoutes } from './modules/auth/rest-api/auth.routes';
 import { RequireBusinessRole } from './modules/businesses/rest-api/businesses.middleware';
@@ -25,7 +28,9 @@ import { templatesRoutes } from './modules/templates/rest-api/templates.routes';
 export const CreateApp = (): Express => {
   const app = express();
   app.disable('x-powered-by');
-  app.set('trust proxy', 'loopback');
+  app.set('trust proxy', env.TRUST_PROXY);
+  app.use(SecurityHeaders());
+  app.use(compression());
   app.use(express.json({ limit: '2mb' }));
   app.use(cookieParser());
 

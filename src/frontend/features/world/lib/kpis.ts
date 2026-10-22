@@ -1,6 +1,16 @@
 import { CANCELLED_STATUS } from '@/frontend/features/orders/types';
-import { DayLabel, FormatMoney, FormatTime } from '@/frontend/utils/format';
+import type { DeliveryResponseType } from '@/frontend/features/deliveries/types';
+import { DayLabel, FormatDateTime, FormatMoney, FormatTime, IsPast } from '@/frontend/utils/format';
 import type { WorldContextType, WorldKpiType } from '../types';
+
+/** "on the way", "late", "today 2:30 PM", "tomorrow 9:00 AM" or "Oct 24, 11:00 AM". */
+const NextWhen = (d: DeliveryResponseType): string => {
+  if (d.status === 'IN_TRANSIT') return 'on the way';
+  if (d.status === 'ARRIVED') return 'at the dock';
+  if (IsPast(d.expectedAt)) return 'late';
+  const day = DayLabel(d.expectedAt);
+  return day === 'Today' || day === 'Tomorrow' ? `${day.toLowerCase()} ${FormatTime(d.expectedAt)}` : FormatDateTime(d.expectedAt);
+};
 
 /** The four numbers above the scene, worded in the business's own vocabulary. */
 export const BuildKpis = (ctx: WorldContextType): WorldKpiType[] => {
@@ -52,8 +62,8 @@ export const BuildKpis = (ctx: WorldContextType): WorldKpiType[] => {
       format: 'number',
       icon: 'truck',
       tone: 'info',
-      chip: ctx.deliveries.length ? { text: `${ctx.deliveries.length} ${labels.deliveries.toLowerCase()}`, tone: 'info' } : null,
-      sub: next ? `Next: ${next.number} · ${DayLabel(next.expectedAt).toLowerCase()} ${FormatTime(next.expectedAt)}` : `No ${labels.deliveries.toLowerCase()} booked`,
+      chip: ctx.deliveries.length ? { text: `${ctx.deliveries.length} booked`, tone: 'info' } : null,
+      sub: next ? `Next: ${next.number} · ${NextWhen(next)}` : `No ${labels.deliveries.toLowerCase()} booked`,
     },
   ];
 };

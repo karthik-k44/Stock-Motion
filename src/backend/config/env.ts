@@ -22,6 +22,17 @@ const EnvSchema = z
     JWT_SECRET: z.preprocess(emptyToUndefined, z.string().min(32, 'JWT_SECRET must be at least 32 characters').optional()),
     ACCESS_TOKEN_TTL: z.string().default('15m'),
     REFRESH_TOKEN_DAYS: z.coerce.number().int().positive().default(30),
+    /**
+     * Which proxies to trust for the client's IP and protocol (Express "trust proxy"): a hop count ("1" behind one
+     * load balancer, as on most hosts), "true", or a list such as "loopback, 10.0.0.0/8". Rate limits and secure
+     * cookies depend on it being right.
+     */
+    TRUST_PROXY: z
+      .string()
+      .default('loopback')
+      .transform((v): boolean | number | string => (v === 'true' ? true : v === 'false' ? false : /^\d+$/.test(v) ? Number(v) : v)),
+    /** How long open requests and sockets get to finish when the host stops the server */
+    SHUTDOWN_TIMEOUT_MS: z.coerce.number().int().positive().default(10_000),
   })
   .superRefine((v, ctx) => {
     if (v.NODE_ENV === 'production' && !v.JWT_SECRET) {

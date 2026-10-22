@@ -1,7 +1,9 @@
 /*
- * Live world layout. Below 1280px everything stacks: numbers, camera buttons, scene, details, tracker.
- * From 1280px the scene fills the screen and the panels float over it; the camera is centred in the
- * part they leave free (see useCoveredInsets + CameraRig). Panel looks are Tailwind classes in the components.
+ * Live world layout, by window width:
+ *   < 1024   everything stacks: numbers, camera buttons, scene, details, tracker
+ *   1024–1439 a grid: numbers on top, scene with the details beside it, tracker below
+ *   ≥ 1440   the scene fills the screen and the panels float over it; the scene is fitted into the part
+ *            they leave free (useCoveredInsets + IsoScene). Panel looks are Tailwind classes in the components.
  */
 .page-world { padding: 0; max-width: none; gap: 0; }
 
@@ -39,7 +41,21 @@
 
 .world-tools { align-self: flex-start; }
 
-@media (min-width: 1280px) {
+@media (min-width: 1024px) and (max-width: 1439px) {
+  .world-stage {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    grid-template-areas: 'kpis kpis' 'tools inspector' 'scene inspector' 'tracker tracker';
+    align-items: start;
+  }
+  .world-kpis { grid-area: kpis; }
+  .world-tools { grid-area: tools; }
+  .world-scene { grid-area: scene; height: min(64dvh, 560px); }
+  .world-inspector { grid-area: inspector; align-self: stretch; max-height: calc(min(64dvh, 560px) + 64px); overflow-y: auto; }
+  .world-tracker { grid-area: tracker; }
+}
+
+@media (min-width: 1440px) {
   .world-stage { height: calc(100dvh - var(--topbar-h)); min-height: 760px; padding: 0; }
   .world-scene { position: absolute; inset: 0; height: auto; border: 0; border-radius: 0; }
   .world-kpis,

@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate } from 'react-router';
+import { createBrowserRouter } from 'react-router';
 import { NotFound, RouteError } from '@/frontend/features/not-found/NotFound';
 import { Shell } from '@/frontend/features/shell/Shell';
 import { paths } from './paths';
@@ -18,13 +18,22 @@ export const router = createBrowserRouter([
     errorElement: <RouteError />,
     lazy: async () => ({ Component: (await import('@/frontend/features/onboarding/Onboarding')).Onboarding }),
   },
-  // Signed in, inside a business.
+  // The public marketing pages, under one layout (the navbar and footer stay mounted between them).
   {
-    path: paths.home,
+    errorElement: <RouteError />,
+    lazy: async () => ({ Component: (await import('@/frontend/features/landing/MarketingLayout')).MarketingLayout }),
+    children: [
+      { index: true, lazy: async () => ({ Component: (await import('@/frontend/features/landing/Landing')).Landing }) },
+      { path: 'features', lazy: async () => ({ Component: (await import('@/frontend/features/landing/Features')).Features }) },
+      { path: 'pricing', lazy: async () => ({ Component: (await import('@/frontend/features/landing/Pricing')).Pricing }) },
+      { path: 'faq', lazy: async () => ({ Component: (await import('@/frontend/features/landing/Faq')).Faq }) },
+    ],
+  },
+  // Signed in, inside a business (a layout route: its pages keep their own paths).
+  {
     element: <Shell />,
     errorElement: <RouteError />,
     children: [
-      { index: true, element: <Navigate to={paths.world} replace /> },
       { path: 'world', lazy: async () => ({ Component: (await import('@/frontend/features/world/World')).World }) },
       { path: 'dashboard', lazy: async () => ({ Component: (await import('@/frontend/features/dashboard/Dashboard')).Dashboard }) },
       { path: 'inventory', lazy: async () => ({ Component: (await import('@/frontend/features/inventory/Inventory')).Inventory }) },

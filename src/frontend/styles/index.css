@@ -21,6 +21,8 @@
 @import './pages.css' layer(components);
 @import './app.css' layer(components);
 @import './world.css' layer(components);
+@import './landing.css' layer(components);
+@import './depth-carousel.css' layer(components);
 
 /*
  * Orange and white. Brand orange is #ff7900; it carries near-black text (6.5:1), never white (2.6:1).
@@ -59,10 +61,15 @@
   /* "In progress / on the way": the brand orange, never blue */
   --color-info: var(--color-primary-700);
   --color-info-bg: var(--color-primary-50);
-  --color-incoming: #0b6283;
-  --color-incoming-bg: #e3f3f9;
+  /* "On its way" stays in the orange family: deeper and calmer than the primary */
+  --color-incoming: var(--color-primary-800);
+  --color-incoming-bg: var(--color-primary-50);
   --color-reserved: #4b3bb3;
   --color-reserved-bg: #eeebfb;
+  /* Marketing pages: dark frames and muted chrome (docs/design/style-reference.md) */
+  --color-abyss: #000710;
+  --color-carbon: #15191e;
+  --color-steel: #8b8d98;
   --color-neutral: #57534e;
   --color-neutral-bg: #f1eeeb;
 
@@ -111,6 +118,10 @@
   [data-slot] svg {
     display: block;
     flex-shrink: 0;
+  }
+  a[data-slot],
+  [data-slot] a {
+    text-decoration: none;
   }
   [data-slot='card-title'],
   [data-slot='card-description'] {

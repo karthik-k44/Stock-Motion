@@ -3,7 +3,13 @@ export const paths = {
   signup: '/signup',
   invite: (token: string) => `/invite/${token}`,
   onboarding: '/onboarding',
-  home: '/',
+  /** The public front page */
+  landing: '/',
+  features: '/features',
+  pricing: '/pricing',
+  faq: '/faq',
+  /** Where the signed-in app starts */
+  home: '/world',
   world: '/world',
   dashboard: '/dashboard',
   inventory: '/inventory',

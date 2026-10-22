@@ -5,13 +5,15 @@ import { FieldErrors } from '@/frontend/lib/form';
 import type { ApiError } from '@/frontend/services/api-error';
 import { LoginSchema, RegisterSchema, type LoginInput, type RegisterInput } from '../types';
 
-type Props =
+/** `initialEmail` pre-fills the email (sign-up started from the landing page footer). */
+type Props = { initialEmail?: string } & (
   | { mode: 'login'; submitLabel: string; busy: boolean; error: ApiError | null; onSubmit: (input: LoginInput) => void }
-  | { mode: 'register'; submitLabel: string; busy: boolean; error: ApiError | null; onSubmit: (input: RegisterInput) => void };
+  | { mode: 'register'; submitLabel: string; busy: boolean; error: ApiError | null; onSubmit: (input: RegisterInput) => void }
+);
 
 /** Email + password (and name when signing up), validated before it is sent. */
 export const AccountForm = (props: Props) => {
-  const [values, setValues] = useState({ name: '', email: '', password: '' });
+  const [values, setValues] = useState({ name: '', email: props.initialEmail ?? '', password: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const set = (key: keyof typeof values) => (e: React.ChangeEvent<HTMLInputElement>) => setValues((v) => ({ ...v, [key]: e.target.value }));
   const serverErrors: Record<string, string> = props.error ? { form: props.error.message, ...props.error.fieldErrors() } : {};
