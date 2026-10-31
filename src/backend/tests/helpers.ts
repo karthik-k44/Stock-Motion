@@ -1,19 +1,23 @@
 import request from 'supertest';
 import { CreateApp } from '@/backend/app';
-import { ConnectDb, db } from '@/backend/db/client';
+import { ConnectDb, WipeDatabase } from '@/backend/db/client';
 import { RunMigrations } from '@/backend/db/migrate';
-import { ALL_TABLES } from '@/backend/db/schema';
 import type { BusinessTypeEnum } from '@/backend/types/template';
 
-/** In-memory Postgres (PGlite), migrated once per test file. */
+/**
+ * In-memory Postgres (PGlite), migrated once per test file. Set TEST_DATABASE_URL to run the suite against a real
+ * PostgreSQL server instead (created if missing) — every table in it is emptied, so its name must contain "test".
+ */
 export const SetupDatabase = async () => {
-  await ConnectDb({});
+  const url = process.env.TEST_DATABASE_URL || undefined;
+  if (url && !/test/i.test(new URL(url).pathname)) {
+    throw new Error('TEST_DATABASE_URL must point at a database with "test" in its name — the tests wipe it');
+  }
+  await ConnectDb({ url });
   await RunMigrations();
 };
 
-export const ResetDatabase = async () => {
-  await db.exec(`TRUNCATE ${ALL_TABLES.join(', ')} RESTART IDENTITY CASCADE`);
-};
+export const ResetDatabase = () => WipeDatabase();
 
 export const app = CreateApp();
 

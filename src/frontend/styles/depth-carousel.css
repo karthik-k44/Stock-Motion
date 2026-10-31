@@ -57,8 +57,8 @@
 .depth-carousel__arrow:hover { background: rgb(255 255 255 / 0.2); }
 .depth-carousel__arrow:active { scale: 0.94; }
 .depth-carousel__arrow:focus-visible { outline: 2px solid var(--color-ring); outline-offset: 2px; }
-.depth-carousel__arrow--prev { left: 16px; }
-.depth-carousel__arrow--next { right: 16px; }
+.depth-carousel__arrow--prev { left: var(--dc-arrow-inset, 16px); }
+.depth-carousel__arrow--next { right: var(--dc-arrow-inset, 16px); }
 
 .depth-carousel__dots {
   position: absolute;

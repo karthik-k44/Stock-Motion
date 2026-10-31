@@ -44,16 +44,23 @@ html:has(.landing) { scroll-behavior: smooth; }
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
 }
 
-/* Hero panel: white with a very soft warm glow (kept light, per the reference's white canvas), and a hairline edge. */
+/*
+ * Hero: a full-width band. Its top edge is pure white (the navbar above is white) and its bottom edge is exactly the
+ * use-cases band's Fog, so it joins both without a seam. Every glow is fully transparent before it reaches either edge,
+ * and the grain fades out near both edges too.
+ */
 .landing-hero-panel {
   background:
-    radial-gradient(55% 50% at 88% -6%, rgb(255 154 61 / 0.22) 0%, rgb(255 154 61 / 0.08) 40%, rgb(255 154 61 / 0) 72%),
-    radial-gradient(50% 45% at 6% 10%, rgb(255 201 163 / 0.32) 0%, rgb(255 201 163 / 0.12) 40%, rgb(255 201 163 / 0) 72%),
-    radial-gradient(65% 50% at 50% 108%, rgb(255 121 0 / 0.12) 0%, rgb(255 121 0 / 0.04) 40%, rgb(255 121 0 / 0) 72%),
-    linear-gradient(180deg, #ffffff 0%, #fffaf6 100%);
-  box-shadow: inset 0 0 0 1px var(--color-line);
+    radial-gradient(45% 55% at 90% 45%, rgb(255 154 61 / 0.2) 0%, rgb(255 154 61 / 0.07) 45%, rgb(255 154 61 / 0) 75%),
+    radial-gradient(40% 55% at 8% 45%, rgb(255 201 163 / 0.3) 0%, rgb(255 201 163 / 0.1) 45%, rgb(255 201 163 / 0) 75%),
+    radial-gradient(55% 35% at 50% 72%, rgb(255 121 0 / 0.08) 0%, rgb(255 121 0 / 0.03) 45%, rgb(255 121 0 / 0) 75%),
+    linear-gradient(180deg, #ffffff 0%, #fffaf6 55%, var(--color-sunken) 100%);
 }
-.landing-hero-panel.landing-grain::after { opacity: 0.05; }
+.landing-hero-panel.landing-grain::after {
+  opacity: 0.05;
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 15%, #000 75%, transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 15%, #000 75%, transparent 100%);
+}
 /* The active scenario's caption: re-keyed on every change, so it rises in with the new card. */
 .landing-caption { animation: landing-caption 520ms cubic-bezier(0.22, 1, 0.36, 1) both; }
 @keyframes landing-caption { from { opacity: 0; translate: 0 6px; } to { opacity: 1; translate: 0 0; } }

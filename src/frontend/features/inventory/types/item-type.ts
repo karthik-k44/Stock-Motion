@@ -85,6 +85,8 @@ export const AdjustStockSchema = z
     qty: z.number({ required_error: 'Enter a quantity', invalid_type_error: 'Enter a quantity' }).int('Use a whole number').min(0, 'Quantity cannot be negative').max(10_000_000, 'That is too many'),
     reason: z.nativeEnum(AdjustReasonTypeEnum),
     note: z.string().trim().max(200, 'Keep the note under 200 characters'),
+    /** Sent with a count, so a count taken against stale numbers is refused instead of overwriting newer stock */
+    expectedOnHand: z.number().int().min(0).optional(),
   })
   .superRefine((v, ctx) => {
     if (v.mode !== AdjustModeTypeEnum.SET && v.qty < 1) ctx.addIssue({ code: 'custom', path: ['qty'], message: 'Enter at least 1' });

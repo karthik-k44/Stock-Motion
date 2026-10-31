@@ -1,6 +1,7 @@
+-- The schema TypeORM started from (run by migrations/1792368000000-initial-schema.ts).
 -- Multi-business: accounts sign up, create businesses from a template (retail, café, trades)
--- and every operational row is scoped to a business. The single-tenant demo tables from
--- 001_init.sql only ever held seed data, so they are replaced rather than migrated.
+-- and every operational row is scoped to a business. The DROPs clear the single-tenant demo
+-- tables of the very first version, which only ever held seed data.
 
 DROP VIEW IF EXISTS item_views;
 DROP TABLE IF EXISTS activity, movements, delivery_lines, deliveries, order_lines, orders, items, locations, users CASCADE;

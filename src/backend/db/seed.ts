@@ -3,8 +3,8 @@ import { logger } from '@/backend/config/logger';
 import { authService } from '@/backend/modules/auth/auth.service';
 import { businessesService } from '@/backend/modules/businesses/businesses.service';
 import { BusinessTypeEnum } from '@/backend/types/template';
-import { db } from './client';
-import { ALL_TABLES } from './schema';
+import { db, WipeDatabase } from './client';
+import { AccountEntity } from './entities';
 
 /** Local demo login, created only in development. Listed in README.md. */
 export const DEMO_ACCOUNT = { name: 'Demo Owner', email: 'demo@stockmotion.local', password: 'stockmotion-demo' };
@@ -15,17 +15,14 @@ const DEMO_BUSINESSES = [
   { name: 'Brightwire Trades', type: BusinessTypeEnum.TRADES, currency: 'USD' },
 ];
 
-const isEmpty = async (): Promise<boolean> => {
-  const { rows } = await db.query<{ n: number }>('SELECT COUNT(*)::int AS n FROM accounts');
-  return rows[0].n === 0;
-};
+const isEmpty = async (): Promise<boolean> => !(await db.getRepository(AccountEntity).exists());
 
 /**
  * Create the demo account with one sample business per template. With `reset`, every row in the
  * database is wiped first; otherwise it only runs on an empty database.
  */
 export const SeedDatabase = async (opts: { reset?: boolean } = {}): Promise<boolean> => {
-  if (opts.reset) await db.exec(`TRUNCATE ${ALL_TABLES.join(', ')} RESTART IDENTITY CASCADE`);
+  if (opts.reset) await WipeDatabase();
   else if (!(await isEmpty())) return false;
   const { account } = await authService.Register(DEMO_ACCOUNT);
   for (const b of DEMO_BUSINESSES) await businessesService.Create(account, { ...b, sampleData: true });
@@ -40,10 +37,10 @@ if (isMain) {
     logger.error('Refusing to seed a production database with a known demo password');
     process.exit(1);
   }
-  const { ConnectDb } = await import('./client');
+  const { CloseDb, ConnectDb } = await import('./client');
   const { RunMigrations } = await import('./migrate');
   await ConnectDb({ url: env.DATABASE_URL, dataDir: env.PGLITE_DIR });
   await RunMigrations();
   await SeedDatabase({ reset: true });
-  await db.close();
+  await CloseDb();
 }

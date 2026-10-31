@@ -23,13 +23,15 @@ export const AdjustStockModal = ({ item, onClose }: Props) => {
   const [note, setNote] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [reviewing, setReviewing] = useState(false);
+  // What was on hand when the count started: a count is absolute, so the server refuses it if stock moved since.
+  const [countedFrom] = useState(item.onHand);
   const adjust = inventoryService.useAdjustStockMutation();
   const qtyNum = ToNumber(qty);
   const next = Number.isFinite(qtyNum) ? NextOnHand(item.onHand, mode, qtyNum) : item.onHand;
   const u = (n: number) => FormatQty(n, item.unit);
 
   const validate = () => {
-    const parsed = AdjustStockSchema.safeParse({ mode, qty: qtyNum, reason, note });
+    const parsed = AdjustStockSchema.safeParse({ mode, qty: qtyNum, reason, note, expectedOnHand: mode === AdjustModeTypeEnum.SET ? countedFrom : undefined });
     const errs = parsed.success ? {} : FieldErrors(parsed.error);
     if (parsed.success && next < 0) errs.qty = `Only ${u(item.onHand)} on hand`;
     else if (parsed.success && next < item.reserved) errs.qty = `${u(item.reserved)} are reserved — on hand can’t go below that`;

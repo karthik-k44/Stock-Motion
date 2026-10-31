@@ -1,11 +1,11 @@
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { db } from '@/backend/db/client';
+import { CloseDb } from '@/backend/db/client';
 import { app, RefreshCookie, ResetDatabase, SetupDatabase, SignUp } from './helpers';
 
 beforeAll(SetupDatabase);
 beforeEach(ResetDatabase);
-afterAll(() => db.close());
+afterAll(CloseDb);
 
 describe('accounts and sessions', () => {
   it('signs up with an httpOnly refresh cookie and an access token', async () => {

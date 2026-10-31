@@ -1,4 +1,4 @@
-import { BadRequest, Conflict, NotFound } from '@/backend/common/errors';
+import { BadRequest, Conflict, Forbidden, NotFound } from '@/backend/common/errors';
 import { RecordActivity, RecordMovement } from '@/backend/common/services/audit';
 import { Plural } from '@/backend/common/utils/format';
 import { db, type Queryable } from '@/backend/db/client';
@@ -7,7 +7,7 @@ import { itemsRepository } from '@/backend/modules/items/items.repository';
 import { suppliersRepository } from '@/backend/modules/suppliers/suppliers.repository';
 import { BroadcastChange } from '@/backend/realtime/socket';
 import { ActivityKindTypeEnum, ActivityRefTypeEnum, type ActivityResponseType } from '@/backend/types/activity';
-import type { ScopeType } from '@/backend/types/business';
+import { IsManagementRole, type ScopeType } from '@/backend/types/business';
 import { ResourceTypeEnum } from '@/backend/types/dashboard';
 import { DeliveryStatusTypeEnum, type DeliveryResponseType } from '@/backend/types/delivery';
 import { ItemKindTypeEnum, MovementTypeEnum, StockStatusTypeEnum } from '@/backend/types/item';
@@ -156,6 +156,11 @@ const Receive = async (scope: ScopeType, number: string, input: ReceiveDeliveryI
     if (unknown.length) throw BadRequest(`${unknown.join(', ')} ${unknown.length === 1 ? 'is' : 'are'} not on ${number}`);
 
     const lineRows = await deliveriesRepository.ListLines(tx, [row.id]);
+    // Receiving more than was ordered creates stock out of nothing, so it takes a manager.
+    const over = lineRows.filter((l) => (counted.get(l.sku) ?? l.expected) > l.expected);
+    if (over.length && !IsManagementRole(scope.actor.role)) {
+      throw Forbidden(`Only a manager can receive more than expected — ${over.map((l) => l.sku).join(', ')} ${over.length === 1 ? 'was' : 'were'} counted over`);
+    }
     await itemsRepository.LockItemsByIds(tx, lineRows.map((l) => l.item_id));
     let total = 0;
     let discrepancies = 0;

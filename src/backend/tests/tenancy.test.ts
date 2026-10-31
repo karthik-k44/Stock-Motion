@@ -3,14 +3,14 @@ import type { AddressInfo } from 'node:net';
 import { io as connect, type Socket } from 'socket.io-client';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { db } from '@/backend/db/client';
+import { CloseDb } from '@/backend/db/client';
 import { AttachRealtime, CloseRealtime } from '@/backend/realtime/socket';
 import { BusinessTypeEnum } from '@/backend/types/template';
 import { app, Client, CreateBusiness, OwnerWithBusiness, ResetDatabase, SetupDatabase, SignUp } from './helpers';
 
 beforeAll(SetupDatabase);
 beforeEach(ResetDatabase);
-afterAll(() => db.close());
+afterAll(CloseDb);
 
 describe('business isolation', () => {
   it('lists only my businesses and hides other businesses entirely', async () => {

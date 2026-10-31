@@ -5,7 +5,7 @@ import express from 'express';
 import { CreateApp } from './app';
 import { env } from './config/env';
 import { logger } from './config/logger';
-import { ConnectDb, db } from './db/client';
+import { CloseDb, ConnectDb } from './db/client';
 import { RunMigrations } from './db/migrate';
 import { SeedDatabase } from './db/seed';
 import { AttachRealtime, CloseRealtime } from './realtime/socket';
@@ -62,7 +62,7 @@ const main = async () => {
     }, env.SHUTDOWN_TIMEOUT_MS).unref();
     await CloseRealtime();
     await new Promise<void>((resolve) => server.close(() => resolve()));
-    await db.close();
+    await CloseDb();
     process.exit(0);
   };
   process.on('SIGINT', () => void shutdown('SIGINT'));

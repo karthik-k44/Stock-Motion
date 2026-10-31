@@ -9,6 +9,7 @@
     "start": "cross-env NODE_ENV=production tsx --tsconfig tsconfig.node.json src/backend/server.ts",
     "db:migrate": "tsx --tsconfig tsconfig.node.json src/backend/db/migrate.ts",
     "db:seed": "tsx --tsconfig tsconfig.node.json src/backend/db/seed.ts",
+    "db:migration:create": "tsx scripts/new-migration.ts",
     "lint": "eslint src",
     "test": "vitest run",
     "typecheck": "tsc -b --noEmit",
@@ -38,6 +39,7 @@
     "socket.io-client": "^4.8.4",
     "tailwind-merge": "^3.7.0",
     "tsx": "^4.23.15",
+    "typeorm": "^1.1.2",
     "zod": "^3.25.76"
   },
   "devDependencies": {
@@ -68,6 +70,6 @@
     "vitest": "^3.2.7"
   },
   "engines": {
-    "node": ">=20.12"
+    "node": "^20.19.0 || ^22.13.0 || >=24.11.0"
   }
 }

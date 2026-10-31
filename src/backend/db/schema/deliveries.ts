@@ -1,6 +1,6 @@
 import type { DbDate, DbNumeric } from './_shared';
 
-/** Row shapes as returned by the database (snake_case, before mapping). */
+/** The `deliveries` table. */
 export type DeliveryRow = {
   id: string;
   business_id: string;
@@ -12,8 +12,20 @@ export type DeliveryRow = {
   expected_at: DbDate;
   received_at: DbDate | null;
   status: string;
+  created_at: DbDate;
 };
 
+/** The `delivery_lines` table. */
+export type DeliveryLineRecord = {
+  delivery_id: string;
+  item_id: string;
+  position: number;
+  expected: number;
+  received: number | null;
+  unit_cost: DbNumeric;
+};
+
+/** A delivery line with its item's details. */
 export type DeliveryLineRow = {
   delivery_id: string;
   item_id: string;

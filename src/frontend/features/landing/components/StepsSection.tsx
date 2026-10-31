@@ -2,9 +2,12 @@ import { Text } from '@/frontend/components/text';
 import { STEPS } from '../lib/landing-content';
 import { SectionHeading } from './SectionHeading';
 
-/** How to start: three numbered steps on flat hairline cards. */
+/**
+ * How to start: three numbered steps on flat hairline cards. The background starts in the use-cases band's grey and
+ * fades to white, so neither edge shows a line.
+ */
 export const StepsSection = () => (
-  <section id="how-it-works" className="scroll-mt-28 py-20">
+  <section id="how-it-works" className="scroll-mt-28 bg-linear-to-b from-sunken to-white py-20">
     <div className="mx-auto max-w-300 px-4 sm:px-6">
       <SectionHeading eyebrow="How it works" title="Up and running in an afternoon." />
       <ol className="mt-12 grid list-none gap-4 p-0 lg:grid-cols-3">

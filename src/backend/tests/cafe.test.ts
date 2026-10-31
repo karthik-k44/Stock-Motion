@@ -1,11 +1,11 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { db } from '@/backend/db/client';
+import { CloseDb } from '@/backend/db/client';
 import { BusinessTypeEnum } from '@/backend/types/template';
 import { OwnerWithBusiness, ResetDatabase, SetupDatabase } from './helpers';
 
 beforeAll(SetupDatabase);
 beforeEach(ResetDatabase);
-afterAll(() => db.close());
+afterAll(CloseDb);
 
 const cafe = () => OwnerWithBusiness(BusinessTypeEnum.CAFE);
 

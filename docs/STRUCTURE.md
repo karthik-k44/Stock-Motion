@@ -11,7 +11,8 @@ src/
 │   ├── server.ts           # entry point: db, migrations, dev seed, socket.io, Vite (dev) or dist/ (prod)
 │   ├── common/             # errors/, services/audit.ts (activity + stock ledger), types/, utils/ (jwt, crypto, csv, cookies …)
 │   ├── config/             # env.ts (zod-validated), logger.ts
-│   ├── db/                 # client.ts, migrate.ts, seed.ts, next-number.ts, schema/ (row types, one file per table group + index.ts), migrations/ (*.sql)
+│   ├── db/                 # client.ts (TypeORM DataSource, `db`), entities/ (one EntitySchema per table), schema/ (row types),
+│   │                       # migrations/ (TypeORM migrations + sql/), pglite-pool.ts, migrate.ts, seed.ts, next-number.ts
 │   ├── middleware/         # auth, rate-limit, error, not-found — each `<name>.middleware.ts`
 │   ├── modules/<domain>/   # auth, businesses, invites, templates, items, categories, locations, suppliers, customers,
 │   │                       # orders, deliveries, imports, activity, dashboard, system
@@ -49,7 +50,7 @@ Services read those flags; they never hard-code a status such as `'PICKING'`. Th
 - That middleware resolves `req.scope = { businessId, template, actor }`. Every service takes the `ScopeType` and every repository query filters by `business_id`.
 - Non-members get **404**, not 403, so business ids can't be probed.
 - Narrow a route further with `RequireRole(...MANAGEMENT_ROLES)` (owner / manager).
-- `BroadcastChange(businessId, resources, activity)` emits only to that business's socket room.
+- `BroadcastChange(businessId, resources, activity)` emits only to that business's socket room. Joining the room checks membership; every socket also sits in an `account:<id>` room, so `RevokeRealtimeAccess` cuts a removed member's open tabs off at once.
 - On the frontend, `session-state.ts` holds the current business id and `Biz.Get/Post/…` prefix it.
 - Switching business (`businessesService.SelectBusiness`) drops every business-scoped query.
 - `BusinessGate` provides the loaded business through context, keyed by id, so screens remount on a switch. Read it with `businessesService.useBusiness()`.
@@ -101,7 +102,7 @@ There is no `ApiResponse<T>` envelope; the API returns resources directly. Error
 
 `features/landing` holds the public pages — `Landing.tsx` (`/`), `Features.tsx` (`/features`), `Pricing.tsx` (`/pricing`) and `Faq.tsx` (`/faq`) — as children of one layout route, `MarketingLayout.tsx` (navbar, footer, scroll restoration). They follow `docs/design/style-reference.md` — the palette is scoped to `.landing` in `styles/landing.css`, so the app keeps its own.
 - **Copy and plans** live in `lib/landing-content.ts` and `lib/pricing-content.ts`; components only lay them out. Nothing there is invented: features are real, prices are the owner's, there are no fake customer logos or counts.
-- **Hero:** the pitch on the left, the scenario illustrations on the right in `components/ui/depth-carousel` (cards stacked back in 3D, eased by GSAP; drag, horizontal wheel, arrow keys, arrows and dots; follows the app's motion setting). Styles in `styles/depth-carousel.css`.
+- **Hero:** the pitch on the left, the scenario illustrations on the right in `components/ui/depth-carousel` (cards in 3D depth — `sides="both"`: previous images to the left, next to the right — eased by GSAP; drag, horizontal wheel, arrow keys, arrows and dots; follows the app's motion setting). Styles in `styles/depth-carousel.css`.
 - **Illustrations:** `scripts/illustrations/` draws each scenario with the live world's isometric kit and renders it to `public/landing/scenarios/` — `npm run illustrations`.
 - **Navbar:** shadcn NavigationMenu with a full-width mega menu; Features, Pricing and FAQ are pages, and `/#…` links (How it works, the use cases) scroll to a section of the front page from any page.
 
@@ -133,15 +134,16 @@ Frontend and backend keep **separate, duplicated** domain types (`src/backend/ty
 
 ```
 modules/<domain>/
-├── <domain>.repository.ts    # ALL SQL for the domain: functions taking a Queryable (db or a transaction) first
+├── <domain>.repository.ts    # ALL database access for the domain (TypeORM): functions taking a Queryable (`db` or a transaction) first
 ├── <domain>.service.ts       # business rules only — no SQL — exported as one `<domain>Service` object
 ├── <domain>.validators.ts    # zod schemas
 ├── <domain>.mapper.ts        # row → response, only when shared (items, deliveries, activity)
 └── rest-api/<domain>.controller.ts, <domain>.routes.ts, <domain>.middleware.ts (optional)
 ```
 
-- **No SQL in services** (review-only). A service calls repositories, its own and other modules' (e.g. orders uses `itemsRepository.LockItemsByIds`), so a query is written once. Shared services (`common/services/audit.ts`, `realtime/socket.ts`) go through repositories too.
-- **Writes** run in a transaction:
+- **No queries in services** (review-only). A service calls repositories, its own and other modules' (e.g. orders uses `itemsRepository.LockItemsByIds`), so a query is written once. Shared services (`common/services/audit.ts`, `realtime/socket.ts`) go through repositories too.
+- **Repositories use TypeORM**: the entity's repository for plain reads and writes (`findOneBy`, `insert`, `update`, `delete`), the query builder for joins, filters and locks (`setLock('pessimistic_write')`), and parameterised SQL (`q.query`) only for reporting aggregates (dashboard, customer stats) and the advisory-lock numbering. A function returns `undefined`, never `null`, for "not found".
+- **Writes** run in a transaction, `db.transaction(async (tx) => …)`, passing `tx` to every repository call (never `db` inside a transaction — on embedded PGlite that waits for itself):
   - lock the rows they change (`FOR UPDATE`, stock rows in id order);
   - record an `activity` row (and `movements` rows for stock changes) through `common/services/audit.ts`;
   - after commit, call `BroadcastChange(scope.businessId, resources, activity)`.
@@ -156,6 +158,8 @@ npx tsc -b --noEmit && npx eslint src && npx vitest run && npm run build
 ## Known deviations
 
 - **No Formik.** Forms validate with the feature's zod schema (`safeParse`) directly; the server validates again.
-- **Database driver.** `db/client.ts` speaks to real Postgres when `DATABASE_URL` is set, and otherwise to embedded Postgres (PGlite). Migrations are plain SQL files, and `db/schema/` holds row types rather than an ORM schema.
-- **Tests run one file at a time** (`fileParallelism: false`). Each file starts its own in-memory Postgres, and running them all at once exhausts memory on Windows.
+- **TypeORM without decorators.** Entities are `EntitySchema` objects (`db/entities/`), not decorated classes: tsx/esbuild don't emit decorator metadata, and the codebase is arrow functions. Their property names are the snake_case column names, so entities, query-builder raw rows and `db/schema/` row types share one shape and the services never map between them.
+- **Migrations own the schema.** `synchronize` is off; changes go in a migration (`npm run db:migration:create -- Name`, then list it in `migrations/index.ts`) and the entity is updated to match. The first migration runs `migrations/sql/initial-schema.sql`, and adopts databases made by the old SQL-file runner (`schema_migrations`) instead of re-running it. The second makes `activity` and `movements` append-only.
+- **Database driver.** `DATABASE_URL` → PostgreSQL through TypeORM's pool. Otherwise embedded PostgreSQL (PGlite) through `db/pglite-pool.ts`, which lends PGlite's single session to one transaction at a time so requests keep their isolation.
+- **Tests run one file at a time** (`fileParallelism: false`). Each file starts its own in-memory Postgres, and running them all at once exhausts memory on Windows. `TEST_DATABASE_URL` runs them against a real PostgreSQL database instead (its name must contain `test`).
 - **Templates are served, not duplicated.** Unlike domain types, the template config lives only on the backend; the frontend reads it from the API. Only its TypeScript shape is duplicated (`features/businesses/types`).

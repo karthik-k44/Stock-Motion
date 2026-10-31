@@ -11,7 +11,7 @@ export const NextNumber = async (
   prefix: string,
   start: number,): Promise<string> => {
   await tx.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`${table}:${businessId}`]);
-  const { rows } = await tx.query<{ n: number | null }>(
+  const rows: { n: number | null }[] = await tx.query(
     `SELECT MAX(NULLIF(regexp_replace(number, '\\D', '', 'g'), '')::int) AS n
      FROM ${table} WHERE business_id = $1 AND number LIKE $2`,
     [businessId, `${prefix}-%`],
