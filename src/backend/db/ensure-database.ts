@@ -12,6 +12,12 @@ export const RedactUrl = (url: string): string => {
   }
 };
 
+/**
+ * How long to wait for PostgreSQL to answer a new connection. node-postgres waits forever by default, so an unreachable
+ * host (a firewall dropping packets, a wrong port) would hang start-up silently instead of failing with a reason.
+ */
+export const CONNECT_TIMEOUT_MS = 10_000;
+
 const explain = (err: unknown, url: string): Error => {
   const e = err as { code?: string; message?: string };
   const u = new URL(url);
@@ -34,6 +40,13 @@ const explain = (err: unknown, url: string): Error => {
           'Transaction pooler, port 6543).',
       );
     default:
+      if (/timeout/i.test(e.message ?? '')) {
+        return new Error(
+          `No answer from ${where} within ${CONNECT_TIMEOUT_MS / 1000} s. Check the host and port in DATABASE_URL, and that the ` +
+            'database accepts connections from anywhere (Supabase: Database → Network restrictions; use the Transaction ' +
+            'pooler string, port 6543).',
+        );
+      }
       return new Error(`Could not connect to ${RedactUrl(url)}: ${e.message ?? String(err)}`);
   }
 };
@@ -45,7 +58,7 @@ const quoteIdent = (name: string) => `"${name.replace(/"/g, '""')}"`;
  * run (connects to the `postgres` maintenance database to do so).
  */
 export const EnsureDatabase = async (url: string): Promise<void> => {
-  const probe = new pg.Client({ connectionString: url });
+  const probe = new pg.Client({ connectionString: url, connectionTimeoutMillis: CONNECT_TIMEOUT_MS });
   try {
     await probe.connect();
     await probe.end();
@@ -59,7 +72,7 @@ export const EnsureDatabase = async (url: string): Promise<void> => {
   const name = decodeURIComponent(target.pathname.replace(/^\//, ''));
   if (!name) throw new Error('DATABASE_URL must include a database name, e.g. postgres://user:pass@localhost:5432/stockmotion');
   target.pathname = '/postgres';
-  const admin = new pg.Client({ connectionString: target.toString() });
+  const admin = new pg.Client({ connectionString: target.toString(), connectionTimeoutMillis: CONNECT_TIMEOUT_MS });
   try {
     await admin.connect();
     await admin.query(`CREATE DATABASE ${quoteIdent(name)}`);
