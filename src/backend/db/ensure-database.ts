@@ -25,6 +25,14 @@ const explain = (err: unknown, url: string): Error => {
       return new Error(`Nothing is accepting connections at ${where}. Is the PostgreSQL service running?`);
     case 'ENOTFOUND':
       return new Error(`Unknown database host "${u.hostname}" in DATABASE_URL.`);
+    // The host only has an IPv6 address and this machine can't reach IPv6 — e.g. Supabase's direct connection on Vercel.
+    case 'ENETUNREACH':
+    case 'EHOSTUNREACH':
+      return new Error(
+        `Can't reach ${where} from here (${e.message ?? e.code}). If that address is IPv6-only — like Supabase's direct ` +
+          'connection, db.<project>.supabase.co — use the provider\'s pooled connection string instead (Supabase: Connect → ' +
+          'Transaction pooler, port 6543).',
+      );
     default:
       return new Error(`Could not connect to ${RedactUrl(url)}: ${e.message ?? String(err)}`);
   }
