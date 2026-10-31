@@ -1,4 +1,4 @@
-import { createServer } from 'node:http';
+import { createServer, type Server } from 'node:http';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
@@ -6,21 +6,35 @@ import { CreateApp } from './app';
 import { env } from './config/env';
 import { logger } from './config/logger';
 import { CloseDb, ConnectDb } from './db/client';
-import { RunMigrations } from './db/migrate';
-import { SeedDatabase } from './db/seed';
 import { AttachRealtime, CloseRealtime } from './realtime/socket';
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 
-const main = async () => {
-  await ConnectDb({ url: env.DATABASE_URL, dataDir: env.PGLITE_DIR });
-  await RunMigrations();
-  // Demo login on an empty development database; production starts empty and owners sign up.
-  if (env.NODE_ENV === 'development') await SeedDatabase();
+/**
+ * Vercel sets `VERCEL` in every deployment. There, `npm run vercel-build` has bundled this file into one function:
+ * the build already ran the migrations, Vercel's CDN serves the frontend, and Vercel starts and stops instances —
+ * so the server only connects to PostgreSQL and is handed to Vercel. Everywhere else (dev, Docker, `npm start`)
+ * it is a long-running process that does all of that itself.
+ */
+const ON_VERCEL = Boolean(process.env.VERCEL);
+
+const start = async (): Promise<Server> => {
+  if (ON_VERCEL && !env.DATABASE_URL) {
+    throw new Error('DATABASE_URL is required on Vercel: an embedded database would be lost between requests');
+  }
+  await ConnectDb({ url: env.DATABASE_URL, dataDir: env.PGLITE_DIR, poolSize: env.DB_POOL_SIZE });
+  if (!ON_VERCEL) {
+    // Loaded only here, so the Vercel bundle never runs them (both are also command-line scripts).
+    const { RunMigrations } = await import('./db/migrate');
+    await RunMigrations();
+    // Demo login on an empty development database; production starts empty and owners sign up.
+    if (env.NODE_ENV === 'development') await (await import('./db/seed')).SeedDatabase();
+  }
 
   const app = CreateApp();
   const server = createServer(app);
   AttachRealtime(server);
+  if (ON_VERCEL) return server;
 
   if (env.NODE_ENV === 'production') {
     const dist = `${ROOT}dist`;
@@ -67,6 +81,7 @@ const main = async () => {
   };
   process.on('SIGINT', () => void shutdown('SIGINT'));
   process.on('SIGTERM', () => void shutdown('SIGTERM'));
+  return server;
 };
 
 process.on('unhandledRejection', (reason) => logger.error('Unhandled promise rejection', reason));
@@ -75,7 +90,8 @@ process.on('uncaughtException', (err) => {
   process.exit(1);
 });
 
-main().catch((err) => {
+/** The HTTP server (Express API + realtime socket). Vercel runs the default export; elsewhere it is already listening. */
+export default await start().catch((err) => {
   logger.error(`Failed to start: ${err instanceof Error ? err.message : String(err)}`);
   logger.debug('Startup error detail', err);
   process.exit(1);

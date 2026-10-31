@@ -4,7 +4,7 @@ import { io as connect, type Socket } from 'socket.io-client';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { CloseDb, db } from '@/backend/db/client';
-import { AttachRealtime, CloseRealtime } from '@/backend/realtime/socket';
+import { AttachRealtime, CloseRealtime, SOCKET_PATH } from '@/backend/realtime/socket';
 import { BusinessTypeEnum } from '@/backend/types/template';
 import { app, Client, OwnerWithBusiness, ResetDatabase, SetupDatabase } from './helpers';
 
@@ -178,7 +178,7 @@ describe('realtime access', () => {
   it('a removed team member stops receiving the business’s changes at once', async () => {
     const owner = await shop(1);
     const picker = await join(owner, 'PICKER');
-    const socket = connect(url, { auth: { token: picker.token }, transports: ['websocket'], reconnection: false });
+    const socket = connect(url, { auth: { token: picker.token }, path: SOCKET_PATH, transports: ['websocket'], reconnection: false });
     sockets.push(socket);
     const joinBusiness = () => new Promise<boolean>((resolve) => socket.emit('business:join', owner.business.id, resolve));
     expect(await joinBusiness()).toBe(true);

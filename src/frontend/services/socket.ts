@@ -36,7 +36,8 @@ export const realtime = {
   /** Connects with the current access token; re-joins the current business on every (re)connect. */
   Connect: () => {
     if (socket) return;
-    socket = io({ path: '/socket.io', transports: ['websocket', 'polling'], auth: (cb) => cb({ token: tokenStore.Get() ?? '' }) });
+    // WebSocket only: long-polling needs every request to reach the same server, which serverless hosts don't promise.
+    socket = io({ path: '/api/socket.io', transports: ['websocket'], auth: (cb) => cb({ token: tokenStore.Get() ?? '' }) });
     socket.on('data:changed', (e: DataChangedEvent) => {
       if (e.businessId === sessionState.GetBusinessId()) listeners.forEach((l) => l(e));
     });

@@ -48,6 +48,7 @@ Settings are read from `.env` in the project root (git-ignored). Real environmen
 # Leave empty to use the embedded Postgres (PGlite) in .data/pglite instead
 DATABASE_URL=postgres://postgres:YOUR_PASSWORD@localhost:5432/stockmotion
 PGLITE_DIR=.data/pglite
+DB_POOL_SIZE=10            # PostgreSQL connections per server instance (keep it small on Vercel)
 PORT=3000
 LOG_LEVEL=info              # debug | info | warn | error
 JWT_SECRET=                 # 32+ characters; required in production, random per run in development
@@ -70,6 +71,7 @@ Sessions use a short-lived access token held in memory, plus a rotating, httpOnl
 | `npm test` | Backend integration tests (in-memory Postgres, one file at a time). Set `TEST_DATABASE_URL` to run them against a real PostgreSQL database whose name contains `test` — it is emptied |
 | `npm run lint` | ESLint: import cycles, frontend/backend boundary, hook rules |
 | `npm run typecheck` | `tsc -b --noEmit` |
+| `npm run vercel-build` | Vercel's build: frontend, migrations, and the backend bundled as one function in `.vercel/output` (needs `DATABASE_URL`) |
 | `npm run illustrations` | Re-render the landing page's scenario illustrations into `public/landing/scenarios/` (uses your installed Chrome) |
 | `npm run db:seed` | Wipe the database and recreate the demo login (refuses in production) |
 | `npm run db:migrate` | Apply pending migrations (the server also does this on start) |
@@ -89,6 +91,17 @@ docker run -p 3000:3000   -e JWT_SECRET="$(openssl rand -hex 48)"   -e DATABASE_
 Leave `DATABASE_URL` empty to use the embedded Postgres instead, and mount a volume at `/app/.data` to keep it. The image has a health check on `/api/system/health` and stops gracefully on SIGTERM.
 
 **Without Docker:** `npm ci && npm run build && npm start` with the same environment variables (`.env.example` lists them all).
+
+**On Vercel**
+
+1. Create a PostgreSQL database (Neon or Supabase, e.g. from Vercel's Marketplace) and copy its **pooled** connection string. Vercel can't keep the embedded database.
+2. Import the repository in Vercel. `vercel.json` already sets the build (`npm run vercel-build`); leave the framework preset as "Other".
+3. Add environment variables: `DATABASE_URL` (pooled), `JWT_SECRET` (32+ characters) and `DB_POOL_SIZE=3`. Don't set `NODE_ENV` — the build sets it on the function, and setting it project-wide makes the install skip the build tools. Give Preview deployments their own database (e.g. a Neon branch): every build runs the migrations against its `DATABASE_URL`.
+4. Deploy, then open `https://<your-domain>/api/system/health` — it should answer `{"ok":true}`.
+
+The build runs the migrations, puts the frontend on Vercel's CDN and bundles the backend (`src/backend/server.ts`, which skips the start-up work Vercel does itself) into one function that serves `/api/*`, including the live-update socket at `/api/socket.io`. Compared with one long-running server:
+- **Live updates** reach the people connected to the same function instance. At low traffic that is everyone; once Vercel runs several instances, changes need a shared Redis channel (the Socket.IO Redis adapter) to reach all of them — not included yet. Live sockets also close at the function's time limit (300 s) and the app reconnects on its own. WebSockets need Fluid compute, on by default for projects created since April 2025.
+- **Rate limits** are counted per instance.
 
 Checklist:
 - Serve over **HTTPS** (the refresh cookie is `Secure` in production and HSTS is on).

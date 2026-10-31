@@ -1,5 +1,4 @@
 import { mkdirSync } from 'node:fs';
-import { PGlite } from '@electric-sql/pglite';
 import { DataSource, type DataSourceOptions, type EntityManager } from 'typeorm';
 import { logger } from '@/backend/config/logger';
 import { ENTITIES } from './entities';
@@ -38,6 +37,8 @@ const embedded = async (dataDir?: string): Promise<DataSourceOptions> => {
     mkdirSync(dataDir, { recursive: true });
     release = await AcquireDataDirLock(dataDir);
   }
+  // Loaded only when used, so a PostgreSQL-only build (the Vercel function) doesn't need PGlite at all.
+  const { PGlite } = await import('@electric-sql/pglite');
   const lite = dataDir ? new PGlite(dataDir) : new PGlite();
   await lite.waitReady.catch((err) => {
     release();
@@ -54,10 +55,10 @@ const embedded = async (dataDir?: string): Promise<DataSourceOptions> => {
  * Connect once at startup. `url` → PostgreSQL (created if missing); otherwise embedded PostgreSQL (PGlite)
  * persisted to `dataDir`, or in memory when `dataDir` is omitted — used by tests.
  */
-export const ConnectDb = async (opts: { url?: string; dataDir?: string }): Promise<DataSource> => {
+export const ConnectDb = async (opts: { url?: string; dataDir?: string; poolSize?: number }): Promise<DataSource> => {
   if (source) return source;
   if (opts.url) await EnsureDatabase(opts.url);
-  const options: DataSourceOptions = opts.url ? { ...SHARED, url: opts.url, poolSize: 10 } : await embedded(opts.dataDir);
+  const options: DataSourceOptions = opts.url ? { ...SHARED, url: opts.url, poolSize: opts.poolSize ?? 10 } : await embedded(opts.dataDir);
   source = await new DataSource(options).initialize();
   db = source.manager;
   logger.info(

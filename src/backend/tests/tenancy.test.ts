@@ -4,7 +4,7 @@ import { io as connect, type Socket } from 'socket.io-client';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { CloseDb } from '@/backend/db/client';
-import { AttachRealtime, CloseRealtime } from '@/backend/realtime/socket';
+import { AttachRealtime, CloseRealtime, SOCKET_PATH } from '@/backend/realtime/socket';
 import { BusinessTypeEnum } from '@/backend/types/template';
 import { app, Client, CreateBusiness, OwnerWithBusiness, ResetDatabase, SetupDatabase, SignUp } from './helpers';
 
@@ -110,7 +110,7 @@ describe('realtime', () => {
   });
 
   const open = (token: string) => {
-    const socket = connect(url, { auth: { token }, transports: ['websocket'], reconnection: false });
+    const socket = connect(url, { auth: { token }, path: SOCKET_PATH, transports: ['websocket'], reconnection: false });
     sockets.push(socket);
     return socket;
   };

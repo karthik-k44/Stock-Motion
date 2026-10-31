@@ -8,7 +8,7 @@ How StockMotion is organised and the rules new features follow. Most are enforce
 src/
 ├── backend/               # Express API + Postgres (Node only, never imported by the browser)
 │   ├── app.ts              # express app wiring: public routes, then /businesses/:businessId/* behind RequireAuth + RequireBusinessRole
-│   ├── server.ts           # entry point: db, migrations, dev seed, socket.io, Vite (dev) or dist/ (prod)
+│   ├── server.ts           # entry point: db, migrations, dev seed, socket.io, Vite (dev) or dist/ (prod); on Vercel, the function
 │   ├── common/             # errors/, services/audit.ts (activity + stock ledger), types/, utils/ (jwt, crypto, csv, cookies …)
 │   ├── config/             # env.ts (zod-validated), logger.ts
 │   ├── db/                 # client.ts (TypeORM DataSource, `db`), entities/ (one EntitySchema per table), schema/ (row types),
@@ -161,5 +161,6 @@ npx tsc -b --noEmit && npx eslint src && npx vitest run && npm run build
 - **TypeORM without decorators.** Entities are `EntitySchema` objects (`db/entities/`), not decorated classes: tsx/esbuild don't emit decorator metadata, and the codebase is arrow functions. Their property names are the snake_case column names, so entities, query-builder raw rows and `db/schema/` row types share one shape and the services never map between them.
 - **Migrations own the schema.** `synchronize` is off; changes go in a migration (`npm run db:migration:create -- Name`, then list it in `migrations/index.ts`) and the entity is updated to match. The first migration runs `migrations/sql/initial-schema.sql`, and adopts databases made by the old SQL-file runner (`schema_migrations`) instead of re-running it. The second makes `activity` and `movements` append-only.
 - **Database driver.** `DATABASE_URL` → PostgreSQL through TypeORM's pool. Otherwise embedded PostgreSQL (PGlite) through `db/pglite-pool.ts`, which lends PGlite's single session to one transaction at a time so requests keep their isolation.
+- **One entry point, two ways to run.** `server.ts` is a long-running process in dev, Docker and `npm start`. On Vercel (`VERCEL` is set) it only connects to PostgreSQL and default-exports its server: `scripts/vercel-build.ts` has bundled it with esbuild into one function for `/api/*` (bundling resolves the `@/` imports, which Vercel's own build would leave unresolved), run the migrations, and put the frontend on the CDN with routes that send every other path to `index.html`. Migrations and the demo seed are imported lazily so the bundle never runs them. The realtime socket lives at `/api/socket.io` so one route covers the whole backend.
 - **Tests run one file at a time** (`fileParallelism: false`). Each file starts its own in-memory Postgres, and running them all at once exhausts memory on Windows. `TEST_DATABASE_URL` runs them against a real PostgreSQL database instead (its name must contain `test`).
 - **Templates are served, not duplicated.** Unlike domain types, the template config lives only on the backend; the frontend reads it from the API. Only its TypeScript shape is duplicated (`features/businesses/types`).

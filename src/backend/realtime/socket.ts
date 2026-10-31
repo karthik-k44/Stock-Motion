@@ -9,6 +9,9 @@ import type { DataChangedPayloadType, ResourceTypeEnum } from '@/backend/types/d
 
 let io: Server | null = null;
 
+/** Under /api with the rest of the backend, so a single route sends all backend traffic to it (one rule on Vercel). */
+export const SOCKET_PATH = '/api/socket.io';
+
 const room = (businessId: string) => `business:${businessId}`;
 /** Every socket of one account, so access can be taken away from all of its tabs at once. */
 const accountRoom = (accountId: string) => `account:${accountId}`;
@@ -18,7 +21,7 @@ const JOIN_LIMIT = { max: 20, windowMs: 60_000 };
 
 export const AttachRealtime = (server: HttpServer): Server => {
   // destroyUpgrade:false — Vite's HMR websocket shares this HTTP server in development.
-  io = new Server(server, { destroyUpgrade: false, serveClient: false });
+  io = new Server(server, { path: SOCKET_PATH, destroyUpgrade: false, serveClient: false });
 
   // Every socket carries the same access token as REST calls; no token, no connection.
   io.use((socket, next) => {

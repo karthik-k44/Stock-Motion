@@ -17,6 +17,8 @@ const EnvSchema = z
     /** When set, connect to this Postgres server. Otherwise an embedded Postgres (PGlite) is used. */
     DATABASE_URL: z.preprocess(emptyToUndefined, z.string().url().optional()),
     PGLITE_DIR: z.string().default('.data/pglite'),
+    /** PostgreSQL connections per server instance. Keep it small on serverless hosts, where many instances run at once. */
+    DB_POOL_SIZE: z.coerce.number().int().positive().default(10),
     LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
     /** Signs access tokens. Required in production; development and tests get a random one per process. */
     JWT_SECRET: z.preprocess(emptyToUndefined, z.string().min(32, 'JWT_SECRET must be at least 32 characters').optional()),
