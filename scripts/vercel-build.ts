@@ -16,7 +16,16 @@ const OUT = '.vercel/output';
 const FUNCTION = `${OUT}/functions/api.func`;
 
 if (!process.env.DATABASE_URL) {
-  console.error('DATABASE_URL is not set. Add a PostgreSQL connection string (e.g. Neon or Supabase, pooled) to the project\'s environment variables.');
+  // Vercel tells the build which environment it is for: a variable added for Production only is missing in Preview.
+  const target = process.env.VERCEL_ENV ?? 'this';
+  const branch = process.env.VERCEL_GIT_COMMIT_REF ? ` (branch ${process.env.VERCEL_GIT_COMMIT_REF})` : '';
+  console.error(
+    [
+      `DATABASE_URL is not set for ${target} builds${branch}.`,
+      `Add a PostgreSQL connection string (Neon or Supabase, pooled) under Settings → Environment Variables with the`,
+      `"${target === 'this' ? 'right' : target}" environment ticked, then redeploy — variables only reach new deployments.`,
+    ].join('\n'),
+  );
   process.exit(1);
 }
 

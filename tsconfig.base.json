@@ -15,7 +15,7 @@
     "erasableSyntaxOnly": true,
     "verbatimModuleSyntax": true,
     "skipLibCheck": true,
-    "baseUrl": ".",
+    // No baseUrl (deprecated in TypeScript 6): paths resolve relative to this file.
     "paths": { "@/*": ["./src/*"] }
   }
 }
