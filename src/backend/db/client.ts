@@ -3,7 +3,7 @@ import pg from 'pg';
 import { DataSource, type DataSourceOptions, type EntityManager } from 'typeorm';
 import { logger } from '@/backend/config/logger';
 import { ENTITIES } from './entities';
-import { EnsureDatabase, RedactUrl } from './ensure-database';
+import { CONNECT_TIMEOUT_MS, EnsureDatabase, RedactUrl } from './ensure-database';
 import { MIGRATIONS } from './migrations';
 import { AcquireDataDirLock } from './pglite-lock';
 import { PGliteDriverFor } from './pglite-pool';
@@ -62,7 +62,7 @@ export const ConnectDb = async (opts: { url?: string; dataDir?: string; poolSize
   // `driver: pg` hands TypeORM the module it would otherwise require() at runtime by name — a lookup a bundler can't
   // see, so the Vercel bundle would ship without pg and fail on every request.
   const options: DataSourceOptions = opts.url
-    ? { ...SHARED, url: opts.url, poolSize: opts.poolSize ?? 10, driver: pg }
+    ? { ...SHARED, url: opts.url, poolSize: opts.poolSize ?? 10, driver: pg, connectTimeoutMS: CONNECT_TIMEOUT_MS }
     : await embedded(opts.dataDir);
   source = await new DataSource(options).initialize();
   db = source.manager;
