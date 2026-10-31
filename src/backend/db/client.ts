@@ -1,4 +1,5 @@
 import { mkdirSync } from 'node:fs';
+import pg from 'pg';
 import { DataSource, type DataSourceOptions, type EntityManager } from 'typeorm';
 import { logger } from '@/backend/config/logger';
 import { ENTITIES } from './entities';
@@ -58,7 +59,11 @@ const embedded = async (dataDir?: string): Promise<DataSourceOptions> => {
 export const ConnectDb = async (opts: { url?: string; dataDir?: string; poolSize?: number }): Promise<DataSource> => {
   if (source) return source;
   if (opts.url) await EnsureDatabase(opts.url);
-  const options: DataSourceOptions = opts.url ? { ...SHARED, url: opts.url, poolSize: opts.poolSize ?? 10 } : await embedded(opts.dataDir);
+  // `driver: pg` hands TypeORM the module it would otherwise require() at runtime by name — a lookup a bundler can't
+  // see, so the Vercel bundle would ship without pg and fail on every request.
+  const options: DataSourceOptions = opts.url
+    ? { ...SHARED, url: opts.url, poolSize: opts.poolSize ?? 10, driver: pg }
+    : await embedded(opts.dataDir);
   source = await new DataSource(options).initialize();
   db = source.manager;
   logger.info(
