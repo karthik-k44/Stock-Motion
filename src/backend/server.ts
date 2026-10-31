@@ -13,31 +13,59 @@ const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 /**
  * Vercel sets `VERCEL` in every deployment. There, `npm run vercel-build` has bundled this file into one function:
  * the build already ran the migrations, Vercel's CDN serves the frontend, and Vercel starts and stops instances —
- * so the server only connects to PostgreSQL and calls listen() for Vercel to take it over. Everywhere else (dev,
- * Docker, `npm start`) it is a long-running process that does all of that itself.
+ * see startOnVercel. Everywhere else (dev, Docker, `npm start`) it is a long-running process that does it all itself.
  */
 const ON_VERCEL = Boolean(process.env.VERCEL);
 
-const start = async (): Promise<Server> => {
-  if (ON_VERCEL && !env.DATABASE_URL) {
-    throw new Error('DATABASE_URL is required on Vercel: an embedded database would be lost between requests');
-  }
-  await ConnectDb({ url: env.DATABASE_URL, dataDir: env.PGLITE_DIR, poolSize: env.DB_POOL_SIZE });
-  if (!ON_VERCEL) {
-    // Loaded only here, so the Vercel bundle never runs them (both are also command-line scripts).
-    const { RunMigrations } = await import('./db/migrate');
-    await RunMigrations();
-    // Demo login on an empty development database; production starts empty and owners sign up.
-    if (env.NODE_ENV === 'development') await (await import('./db/seed')).SeedDatabase();
-  }
+/**
+ * On Vercel the function starts at once and connects to PostgreSQL on the first request, not during start-up: a
+ * database that can't be reached then answers every request with a 503 saying why (never the password), instead of
+ * the function hanging until Vercel kills it with an opaque 500. A failed attempt is retried on the next request, so a
+ * brief outage doesn't stick to the instance.
+ */
+const startOnVercel = (): Server => {
+  let connecting: Promise<unknown> | null = null;
+  const ready = () =>
+    (connecting ??= (async () => {
+      if (!env.DATABASE_URL) throw new Error('DATABASE_URL is not set for this deployment');
+      await ConnectDb({ url: env.DATABASE_URL, poolSize: env.DB_POOL_SIZE });
+    })().catch((err: unknown) => {
+      connecting = null;
+      throw err;
+    }));
+  // Start connecting during the cold start, so the first request usually finds the database ready.
+  ready().catch((err: unknown) => logger.error(`Database not ready: ${err instanceof Error ? err.message : String(err)}`));
 
-  const app = CreateApp();
+  const app = express();
+  app.use(async (_req, res, next) => {
+    try {
+      await ready();
+      next();
+    } catch (err) {
+      res.status(503).json({ error: { code: 'DATABASE_UNAVAILABLE', message: err instanceof Error ? err.message : String(err) } });
+    }
+  });
+  app.use(CreateApp());
   const server = createServer(app);
   AttachRealtime(server);
   // Vercel finds the server by catching this listen() call while it loads the file (it swaps listen() out for the
   // load), then serves its requests through this same server, socket included. Exporting the server without
   // calling listen() leaves Vercel with no handler, and every /api request fails with a 500.
-  if (ON_VERCEL) return server.listen();
+  return server.listen();
+};
+
+const start = async (): Promise<Server> => {
+  if (ON_VERCEL) return startOnVercel();
+  await ConnectDb({ url: env.DATABASE_URL, dataDir: env.PGLITE_DIR, poolSize: env.DB_POOL_SIZE });
+  // Loaded only here, so the Vercel bundle never runs them (both are also command-line scripts).
+  const { RunMigrations } = await import('./db/migrate');
+  await RunMigrations();
+  // Demo login on an empty development database; production starts empty and owners sign up.
+  if (env.NODE_ENV === 'development') await (await import('./db/seed')).SeedDatabase();
+
+  const app = CreateApp();
+  const server = createServer(app);
+  AttachRealtime(server);
 
   if (env.NODE_ENV === 'production') {
     const dist = `${ROOT}dist`;
