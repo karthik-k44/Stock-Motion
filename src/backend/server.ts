@@ -13,8 +13,8 @@ const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 /**
  * Vercel sets `VERCEL` in every deployment. There, `npm run vercel-build` has bundled this file into one function:
  * the build already ran the migrations, Vercel's CDN serves the frontend, and Vercel starts and stops instances —
- * so the server only connects to PostgreSQL and is handed to Vercel. Everywhere else (dev, Docker, `npm start`)
- * it is a long-running process that does all of that itself.
+ * so the server only connects to PostgreSQL and calls listen() for Vercel to take it over. Everywhere else (dev,
+ * Docker, `npm start`) it is a long-running process that does all of that itself.
  */
 const ON_VERCEL = Boolean(process.env.VERCEL);
 
@@ -34,7 +34,10 @@ const start = async (): Promise<Server> => {
   const app = CreateApp();
   const server = createServer(app);
   AttachRealtime(server);
-  if (ON_VERCEL) return server;
+  // Vercel finds the server by catching this listen() call while it loads the file (it swaps listen() out for the
+  // load), then serves its requests through this same server, socket included. Exporting the server without
+  // calling listen() leaves Vercel with no handler, and every /api request fails with a 500.
+  if (ON_VERCEL) return server.listen();
 
   if (env.NODE_ENV === 'production') {
     const dist = `${ROOT}dist`;
