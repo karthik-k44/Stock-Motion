@@ -18,7 +18,11 @@ export const Signup = () => {
   if (session.data) return <Navigate to={paths.home} replace />;
 
   return (
-    <AuthLayout title="Create your account" subtitle="Then pick your kind of business — retail, café or trades — and you're set up in a minute.">
+    <AuthLayout
+      title="Create your account"
+      subtitle="Then pick your kind of business — retail, café or trades — and you're set up in a minute."
+      back={{ to: paths.landing, label: 'Back to home' }}
+    >
       <AccountForm
         mode="register"
         initialEmail={params.get('email') ?? ''}

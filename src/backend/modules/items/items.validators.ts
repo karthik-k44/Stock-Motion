@@ -93,6 +93,8 @@ export const AdjustStockSchema = z
     qty: QuantitySchema,
     reason: z.nativeEnum(AdjustReasonTypeEnum),
     note: z.string().trim().max(200, 'Keep the note under 200 characters').default(''),
+    /** The on-hand count the person was looking at. A count (SET) is absolute, so it is refused if stock moved since. */
+    expectedOnHand: z.number().int().min(0).optional(),
   })
   .superRefine((v, ctx) => {
     if (v.mode !== AdjustModeTypeEnum.SET && v.qty < 1) {

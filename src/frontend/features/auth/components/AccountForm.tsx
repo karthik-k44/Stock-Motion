@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/frontend/components/button';
-import { describedBy, Field } from '@/frontend/components/form';
+import { describedBy, Field, PasswordInput } from '@/frontend/components/form';
 import { FieldErrors } from '@/frontend/lib/form';
 import type { ApiError } from '@/frontend/services/api-error';
 import { LoginSchema, RegisterSchema, type LoginInput, type RegisterInput } from '../types';
@@ -45,10 +45,8 @@ export const AccountForm = (props: Props) => {
         <input id="acc-email" className="input" type="email" autoComplete="email" value={values.email} onChange={set('email')} aria-invalid={Boolean(shown.email)} aria-describedby={describedBy('acc-email', shown.email)} />
       </Field>
       <Field id="acc-password" label="Password" error={shown.password} hint={props.mode === 'register' ? 'At least 8 characters' : undefined}>
-        <input
+        <PasswordInput
           id="acc-password"
-          className="input"
-          type="password"
           autoComplete={props.mode === 'register' ? 'new-password' : 'current-password'}
           value={values.password}
           onChange={set('password')}

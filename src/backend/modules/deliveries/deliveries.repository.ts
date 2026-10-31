@@ -1,4 +1,5 @@
 import type { Queryable } from '@/backend/db/client';
+import { DeliveryEntity, DeliveryLineEntity, ItemEntity, NameOf } from '@/backend/db/entities';
 import { NextNumber } from '@/backend/db/next-number';
 import type { DbDate, DeliveryLineRow, DeliveryRow } from '@/backend/db/schema';
 
@@ -10,53 +11,52 @@ export type DeliveryFiltersType = {
   limit?: number;
 };
 
-const List = async (q: Queryable, businessId: string, filters: DeliveryFiltersType = {}): Promise<DeliveryRow[]> => {
-  const where = ['business_id = $1'];
-  const params: unknown[] = [businessId];
-  if (filters.view === 'UPCOMING') where.push(`status <> 'RECEIVED'`);
-  if (filters.view === 'RECEIVED') where.push(`status = 'RECEIVED'`);
-  if (filters.supplierId) {
-    params.push(filters.supplierId);
-    where.push(`supplier_id = $${params.length}`);
-  }
+const deliveries = (q: Queryable) => q.getRepository(DeliveryEntity);
+const lines = (q: Queryable) => q.getRepository(DeliveryLineEntity);
+
+const List = (q: Queryable, businessId: string, filters: DeliveryFiltersType = {}): Promise<DeliveryRow[]> => {
+  const query = deliveries(q).createQueryBuilder('d').where('d.business_id = :businessId', { businessId });
+  if (filters.view === 'UPCOMING') query.andWhere(`d.status <> 'RECEIVED'`);
+  if (filters.view === 'RECEIVED') query.andWhere(`d.status = 'RECEIVED'`);
+  if (filters.supplierId) query.andWhere('d.supplier_id = :supplierId', { supplierId: filters.supplierId });
   if (filters.search) {
-    params.push(`%${filters.search}%`);
-    where.push(`(number ILIKE $${params.length} OR supplier_name ILIKE $${params.length} OR vehicle ILIKE $${params.length} OR reference ILIKE $${params.length})`);
+    query.andWhere('(d.number ILIKE :search OR d.supplier_name ILIKE :search OR d.vehicle ILIKE :search OR d.reference ILIKE :search)', {
+      search: `%${filters.search}%`,
+    });
   }
-  params.push(filters.limit ?? 500);
-  const { rows } = await q.query<DeliveryRow>(
-    `SELECT * FROM deliveries WHERE ${where.join(' AND ')}
-     ORDER BY CASE status WHEN 'RECEIVED' THEN 1 ELSE 0 END,
-              CASE WHEN status = 'RECEIVED' THEN NULL ELSE expected_at END,
-              received_at DESC NULLS LAST
-     LIMIT $${params.length}`,
-    params,
-  );
-  return rows;
+  // Upcoming first, soonest first; then received, newest first.
+  return query
+    .orderBy(`CASE d.status WHEN 'RECEIVED' THEN 1 ELSE 0 END`)
+    .addOrderBy(`CASE WHEN d.status = 'RECEIVED' THEN NULL ELSE d.expected_at END`)
+    .addOrderBy('d.received_at', 'DESC', 'NULLS LAST')
+    .take(filters.limit ?? 500)
+    .getMany();
 };
 
 const FindByNumber = async (q: Queryable, businessId: string, number: string): Promise<DeliveryRow | undefined> => {
-  const { rows } = await q.query<DeliveryRow>('SELECT * FROM deliveries WHERE business_id = $1 AND number = $2', [businessId, number]);
-  return rows[0];
+  return (await deliveries(q).findOneBy({ business_id: businessId, number })) ?? undefined;
 };
 
+/** The delivery row is locked for the rest of the transaction, so it can only be received once. */
 const LockByNumber = async (q: Queryable, businessId: string, number: string): Promise<DeliveryRow | undefined> => {
-  const { rows } = await q.query<DeliveryRow>('SELECT * FROM deliveries WHERE business_id = $1 AND number = $2 FOR UPDATE', [
-    businessId,
-    number,
-  ]);
-  return rows[0];
+  const row = await deliveries(q)
+    .createQueryBuilder('d')
+    .where('d.business_id = :businessId AND d.number = :number', { businessId, number })
+    .setLock('pessimistic_write')
+    .getOne();
+  return row ?? undefined;
 };
 
 const ListLines = async (q: Queryable, deliveryIds: string[]): Promise<DeliveryLineRow[]> => {
   if (!deliveryIds.length) return [];
-  const { rows } = await q.query<DeliveryLineRow>(
-    `SELECT dl.delivery_id, dl.item_id, i.sku, i.name, i.unit, i.location, dl.expected, dl.received, dl.unit_cost
-     FROM delivery_lines dl JOIN items i ON i.id = dl.item_id
-     WHERE dl.delivery_id = ANY($1) ORDER BY dl.position`,
-    [deliveryIds],
-  );
-  return rows;
+  return q
+    .createQueryBuilder(DeliveryLineEntity, 'dl')
+    .select(['dl.delivery_id AS delivery_id', 'dl.item_id AS item_id', 'dl.expected AS expected', 'dl.received AS received', 'dl.unit_cost AS unit_cost'])
+    .addSelect(['i.sku AS sku', 'i.name AS name', 'i.unit AS unit', 'i.location AS location'])
+    .innerJoin(NameOf(ItemEntity), 'i', 'i.id = dl.item_id')
+    .where('dl.delivery_id IN (:...deliveryIds)', { deliveryIds })
+    .orderBy('dl.position')
+    .getRawMany<DeliveryLineRow>();
 };
 
 const Next = (q: Queryable, businessId: string, prefix: string) => NextNumber(q, 'deliveries', businessId, prefix, 2001);
@@ -74,48 +74,52 @@ const Insert = async (
     status: string;
     receivedAt?: DbDate | null;
   },): Promise<string> => {
-  const { rows } = await q.query<{ id: string }>(
-    `INSERT INTO deliveries (business_id, number, supplier_id, supplier_name, vehicle, reference, expected_at, received_at, status)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
-    [
-      input.businessId, input.number, input.supplierId, input.supplierName, input.vehicle, input.reference,
-      input.expectedAt, input.receivedAt ?? null, input.status,
-    ],
-  );
-  return rows[0].id;
+  const { identifiers } = await deliveries(q).insert({
+    business_id: input.businessId,
+    number: input.number,
+    supplier_id: input.supplierId,
+    supplier_name: input.supplierName,
+    vehicle: input.vehicle,
+    reference: input.reference,
+    expected_at: input.expectedAt,
+    received_at: input.receivedAt ?? null,
+    status: input.status,
+  });
+  return identifiers[0].id;
 };
 
 const InsertLine = async (
   q: Queryable,
   input: { deliveryId: string; itemId: string; position: number; expected: number; received?: number | null; unitCost: number },): Promise<void> => {
-  await q.query(
-    'INSERT INTO delivery_lines (delivery_id, item_id, position, expected, received, unit_cost) VALUES ($1, $2, $3, $4, $5, $6)',
-    [input.deliveryId, input.itemId, input.position, input.expected, input.received ?? null, input.unitCost],
-  );
+  await lines(q).insert({
+    delivery_id: input.deliveryId,
+    item_id: input.itemId,
+    position: input.position,
+    expected: input.expected,
+    received: input.received ?? null,
+    unit_cost: input.unitCost,
+  });
 };
 
 const SetStatus = async (q: Queryable, id: string, status: string): Promise<void> => {
-  await q.query(
-    `UPDATE deliveries SET status = $2, received_at = CASE WHEN $2 = 'RECEIVED' THEN now() ELSE received_at END WHERE id = $1`,
-    [id, status],
-  );
+  await deliveries(q).update({ id }, { status, ...(status === 'RECEIVED' && { received_at: () => 'now()' }) });
 };
 
 const SetLineReceived = async (q: Queryable, deliveryId: string, itemId: string, received: number): Promise<void> => {
-  await q.query('UPDATE delivery_lines SET received = $3 WHERE delivery_id = $1 AND item_id = $2', [deliveryId, itemId, received]);
+  await lines(q).update({ delivery_id: deliveryId, item_id: itemId }, { received });
 };
 
 /** Open deliveries that include an item, for the item detail panel. */
-const ListOpenForItem = async (
+const ListOpenForItem = (
   q: Queryable,
   itemId: string,): Promise<{ number: string; supplier_name: string; expected_at: DbDate; expected: number }[]> => {
-  const { rows } = await q.query<{ number: string; supplier_name: string; expected_at: DbDate; expected: number }>(
-    `SELECT d.number, d.supplier_name, d.expected_at, dl.expected
-     FROM delivery_lines dl JOIN deliveries d ON d.id = dl.delivery_id
-     WHERE dl.item_id = $1 AND d.status <> 'RECEIVED' ORDER BY d.expected_at`,
-    [itemId],
-  );
-  return rows;
+  return q
+    .createQueryBuilder(DeliveryLineEntity, 'dl')
+    .select(['d.number AS number', 'd.supplier_name AS supplier_name', 'd.expected_at AS expected_at', 'dl.expected AS expected'])
+    .innerJoin(NameOf(DeliveryEntity), 'd', 'd.id = dl.delivery_id')
+    .where(`dl.item_id = :itemId AND d.status <> 'RECEIVED'`, { itemId })
+    .orderBy('d.expected_at')
+    .getRawMany();
 };
 
 export const deliveriesRepository = {

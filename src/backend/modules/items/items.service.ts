@@ -209,6 +209,9 @@ const Adjust = (scope: ScopeType, sku: string, input: AdjustStockInput): Promise
     if (item.kind !== ItemKindTypeEnum.STOCK) throw BadRequest(`${item.name} has no stock of its own to adjust`);
     const current = await view(tx, scope, sku);
     const onHand = item.on_hand;
+    if (input.expectedOnHand !== undefined && input.expectedOnHand !== onHand) {
+      throw Conflict(`${item.name} changed to ${onHand} on hand since you started — check the count and try again`);
+    }
     const next =
       input.mode === AdjustModeTypeEnum.ADD ? onHand + input.qty : input.mode === AdjustModeTypeEnum.REMOVE ? onHand - input.qty : input.qty;
     if (next === onHand) throw BadRequest('That adjustment would not change the quantity');

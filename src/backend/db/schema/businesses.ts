@@ -26,6 +26,7 @@ export type InviteRow = {
   created_by: string | null;
   expires_at: DbDate;
   accepted_at: DbDate | null;
+  accepted_by: string | null;
   revoked_at: DbDate | null;
   created_at: DbDate;
 };

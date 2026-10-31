@@ -25,7 +25,7 @@ Inventory and orders for any small business, with a live 3D world of the busines
 
 ## Run it
 
-Requires Node 20.12+ (tested on Node 24).
+Requires Node 20.19+ or 22.13+ (tested on Node 24).
 
 ```bash
 npm install
@@ -48,6 +48,7 @@ Settings are read from `.env` in the project root (git-ignored). Real environmen
 # Leave empty to use the embedded Postgres (PGlite) in .data/pglite instead
 DATABASE_URL=postgres://postgres:YOUR_PASSWORD@localhost:5432/stockmotion
 PGLITE_DIR=.data/pglite
+DB_POOL_SIZE=10            # PostgreSQL connections per server instance (keep it small on Vercel)
 PORT=3000
 LOG_LEVEL=info              # debug | info | warn | error
 JWT_SECRET=                 # 32+ characters; required in production, random per run in development
@@ -57,7 +58,7 @@ TRUST_PROXY=loopback        # "1" behind one load balancer (most hosts), "true",
 SHUTDOWN_TIMEOUT_MS=10000   # grace period for open requests on SIGTERM
 ```
 
-- **Your local PostgreSQL:** the database is created on first start and migrations run automatically.
+- **Your local PostgreSQL:** the database is created on first start and migrations run automatically (TypeORM, recorded in `typeorm_migrations`). A database made by an earlier version is adopted as it is — its data is kept.
 - **No database install:** leave `DATABASE_URL` empty and an embedded Postgres is stored in `.data/pglite`.
 
 Sessions use a short-lived access token held in memory, plus a rotating, httpOnly refresh cookie. Replaying an already-used refresh token ends every session of that account.
@@ -67,15 +68,18 @@ Sessions use a short-lived access token held in memory, plus a rotating, httpOnl
 | `npm run dev` | API + Vite dev server with HMR on `PORT` (default 3000) |
 | `npm run build` | Typecheck both projects and build the frontend to `dist/` |
 | `npm start` | Production server: serves `dist/` and the API (needs `JWT_SECRET`) |
-| `npm test` | Backend integration tests (in-memory Postgres, one file at a time) |
+| `npm test` | Backend integration tests (in-memory Postgres, one file at a time). Set `TEST_DATABASE_URL` to run them against a real PostgreSQL database whose name contains `test` — it is emptied |
 | `npm run lint` | ESLint: import cycles, frontend/backend boundary, hook rules |
 | `npm run typecheck` | `tsc -b --noEmit` |
+| `npm run vercel-build` | Vercel's build: frontend, migrations, and the backend bundled as one function in `.vercel/output` (needs `DATABASE_URL`) |
 | `npm run illustrations` | Re-render the landing page's scenario illustrations into `public/landing/scenarios/` (uses your installed Chrome) |
 | `npm run db:seed` | Wipe the database and recreate the demo login (refuses in production) |
+| `npm run db:migrate` | Apply pending migrations (the server also does this on start) |
+| `npm run db:migration:create -- Name` | Start a new migration in `src/backend/db/migrations/` |
 
 ## Deploy
 
-Production runs one Node process that serves the API, the realtime socket and the built frontend. Any host that runs a Docker image or Node 20.12+ works (Render, Railway, Fly.io, a VPS …).
+Production runs one Node process that serves the API, the realtime socket and the built frontend. Any host that runs a Docker image or Node 20.19+ works (Render, Railway, Fly.io, a VPS …).
 
 **With Docker**
 
@@ -87,6 +91,17 @@ docker run -p 3000:3000   -e JWT_SECRET="$(openssl rand -hex 48)"   -e DATABASE_
 Leave `DATABASE_URL` empty to use the embedded Postgres instead, and mount a volume at `/app/.data` to keep it. The image has a health check on `/api/system/health` and stops gracefully on SIGTERM.
 
 **Without Docker:** `npm ci && npm run build && npm start` with the same environment variables (`.env.example` lists them all).
+
+**On Vercel**
+
+1. Create a PostgreSQL database (Neon or Supabase, e.g. from Vercel's Marketplace) and copy its **pooled** connection string. Vercel can't keep the embedded database.
+2. Import the repository in Vercel. `vercel.json` already sets the build (`npm run vercel-build`); leave the framework preset as "Other".
+3. Add environment variables: `DATABASE_URL` (pooled), `JWT_SECRET` (32+ characters) and `DB_POOL_SIZE=3`. Don't set `NODE_ENV` — the build sets it on the function, and setting it project-wide makes the install skip the build tools. Give Preview deployments their own database (e.g. a Neon branch): every build runs the migrations against its `DATABASE_URL`.
+4. Deploy, then open `https://<your-domain>/api/system/health` — it should answer `{"ok":true}`.
+
+The build runs the migrations, puts the frontend on Vercel's CDN and bundles the backend (`src/backend/server.ts`, which skips the start-up work Vercel does itself) into one function that serves `/api/*`, including the live-update socket at `/api/socket.io`. Compared with one long-running server:
+- **Live updates** reach the people connected to the same function instance. At low traffic that is everyone; once Vercel runs several instances, changes need a shared Redis channel (the Socket.IO Redis adapter) to reach all of them — not included yet. Live sockets also close at the function's time limit (300 s) and the app reconnects on its own. WebSockets need Fluid compute, on by default for projects created since April 2025.
+- **Rate limits** are counted per instance.
 
 Checklist:
 - Serve over **HTTPS** (the refresh cookie is `Secure` in production and HSTS is on).
@@ -103,14 +118,25 @@ Checklist:
 - **Incoming:** expected on deliveries not yet received.
 - **Status:** *Out* when nothing is on hand (or nothing can be made), *Low* when available ≤ reorder level.
 
-All of these are derived in one place, the `item_views` SQL view (`src/backend/db/migrations/002_multi_business.sql`).
+All of these are derived in one place, the `item_views` SQL view (`src/backend/db/migrations/sql/initial-schema.sql`).
+
+## Security and data integrity
+
+- **Tenancy.** Every business route checks membership in the database on each request (not from the token); non-members get 404. Realtime rooms are joined the same way, and removing someone from a team cuts their open tabs off at once.
+- **Roles.** Owners manage the team; only an owner can make or invite an owner, and the last owner can’t leave. Managers run the catalogue and imports, book deliveries and cancel orders; staff work orders, count stock and receive deliveries.
+- **Stock under concurrency.** Order, item and delivery rows are locked (`SELECT … FOR UPDATE`, in id order) for every change, so two people can’t reserve the same last unit, close an order twice or receive a delivery twice. `CHECK` constraints keep on-hand and line quantities from going negative.
+- **Stale writes.** A stock count is refused if the count changed since the person started it. Receiving more than a delivery expected takes a manager.
+- **History.** The activity log and stock ledger are append-only: the API has no way to edit them and a database trigger refuses updates.
+- **Sessions.** Short-lived access tokens; rotating, single-use refresh tokens — replaying one ends every session of the account. Credential and invite endpoints are rate-limited.
+
+`src/backend/tests/security.test.ts` checks each of these.
 
 ## Structure
 
 See `docs/STRUCTURE.md`:
-- **Backend** (`src/backend`): Express + Postgres, one folder per domain module. SQL lives only in each module's `*.repository.ts`.
+- **Backend** (`src/backend`): Express + PostgreSQL through TypeORM, one folder per domain module. Database access lives only in each module's `*.repository.ts`.
 - **Frontend** (`src/frontend`): React 19 + Vite + React Query, one folder per feature, each with a single service object. Business templates live in `src/backend/modules/templates`; the frontend reads them from the API.
 
 ## Credits
 
-3D icons on the landing page: [3dicons](https://github.com/realvjy/3dicons) by realvjy, CC0. Font: Inter (SIL Open Font License), self-hosted via Fontsource. Animation: [GSAP](https://gsap.com) (free under its standard license).
+3D icons on the landing page: [3dicons](https://github.com/realvjy/3dicons) by realvjy, CC0. Font: Inter (SIL Open Font License), self-hosted via Fontsource. Data access: [TypeORM](https://typeorm.io) (MIT). Animation: [GSAP](https://gsap.com) (free under its standard license).

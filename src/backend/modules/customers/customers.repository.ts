@@ -1,4 +1,5 @@
 import type { Queryable } from '@/backend/db/client';
+import { CustomerEntity } from '@/backend/db/entities';
 import type { CustomerRow, DbDate, DbNumeric } from '@/backend/db/schema';
 
 export type CustomerListRow = CustomerRow & {
@@ -10,6 +11,12 @@ export type CustomerListRow = CustomerRow & {
 
 export type CustomerWriteType = { name: string; email: string; phone: string; address: string; notes: string };
 
+const customers = (q: Queryable) => q.getRepository(CustomerEntity);
+
+/**
+ * Customers with their order stats (spend counts closed, non-cancelled orders). A reporting aggregate with FILTER
+ * clauses, so it stays parameterised SQL like the dashboard's.
+ */
 const SELECT = `
   SELECT c.*,
     COALESCE(s.order_count, 0)::int AS order_count,
@@ -29,43 +36,37 @@ const SELECT = `
     GROUP BY o.customer_id
   ) s ON s.customer_id = c.id`;
 
-const List = async (q: Queryable, businessId: string, search?: string): Promise<CustomerListRow[]> => {
-  const params: unknown[] = [businessId];
-  let filter = '';
-  if (search) {
-    params.push(`%${search}%`);
-    filter = 'AND (c.name ILIKE $2 OR c.email ILIKE $2 OR c.phone ILIKE $2)';
-  }
-  const { rows } = await q.query<CustomerListRow>(
-    `${SELECT} WHERE c.business_id = $1 ${filter} ORDER BY s.last_order_at DESC NULLS LAST, c.name`,
-    params,
-  );
-  return rows;
+const List = (q: Queryable, businessId: string, search?: string): Promise<CustomerListRow[]> => {
+  const filter = search ? 'AND (c.name ILIKE $2 OR c.email ILIKE $2 OR c.phone ILIKE $2)' : '';
+  const params = search ? [businessId, `%${search}%`] : [businessId];
+  return q.query(`${SELECT} WHERE c.business_id = $1 ${filter} ORDER BY s.last_order_at DESC NULLS LAST, c.name`, params);
 };
 
 const Find = async (q: Queryable, businessId: string, id: string): Promise<CustomerListRow | undefined> => {
-  const { rows } = await q.query<CustomerListRow>(`${SELECT} WHERE c.business_id = $1 AND c.id = $2`, [businessId, id]);
+  const rows: CustomerListRow[] = await q.query(`${SELECT} WHERE c.business_id = $1 AND c.id = $2`, [businessId, id]);
   return rows[0];
 };
 
 const Insert = async (q: Queryable, businessId: string, input: CustomerWriteType & { createdAt?: DbDate }): Promise<string> => {
-  const { rows } = await q.query<{ id: string }>(
-    `INSERT INTO customers (business_id, name, email, phone, address, notes, created_at)
-     VALUES ($1, $2, $3, $4, $5, $6, COALESCE($7, now())) RETURNING id`,
-    [businessId, input.name, input.email, input.phone, input.address, input.notes, input.createdAt ?? null],
-  );
-  return rows[0].id;
+  const { identifiers } = await customers(q).insert({
+    business_id: businessId,
+    name: input.name,
+    email: input.email,
+    phone: input.phone,
+    address: input.address,
+    notes: input.notes,
+    created_at: input.createdAt,
+  });
+  return identifiers[0].id;
 };
 
 const Update = async (q: Queryable, id: string, input: CustomerWriteType): Promise<void> => {
-  await q.query('UPDATE customers SET name = $2, email = $3, phone = $4, address = $5, notes = $6 WHERE id = $1', [
-    id, input.name, input.email, input.phone, input.address, input.notes,
-  ]);
+  await customers(q).update({ id }, { name: input.name, email: input.email, phone: input.phone, address: input.address, notes: input.notes });
 };
 
 const Delete = async (q: Queryable, id: string): Promise<void> => {
   // Orders keep their customer name snapshot; the link is cleared by the foreign key.
-  await q.query('DELETE FROM customers WHERE id = $1', [id]);
+  await customers(q).delete({ id });
 };
 
 export const customersRepository = { List, Find, Insert, Update, Delete };

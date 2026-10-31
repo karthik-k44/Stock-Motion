@@ -14,4 +14,5 @@ export type RefreshTokenRow = {
   account_id: string;
   expires_at: DbDate;
   revoked_at: DbDate | null;
+  created_at: DbDate;
 };

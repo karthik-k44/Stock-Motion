@@ -4,7 +4,7 @@ import { SectionHeading } from './SectionHeading';
 
 /** Who it's for, on a Fog band: one flat white card per use case, each the target of its mega-menu link. */
 export const UseCaseSection = () => (
-  <section id="use-cases" className="mt-20 scroll-mt-28 bg-sunken py-20">
+  <section id="use-cases" className="scroll-mt-28 bg-sunken py-20">
     <div className="mx-auto max-w-300 px-4 sm:px-6">
       <SectionHeading eyebrow="Use cases" title="Built around the way your business already works." lead="Pick your kind of business and StockMotion speaks your language — from aisles and pick lists to recipes and job kits." />
       <ul className="mt-12 grid list-none gap-4 p-0 sm:grid-cols-2 lg:grid-cols-3">

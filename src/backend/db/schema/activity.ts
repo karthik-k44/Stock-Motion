@@ -1,6 +1,19 @@
 import type { DbDate } from './_shared';
 
-/** Row shape as returned by the database (snake_case, before mapping), joined with the actor name. */
+/** The `activity` table. */
+export type ActivityRecord = {
+  id: number;
+  business_id: string;
+  at: DbDate;
+  kind: string;
+  account_id: string | null;
+  message: string;
+  ref_type: string | null;
+  ref_id: string | null;
+  meta: unknown;
+};
+
+/** An activity row joined with the actor name. */
 export type ActivityRow = {
   id: number;
   at: DbDate;

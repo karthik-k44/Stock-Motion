@@ -4,7 +4,7 @@ import { ToIso } from '@/backend/common/utils/dates';
 import { db, type Queryable } from '@/backend/db/client';
 import { ordersRepository } from '@/backend/modules/orders/orders.repository';
 import { templatesService } from '@/backend/modules/templates/templates.service';
-import { BroadcastChange } from '@/backend/realtime/socket';
+import { BroadcastChange, RevokeRealtimeAccess } from '@/backend/realtime/socket';
 import type { AccountResponseType } from '@/backend/types/account';
 import { ActivityKindTypeEnum } from '@/backend/types/activity';
 import {
@@ -146,6 +146,7 @@ const RemoveMember = async (scope: ScopeType, accountId: string): Promise<Member
       message: leaving ? `${member.name} left the team` : `Removed ${member.name} from the team`,
     });
   });
+  RevokeRealtimeAccess(scope.businessId, accountId);
   BroadcastChange(scope.businessId, [ResourceTypeEnum.MEMBERS, ResourceTypeEnum.ACTIVITY, ResourceTypeEnum.ORDERS], [activity]);
   return leaving ? [] : ListMembers(scope);
 };

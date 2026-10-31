@@ -21,6 +21,12 @@ type Props = {
   /** Degrees the cards behind turn */
   tilt?: number;
   tiltDirection?: 'left' | 'right';
+  /**
+   * `one`: the next cards recede to one side and the previous one fades out as it passes.
+   * `both`: previous cards recede to the other side, mirrored — the card in front with history on one side and
+   * what comes next on the other.
+   */
+  sides?: 'one' | 'both';
   perspective?: number;
   visibleCards?: number;
   /** How quickly cards fade with distance */
@@ -34,6 +40,8 @@ type Props = {
   autoplayDelay?: number;
   loop?: boolean;
   showControls?: boolean;
+  /** px from the carousel's sides to the arrows; 0 puts them on its edges (to line up with the page around it) */
+  arrowInset?: number;
   showIndicators?: boolean;
   label?: string;
   onChange?: (index: number, item: DepthItemType) => void;
@@ -48,9 +56,48 @@ const loopDelta = (d: number, n: number) => {
   return m > n / 2 ? m - n : m;
 };
 
+/** Matches `.depth-carousel__arrow` in styles/depth-carousel.css. */
+const ARROW_SIZE = 44;
+
+type FitType = {
+  cardWidth: number;
+  spread: number;
+  depth: number;
+  perspective: number;
+  visibleCards: number;
+  showControls: boolean;
+  arrowInset: number;
+};
+
 /**
- * A carousel of cards stacked back in 3D: the active card in front, the rest receding to one side, turned and
- * fading. Drag, wheel, arrow keys, the arrows or the dots move it; GSAP eases the position between cards.
+ * The largest scale (0.4–1) at which the outermost visible card stays inside `width`, leaving room for the arrows.
+ * A card `d` steps back is offset by spread·d and pushed back by depth·d, so perspective shrinks both; turning only
+ * pulls its outer edge further in, so it is left out.
+ */
+const fitScale = (width: number, c: FitType): number => {
+  const half = width / 2 - (c.showControls ? c.arrowInset + ARROW_SIZE + 8 : 12);
+  const extent = (sc: number) => {
+    let max = (sc * c.cardWidth) / 2;
+    for (let d = 1; d <= c.visibleCards; d++) {
+      const nearness = c.perspective / (c.perspective + sc * c.depth * d);
+      max = Math.max(max, sc * (Math.abs(c.spread) * d + c.cardWidth / 2) * nearness);
+    }
+    return max;
+  };
+  if (extent(1) <= half) return 1;
+  let [lo, hi] = [0.4, 1];
+  for (let i = 0; i < 16; i++) {
+    const mid = (lo + hi) / 2;
+    if (extent(mid) <= half) lo = mid;
+    else hi = mid;
+  }
+  return lo;
+};
+
+/**
+ * A carousel of cards stacked back in 3D: the active card in front, the rest receding to one side (or, with
+ * `sides="both"`, previous cards to one side and next ones to the other), turned and fading. Drag, wheel, arrow
+ * keys, the arrows or the dots move it; GSAP eases the position between cards.
  */
 export const DepthCarousel = ({
   items,
@@ -63,6 +110,7 @@ export const DepthCarousel = ({
   spread = 90,
   tilt = 22,
   tiltDirection = 'right',
+  sides = 'one',
   perspective = 1400,
   visibleCards = 4,
   falloff = 0.2,
@@ -73,6 +121,7 @@ export const DepthCarousel = ({
   autoplayDelay = 3200,
   loop = true,
   showControls = true,
+  arrowInset = 16,
   showIndicators = true,
   label = 'Carousel',
   onChange,
@@ -97,7 +146,10 @@ export const DepthCarousel = ({
   const { reduced } = useMotion();
   reducedRef.current = reduced;
 
-  const cfg = { count, depth, spread, tilt, tiltDirection, visibleCards, falloff, blur, duration, ease, loop, cardWidth, autoplayDelay, fade, showControls };
+  const cfg = {
+    ...{ count, depth, spread, tilt, tiltDirection, sides, perspective, visibleCards, falloff, blur },
+    ...{ duration, ease, loop, cardWidth, autoplayDelay, fade, showControls, arrowInset },
+  };
   const cfgRef = useRef(cfg);
   cfgRef.current = cfg;
   onChangeRef.current = onChange;
@@ -107,24 +159,28 @@ export const DepthCarousel = ({
     const c = cfgRef.current;
     if (!c.count) return;
     const dir = c.tiltDirection === 'left' ? -1 : 1;
+    const both = c.sides === 'both';
     const sc = scaleRef.current;
     for (let i = 0; i < c.count; i++) {
       const el = cardRefs.current[i];
       if (!el) continue;
       const d = c.loop && c.count > 1 ? loopDelta(i - pos, c.count) : i - pos;
-      const back = Math.max(0, d);
+      // Steps behind the front card, and which way it recedes. One-sided, a previous card has dist < 0: it comes forward.
+      const dist = both ? Math.abs(d) : d;
+      const side = both && d < 0 ? -1 : 1;
+      const back = Math.max(0, dist);
       const shown = Math.abs(d) <= c.visibleCards + 0.5;
-      const tz = -c.depth * d;
-      const tx = dir * c.spread * d;
-      const ry = dir * c.tilt * clamp(d, 0, 1);
-      const opacity = shown ? (d < 0 ? Math.max(0, 1 + d) : 1) : 0;
+      const tz = -c.depth * dist;
+      const tx = dir * side * c.spread * dist;
+      const ry = dir * side * c.tilt * clamp(dist, 0, 1);
+      const opacity = both ? clamp(c.visibleCards + 1 - dist, 0, 1) : shown ? (d < 0 ? Math.max(0, 1 + d) : 1) : 0;
       const brightness = c.fade === 'darken' ? Math.max(0.15, 1 - back * c.falloff) : 1;
       const blurPx = c.blur > 0 ? Math.min(c.blur, (back / Math.max(1, c.visibleCards)) * c.blur) : 0;
       el.style.transform = `translate(-50%, -50%) scale(${sc}) translateX(${tx.toFixed(2)}px) translateZ(${tz.toFixed(2)}px) rotateY(${ry.toFixed(3)}deg)`;
       el.style.opacity = opacity.toFixed(3);
       el.style.filter = `brightness(${brightness.toFixed(3)}) blur(${blurPx.toFixed(2)}px)`;
-      el.style.zIndex = String(Math.round(2000 - d * 20));
-      el.style.pointerEvents = shown && opacity > 0.05 ? 'auto' : 'none';
+      el.style.zIndex = String(Math.round(2000 - dist * 20));
+      el.style.pointerEvents = opacity > 0.05 ? 'auto' : 'none';
       const ov = overlayRefs.current[i];
       if (ov) ov.style.opacity = clamp(back * c.falloff * 1.25, 0, 0.86).toFixed(3);
     }
@@ -170,13 +226,12 @@ export const DepthCarousel = ({
 
   const navigateBy = useCallback((step: number) => setFocus(focusRef.current + step, true), [setFocus]);
 
-  // Shrink the whole stack to fit narrow containers (leaving room for the arrows when they show).
+  // Shrink the whole stack until its outermost cards fit the container (and clear the arrows when they show).
   useEffect(() => {
     const root = rootRef.current;
     if (!root) return;
     const ro = new ResizeObserver(([entry]) => {
-      const c = cfgRef.current;
-      scaleRef.current = clamp(entry.contentRect.width / (c.cardWidth + Math.abs(c.spread) * 2 + (c.showControls ? 120 : 24)), 0.4, 1);
+      scaleRef.current = fitScale(entry.contentRect.width, cfgRef.current);
       layout(posRef.current);
     });
     ro.observe(root);
@@ -268,7 +323,7 @@ export const DepthCarousel = ({
 
   useEffect(() => {
     layout(posRef.current);
-  }, [layout, depth, spread, tilt, tiltDirection, visibleCards, falloff, blur, cardWidth, cardHeight, radius, count, fade, showControls]);
+  }, [layout, depth, spread, tilt, tiltDirection, sides, visibleCards, falloff, blur, cardWidth, cardHeight, radius, count, fade, showControls, arrowInset]);
 
   useEffect(() => () => void tweenRef.current?.kill(), []);
 
@@ -276,7 +331,7 @@ export const DepthCarousel = ({
     <div
       ref={rootRef}
       className={Cn('depth-carousel', fade === 'mist' && 'depth-carousel--light', className)}
-      style={{ '--dc-perspective': `${perspective}px` } as CSSProperties}
+      style={{ '--dc-perspective': `${perspective}px`, '--dc-arrow-inset': `${arrowInset}px` } as CSSProperties}
       role="group"
       aria-roledescription="carousel"
       aria-label={label}

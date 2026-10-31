@@ -17,7 +17,7 @@ export const Login = () => {
   if (session.data) return <Navigate to={next} replace />;
 
   return (
-    <AuthLayout title="Sign in" subtitle="Your inventory, orders and live business world.">
+    <AuthLayout title="Sign in" subtitle="Your inventory, orders and live business world." back={{ to: paths.landing, label: 'Back to home' }}>
       <AccountForm mode="login" submitLabel="Sign in" busy={login.isPending} error={login.error} onSubmit={(input) => login.mutate(input, { onSuccess: () => navigate(next, { replace: true }) })} />
       {import.meta.env.DEV && (
         <p className="auth-hint">

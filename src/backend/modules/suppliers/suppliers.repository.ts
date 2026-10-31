@@ -1,53 +1,58 @@
 import type { Queryable } from '@/backend/db/client';
+import { SupplierEntity } from '@/backend/db/entities';
 import type { SupplierRow } from '@/backend/db/schema';
 
 export type SupplierListRow = SupplierRow & { item_count: number; open_deliveries: number };
 
 export type SupplierWriteType = { name: string; contact: string; email: string; phone: string; leadDays: number };
 
-const SELECT = `
-  SELECT s.*,
-    (SELECT COUNT(*)::int FROM items i WHERE i.supplier_id = s.id AND i.archived_at IS NULL) AS item_count,
-    (SELECT COUNT(*)::int FROM deliveries d WHERE d.supplier_id = s.id AND d.status <> 'RECEIVED') AS open_deliveries
-  FROM suppliers s`;
+const suppliers = (q: Queryable) => q.getRepository(SupplierEntity);
 
-const List = async (q: Queryable, businessId: string, search?: string): Promise<SupplierListRow[]> => {
-  const params: unknown[] = [businessId];
-  let filter = '';
-  if (search) {
-    params.push(`%${search}%`);
-    filter = 'AND (s.name ILIKE $2 OR s.contact ILIKE $2 OR s.email ILIKE $2)';
-  }
-  const { rows } = await q.query<SupplierListRow>(`${SELECT} WHERE s.business_id = $1 ${filter} ORDER BY s.name`, params);
-  return rows;
+/** Suppliers of a business with how many items they supply and deliveries still to come. */
+const select = (q: Queryable, businessId: string) =>
+  suppliers(q)
+    .createQueryBuilder('s')
+    .select('s.*')
+    .addSelect('(SELECT COUNT(*)::int FROM items i WHERE i.supplier_id = s.id AND i.archived_at IS NULL)', 'item_count')
+    .addSelect(`(SELECT COUNT(*)::int FROM deliveries d WHERE d.supplier_id = s.id AND d.status <> 'RECEIVED')`, 'open_deliveries')
+    .where('s.business_id = :businessId', { businessId });
+
+const List = (q: Queryable, businessId: string, search?: string): Promise<SupplierListRow[]> => {
+  const query = select(q, businessId);
+  if (search) query.andWhere('(s.name ILIKE :search OR s.contact ILIKE :search OR s.email ILIKE :search)', { search: `%${search}%` });
+  return query.orderBy('s.name').getRawMany<SupplierListRow>();
 };
 
-const Find = async (q: Queryable, businessId: string, id: string): Promise<SupplierListRow | undefined> => {
-  const { rows } = await q.query<SupplierListRow>(`${SELECT} WHERE s.business_id = $1 AND s.id = $2`, [businessId, id]);
-  return rows[0];
+const Find = (q: Queryable, businessId: string, id: string): Promise<SupplierListRow | undefined> => {
+  return select(q, businessId).andWhere('s.id = :id', { id }).getRawOne<SupplierListRow>();
 };
 
 const FindByName = async (q: Queryable, businessId: string, name: string): Promise<SupplierRow | undefined> => {
-  const { rows } = await q.query<SupplierRow>('SELECT * FROM suppliers WHERE business_id = $1 AND lower(name) = lower($2)', [businessId, name]);
-  return rows[0];
+  const row = await suppliers(q)
+    .createQueryBuilder('s')
+    .where('s.business_id = :businessId AND lower(s.name) = lower(:name)', { businessId, name })
+    .getOne();
+  return row ?? undefined;
 };
 
 const Insert = async (q: Queryable, businessId: string, input: SupplierWriteType): Promise<string> => {
-  const { rows } = await q.query<{ id: string }>(
-    'INSERT INTO suppliers (business_id, name, contact, email, phone, lead_days) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
-    [businessId, input.name, input.contact, input.email, input.phone, input.leadDays],
-  );
-  return rows[0].id;
+  const { identifiers } = await suppliers(q).insert({
+    business_id: businessId,
+    name: input.name,
+    contact: input.contact,
+    email: input.email,
+    phone: input.phone,
+    lead_days: input.leadDays,
+  });
+  return identifiers[0].id;
 };
 
 const Update = async (q: Queryable, id: string, input: SupplierWriteType): Promise<void> => {
-  await q.query('UPDATE suppliers SET name = $2, contact = $3, email = $4, phone = $5, lead_days = $6 WHERE id = $1', [
-    id, input.name, input.contact, input.email, input.phone, input.leadDays,
-  ]);
+  await suppliers(q).update({ id }, { name: input.name, contact: input.contact, email: input.email, phone: input.phone, lead_days: input.leadDays });
 };
 
 const Delete = async (q: Queryable, id: string): Promise<void> => {
-  await q.query('DELETE FROM suppliers WHERE id = $1', [id]);
+  await suppliers(q).delete({ id });
 };
 
 export const suppliersRepository = { List, Find, FindByName, Insert, Update, Delete };

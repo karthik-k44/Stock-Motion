@@ -27,6 +27,8 @@ export const ItemFields = ({ kind, values, errors, onChange, editing }: Props) =
   const { data: suppliers = [] } = suppliersService.useSuppliers();
   const stocked = kind === ItemKindTypeEnum.STOCK;
   const free = locations.filter((l) => !template.exclusiveLocations || !l.items.length);
+  // The template's units, plus the item's own if it came in with another one (CSV import accepts any unit).
+  const units = [...new Set([...template.units, values.unit].filter(Boolean))];
 
   const input = (key: keyof ItemFieldValuesType, label: string, opts: { type?: string; hint?: string; disabled?: boolean } = {}) => (
     <Field id={`item-${key}`} label={label} error={errors[key]} hint={opts.hint}>
@@ -54,8 +56,7 @@ export const ItemFields = ({ kind, values, errors, onChange, editing }: Props) =
         <Select id="item-category" value={values.category} options={[{ value: '', label: 'Choose…' }, ...categories.map((c) => ({ value: c.code, label: c.name }))]} onChange={(v) => onChange('category', v)} />
       </Field>
       <Field id="item-unit" label="Unit" error={errors.unit} hint={stocked ? 'Counted in this unit everywhere' : undefined}>
-        <input id="item-unit" className="input" list="item-units" value={values.unit} onChange={(e) => onChange('unit', e.target.value)} aria-invalid={Boolean(errors.unit)} />
-        <datalist id="item-units">{template.units.map((u) => <option key={u} value={u} />)}</datalist>
+        <Select id="item-unit" value={values.unit} options={units.map((u) => ({ value: u, label: u }))} onChange={(v) => onChange('unit', v)} aria-invalid={Boolean(errors.unit)} />
       </Field>
       {stocked && !editing && input('onHand', 'On hand now', { type: 'number', hint: 'Recorded as opening stock' })}
       {kind !== ItemKindTypeEnum.SERVICE && input('reorderLevel', stocked ? 'Reorder at' : 'Warn when fewer than', { type: 'number' })}

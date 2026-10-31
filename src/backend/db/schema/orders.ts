@@ -1,7 +1,7 @@
 import type { DbDate, DbNumeric } from './_shared';
 
-/** Row shapes as returned by the database (snake_case, before mapping). */
-export type OrderRow = {
+/** The `orders` table. */
+export type OrderRecord = {
   id: string;
   business_id: string;
   number: string;
@@ -13,12 +13,25 @@ export type OrderRow = {
   cancelled: boolean;
   due_at: DbDate | null;
   assignee_id: string | null;
-  assignee_name: string | null;
   notes: string;
   created_at: DbDate;
   closed_at: DbDate | null;
 };
 
+/** An order with its assignee's name. */
+export type OrderRow = OrderRecord & { assignee_name: string | null };
+
+/** The `order_lines` table. */
+export type OrderLineRecord = {
+  order_id: string;
+  item_id: string;
+  position: number;
+  qty: number;
+  done: number;
+  unit_price: DbNumeric;
+};
+
+/** An order line with its item's details. */
 export type OrderLineRow = {
   order_id: string;
   item_id: string;

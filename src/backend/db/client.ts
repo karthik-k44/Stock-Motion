@@ -1,125 +1,87 @@
 import { mkdirSync } from 'node:fs';
-import { PGlite } from '@electric-sql/pglite';
-import pg from 'pg';
+import { DataSource, type DataSourceOptions, type EntityManager } from 'typeorm';
 import { logger } from '@/backend/config/logger';
+import { ENTITIES } from './entities';
 import { EnsureDatabase, RedactUrl } from './ensure-database';
+import { MIGRATIONS } from './migrations';
 import { AcquireDataDirLock } from './pglite-lock';
+import { PGliteDriverFor } from './pglite-pool';
+import { ALL_TABLES } from './schema';
 
-export type Row = Record<string, unknown>;
+/** What every repository function takes first: the shared `db`, or the manager of the transaction it runs in. */
+export type Queryable = EntityManager;
 
-/** Anything that can run a parameterised query: the pool or a transaction. */
-export interface Queryable {
-  query<T extends Row = Row>(text: string, params?: unknown[]): Promise<{ rows: T[] }>;
-  /** Run one or more statements without parameters (migrations, truncation). */
-  exec(sql: string): Promise<void>;
-}
+/**
+ * The entity manager for work outside a transaction. `db.transaction(async (tx) => …)` runs work in one and hands
+ * it `tx` to pass on. Set by ConnectDb — module exports are live bindings, so importers see it once connected.
+ */
+export let db = undefined as unknown as EntityManager;
 
-interface Driver extends Queryable {
-  kind: 'postgres' | 'pglite';
-  transaction<T>(fn: (tx: Queryable) => Promise<T>): Promise<T>;
-  close(): Promise<void>;
-}
+let source: DataSource | null = null;
+let closeEmbedded = async () => {};
 
-let driver: Driver | null = null;
+const SHARED = {
+  type: 'postgres',
+  entities: ENTITIES,
+  migrations: MIGRATIONS,
+  migrationsTableName: 'typeorm_migrations',
+  // The migrations own the schema; TypeORM never alters tables on its own.
+  synchronize: false,
+  migrationsRun: false,
+  logging: false,
+} as const;
 
-const postgresDriver = (url: string): Driver => {
-  const pool = new pg.Pool({ connectionString: url, max: 10 });
-  return {
-    kind: 'postgres',
-    query: async <T extends Row>(text: string, params?: unknown[]) => {
-      const r = await pool.query(text, params);
-      return { rows: r.rows as T[] };
-    },
-    exec: async (sql) => {
-      await pool.query(sql);
-    },
-    transaction: async (fn) => {
-      const client = await pool.connect();
-      try {
-        await client.query('BEGIN');
-        const result = await fn({
-          query: async <T extends Row>(text: string, params?: unknown[]) => ({ rows: (await client.query(text, params)).rows as T[] }),
-          exec: async (sql: string) => {
-            await client.query(sql);
-          },
-        });
-        await client.query('COMMIT');
-        return result;
-      } catch (err) {
-        await client.query('ROLLBACK');
-        throw err;
-      } finally {
-        client.release();
-      }
-    },
-    close: () => pool.end(),
-  };
-};
-
-const pgliteDriver = async (dataDir?: string): Promise<Driver> => {
+const embedded = async (dataDir?: string): Promise<DataSourceOptions> => {
   let release = () => {};
   if (dataDir) {
     mkdirSync(dataDir, { recursive: true });
     release = await AcquireDataDirLock(dataDir);
   }
+  // Loaded only when used, so a PostgreSQL-only build (the Vercel function) doesn't need PGlite at all.
+  const { PGlite } = await import('@electric-sql/pglite');
   const lite = dataDir ? new PGlite(dataDir) : new PGlite();
   await lite.waitReady.catch((err) => {
     release();
     throw err;
   });
-  return {
-    kind: 'pglite',
-    query: async <T extends Row>(text: string, params?: unknown[]) => {
-      const r = await lite.query<T>(text, params);
-      return { rows: r.rows };
-    },
-    exec: async (sql) => {
-      await lite.exec(sql);
-    },
-    transaction: (fn) =>
-      lite.transaction((tx) =>
-        fn({
-          query: async <T extends Row>(text: string, params?: unknown[]) => ({ rows: (await tx.query<T>(text, params)).rows }),
-          exec: async (sql: string) => {
-            await tx.exec(sql);
-          },
-        }),
-      ),
-    close: async () => {
-      await lite.close();
-      release();
-    },
+  closeEmbedded = async () => {
+    await lite.close();
+    release();
   };
+  return { ...SHARED, driver: PGliteDriverFor(lite) };
 };
 
 /**
- * Connect once at startup. `url` → real Postgres; otherwise embedded Postgres
- * persisted to `dataDir` (or in memory when `dataDir` is omitted — used by tests).
+ * Connect once at startup. `url` → PostgreSQL (created if missing); otherwise embedded PostgreSQL (PGlite)
+ * persisted to `dataDir`, or in memory when `dataDir` is omitted — used by tests.
  */
-export const ConnectDb = async (opts: { url?: string; dataDir?: string }): Promise<void> => {
-  if (driver) return;
-  if (opts.url) {
-    await EnsureDatabase(opts.url);
-    driver = postgresDriver(opts.url);
-    logger.info(`Database connected (postgres: ${RedactUrl(opts.url)})`);
-  } else {
-    driver = await pgliteDriver(opts.dataDir);
-    logger.info(`Database connected (embedded pglite: ${opts.dataDir ?? 'in-memory'})`);
-  }
+export const ConnectDb = async (opts: { url?: string; dataDir?: string; poolSize?: number }): Promise<DataSource> => {
+  if (source) return source;
+  if (opts.url) await EnsureDatabase(opts.url);
+  const options: DataSourceOptions = opts.url ? { ...SHARED, url: opts.url, poolSize: opts.poolSize ?? 10 } : await embedded(opts.dataDir);
+  source = await new DataSource(options).initialize();
+  db = source.manager;
+  logger.info(
+    opts.url ? `Database connected (postgres: ${RedactUrl(opts.url)})` : `Database connected (embedded pglite: ${opts.dataDir ?? 'in-memory'})`,
+  );
+  return source;
 };
 
-const current = (): Driver => {
-  if (!driver) throw new Error('Database not connected — call ConnectDb() first');
-  return driver;
+export const DataSourceOf = (): DataSource => {
+  if (!source) throw new Error('Database not connected — call ConnectDb() first');
+  return source;
 };
 
-export const db = {
-  query: <T extends Row = Row>(text: string, params?: unknown[]) => current().query<T>(text, params),
-  exec: (sql: string) => current().exec(sql),
-  transaction: <T>(fn: (tx: Queryable) => Promise<T>) => current().transaction(fn),
-  close: async () => {
-    if (!driver) return;
-    await driver.close();
-    driver = null;
-  },
+export const CloseDb = async (): Promise<void> => {
+  if (!source) return;
+  await source.destroy();
+  await closeEmbedded();
+  closeEmbedded = async () => {};
+  source = null;
+  db = undefined as unknown as EntityManager;
+};
+
+/** Empty every table (demo reseed and tests). Never used on a production database. */
+export const WipeDatabase = async (q: Queryable = db): Promise<void> => {
+  await q.query(`TRUNCATE ${ALL_TABLES.join(', ')} RESTART IDENTITY CASCADE`);
 };

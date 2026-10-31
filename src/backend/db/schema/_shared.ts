@@ -1,4 +1,7 @@
-/** Timestamps come back as Date from node-postgres and PGlite; NUMERIC columns as strings. */
+/**
+ * Row types are snake_case, exactly as the columns are named: the TypeORM entities (`db/entities`) use them as their
+ * shapes, and raw query rows have the same keys. Timestamps come back as Date; NUMERIC columns as strings.
+ */
 export type DbDate = Date | string;
 export type DbNumeric = number | string;
 

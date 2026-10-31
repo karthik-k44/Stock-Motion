@@ -1,5 +1,7 @@
 import type { Queryable } from '@/backend/db/client';
 
+// Reporting aggregates (FILTER, date_trunc) read clearest as SQL, so these four stay parameterised raw queries.
+
 export type SalesSummaryRow = {
   orders_today: number;
   closed_today: number;
@@ -10,7 +12,7 @@ export type SalesSummaryRow = {
 
 /** Order counts and revenue. Revenue counts closed, non-cancelled orders by the day they closed. */
 const SalesSummary = async (q: Queryable, businessId: string): Promise<SalesSummaryRow> => {
-  const { rows } = await q.query<SalesSummaryRow>(
+  const rows: SalesSummaryRow[] = await q.query(
     `WITH totals AS (
        SELECT o.id, o.created_at, o.closed_at, o.closed, o.cancelled, COALESCE(SUM(ol.qty * ol.unit_price), 0) AS total
        FROM orders o LEFT JOIN order_lines ol ON ol.order_id = o.id
@@ -31,7 +33,7 @@ const SalesSummary = async (q: Queryable, businessId: string): Promise<SalesSumm
 
 /** Open orders per status. */
 const OpenByStatus = async (q: Queryable, businessId: string): Promise<{ status: string; n: number }[]> => {
-  const { rows } = await q.query<{ status: string; n: number }>(
+  const rows: { status: string; n: number }[] = await q.query(
     'SELECT status, COUNT(*)::int AS n FROM orders WHERE business_id = $1 AND NOT closed GROUP BY status',
     [businessId],
   );
@@ -40,7 +42,7 @@ const OpenByStatus = async (q: Queryable, businessId: string): Promise<{ status:
 
 /** Best sellers this month by quantity, from closed orders. */
 const TopSellers = async (q: Queryable, businessId: string, limit: number): Promise<{ sku: string; name: string; qty: number; revenue: number }[]> => {
-  const { rows } = await q.query<{ sku: string; name: string; qty: number; revenue: number }>(
+  const rows: { sku: string; name: string; qty: number; revenue: number }[] = await q.query(
     `SELECT i.sku, i.name, SUM(ol.qty)::int AS qty, SUM(ol.qty * ol.unit_price)::float8 AS revenue
      FROM order_lines ol JOIN orders o ON o.id = ol.order_id JOIN items i ON i.id = ol.item_id
      WHERE o.business_id = $1 AND o.closed AND NOT o.cancelled AND o.closed_at >= date_trunc('month', now())
@@ -51,7 +53,7 @@ const TopSellers = async (q: Queryable, businessId: string, limit: number): Prom
 };
 
 const Counts = async (q: Queryable, businessId: string): Promise<{ customers: number; new_customers_month: number; team: number }> => {
-  const { rows } = await q.query<{ customers: number; new_customers_month: number; team: number }>(
+  const rows: { customers: number; new_customers_month: number; team: number }[] = await q.query(
     `SELECT
        (SELECT COUNT(*)::int FROM customers WHERE business_id = $1) AS customers,
        (SELECT COUNT(*)::int FROM customers WHERE business_id = $1 AND created_at >= date_trunc('month', now())) AS new_customers_month,

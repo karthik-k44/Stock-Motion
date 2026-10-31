@@ -9,11 +9,19 @@ import type { DataChangedPayloadType, ResourceTypeEnum } from '@/backend/types/d
 
 let io: Server | null = null;
 
+/** Under /api with the rest of the backend, so a single route sends all backend traffic to it (one rule on Vercel). */
+export const SOCKET_PATH = '/api/socket.io';
+
 const room = (businessId: string) => `business:${businessId}`;
+/** Every socket of one account, so access can be taken away from all of its tabs at once. */
+const accountRoom = (accountId: string) => `account:${accountId}`;
+
+/** `business:join` requests one socket may make per window — each one is a membership lookup. */
+const JOIN_LIMIT = { max: 20, windowMs: 60_000 };
 
 export const AttachRealtime = (server: HttpServer): Server => {
   // destroyUpgrade:false — Vite's HMR websocket shares this HTTP server in development.
-  io = new Server(server, { destroyUpgrade: false, serveClient: false });
+  io = new Server(server, { path: SOCKET_PATH, destroyUpgrade: false, serveClient: false });
 
   // Every socket carries the same access token as REST calls; no token, no connection.
   io.use((socket, next) => {
@@ -28,9 +36,13 @@ export const AttachRealtime = (server: HttpServer): Server => {
 
   io.on('connection', (socket) => {
     logger.debug(`Realtime client connected ${socket.id}`);
+    void socket.join(accountRoom(socket.data.accountId));
+    let joins = { count: 0, resetAt: Date.now() + JOIN_LIMIT.windowMs };
     // A client watches one business at a time, and only one it is a member of.
     socket.on('business:join', async (businessId: unknown, ack?: (ok: boolean) => void) => {
       const reply = typeof ack === 'function' ? ack : () => {};
+      if (Date.now() > joins.resetAt) joins = { count: 0, resetAt: Date.now() + JOIN_LIMIT.windowMs };
+      if (++joins.count > JOIN_LIMIT.max) return reply(false);
       if (typeof businessId !== 'string') return reply(false);
       if (!(await businessesRepository.FindMembership(db, businessId, socket.data.accountId))) return reply(false);
       for (const joined of socket.rooms) if (joined.startsWith('business:')) await socket.leave(joined);
@@ -46,6 +58,11 @@ export const BroadcastChange = (businessId: string, resources: ResourceTypeEnum[
   if (!io) return;
   const payload: DataChangedPayloadType = { businessId, resources, activity };
   io.to(room(businessId)).emit('data:changed', payload);
+};
+
+/** Stop an account's open tabs receiving a business's changes (they were removed, or left the team). */
+export const RevokeRealtimeAccess = (businessId: string, accountId: string): void => {
+  io?.in(accountRoom(accountId)).socketsLeave(room(businessId));
 };
 
 export const CloseRealtime = async (): Promise<void> => {

@@ -71,7 +71,7 @@ textarea.input { height: auto; padding: 8px 10px; resize: vertical; }
 .segment-active { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); font-weight: 600; }
 .segment-count { font-size: 11px; color: var(--muted); font-weight: 600; }
 
-.field { display: grid; gap: 5px; }
+.field { display: grid; gap: 5px; align-content: start; }
 .field-label { font-weight: 600; font-size: 13px; }
 .field-hint { font-size: 12px; color: var(--muted); }
 .field-error { display: block; font-size: 12px; color: var(--critical-ink); font-weight: 500; }
@@ -83,23 +83,8 @@ textarea.input { height: auto; padding: 8px 10px; resize: vertical; }
 .check { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; }
 .check input { width: 16px; height: 16px; accent-color: var(--brand); }
 
-.topbar-control {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 34px;
-  padding: 0 4px 0 8px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface);
-  color: var(--ink-2);
-}
-.topbar-select { border: 0; background: transparent; height: 32px; max-width: 210px; font-size: 13px; cursor: pointer; }
-.topbar-select:focus-visible { outline: none; }
-.topbar-control:focus-within { outline: 2px solid var(--focus); outline-offset: 1px; }
 .user-switch .avatar { flex: none; }
 
 @media (max-width: 760px) {
-  .topbar-select { max-width: 120px; }
   .search { min-width: 0; width: 100%; flex-basis: 100%; }
 }
