@@ -7,7 +7,7 @@ export const FeatureGrid = () => (
     <h2 id="feature-grid-title" className="sr-only">
       What StockMotion does
     </h2>
-    <ul className="m-0 grid list-none gap-x-10 gap-y-12 p-0 sm:grid-cols-2 lg:grid-cols-3">
+    <ul data-reveal-group className="m-0 grid list-none gap-x-10 gap-y-12 p-0 sm:grid-cols-2 lg:grid-cols-3">
       {FEATURES.map((f) => {
         const FeatureIcon = f.icon;
         return (

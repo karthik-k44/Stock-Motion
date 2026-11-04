@@ -7,7 +7,7 @@ import { paths } from '@/frontend/config/paths';
 import { businessesService } from '@/frontend/features/businesses/services';
 import { useDocumentTitle } from '@/frontend/hooks/use-document-title';
 import { AccountForm } from './components/AccountForm';
-import { AuthLayout } from './components/AuthLayout';
+import { AuthSplitLayout } from './components/AuthSplitLayout';
 import { authService } from './services';
 
 /** `/invite/:token` — join a team as a new person, or with the account you're signed in to. */
@@ -29,25 +29,25 @@ export const AcceptInvite = () => {
 
   if (preview.isPending || session.isPending) {
     return (
-      <AuthLayout title="Opening your invite…">
+      <AuthSplitLayout title="Opening your invite…">
         <SkeletonRows rows={3} />
-      </AuthLayout>
+      </AuthSplitLayout>
     );
   }
   if (preview.isError) {
     return (
-      <AuthLayout title="This invite can't be used">
+      <AuthSplitLayout title="This invite can't be used">
         <ErrorState message={preview.error.message} />
-        <p className="auth-switch">
+        <p className="auth-switch mt-4">
           <Link className="link" to={paths.login}>Go to sign in</Link>
         </p>
-      </AuthLayout>
+      </AuthSplitLayout>
     );
   }
 
   const invite = preview.data;
   return (
-    <AuthLayout
+    <AuthSplitLayout
       title={`Join ${invite.businessName}`}
       subtitle={<>You've been invited as <strong>{invite.roleLabel}</strong>.</>}
     >
@@ -84,11 +84,11 @@ export const AcceptInvite = () => {
               register.mutate({ token, input }, { onSuccess: () => void qc.fetchQuery({ queryKey: businessesService.keys.mine, queryFn: businessesService.ListMine }).then((mine) => enter(mine[mine.length - 1].id)) })
             }
           />
-          <p className="auth-switch">
+          <p className="auth-switch mt-4">
             Already have an account? <Link className="link" to={`${paths.login}?next=${encodeURIComponent(paths.invite(token))}`}>Sign in to join</Link>
           </p>
         </>
       )}
-    </AuthLayout>
+    </AuthSplitLayout>
   );
 };

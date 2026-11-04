@@ -1,8 +1,8 @@
-import { Link, Navigate, useNavigate, useSearchParams } from 'react-router';
+import { Navigate, useNavigate, useSearchParams } from 'react-router';
 import { paths } from '@/frontend/config/paths';
 import { useDocumentTitle } from '@/frontend/hooks/use-document-title';
 import { AccountForm } from './components/AccountForm';
-import { AuthLayout } from './components/AuthLayout';
+import { AuthSplitLayout } from './components/AuthSplitLayout';
 import { SafeNext } from './lib/safe-next';
 import { authService } from './services';
 
@@ -18,22 +18,19 @@ export const Signup = () => {
   if (session.data) return <Navigate to={paths.home} replace />;
 
   return (
-    <AuthLayout
+    <AuthSplitLayout
       title="Create your account"
       subtitle="Then pick your kind of business — retail, café or trades — and you're set up in a minute."
-      back={{ to: paths.landing, label: 'Back to home' }}
+      tab={{ active: 'signup', search: params.get('next') ? `?next=${encodeURIComponent(next)}` : '' }}
     >
       <AccountForm
         mode="register"
         initialEmail={params.get('email') ?? ''}
-        submitLabel="Create account"
+        submitLabel="Continue"
         busy={register.isPending}
         error={register.error}
         onSubmit={(input) => register.mutate(input, { onSuccess: () => navigate(next, { replace: true }) })}
       />
-      <p className="auth-switch">
-        Already have an account? <Link className="link" to={`${paths.login}${params.get('next') ? `?next=${encodeURIComponent(next)}` : ''}`}>Sign in</Link>
-      </p>
-    </AuthLayout>
+    </AuthSplitLayout>
   );
 };

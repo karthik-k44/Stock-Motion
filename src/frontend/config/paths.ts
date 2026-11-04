@@ -6,6 +6,7 @@ export const paths = {
   /** The public front page */
   landing: '/',
   features: '/features',
+  howItWorks: '/how-it-works',
   pricing: '/pricing',
   faq: '/faq',
   /** Where the signed-in app starts */

@@ -1,8 +1,7 @@
-import { Link, Navigate, useNavigate, useSearchParams } from 'react-router';
-import { paths } from '@/frontend/config/paths';
+import { Navigate, useNavigate, useSearchParams } from 'react-router';
 import { useDocumentTitle } from '@/frontend/hooks/use-document-title';
 import { AccountForm } from './components/AccountForm';
-import { AuthLayout } from './components/AuthLayout';
+import { AuthSplitLayout } from './components/AuthSplitLayout';
 import { SafeNext } from './lib/safe-next';
 import { authService } from './services';
 
@@ -17,16 +16,17 @@ export const Login = () => {
   if (session.data) return <Navigate to={next} replace />;
 
   return (
-    <AuthLayout title="Sign in" subtitle="Your inventory, orders and live business world." back={{ to: paths.landing, label: 'Back to home' }}>
-      <AccountForm mode="login" submitLabel="Sign in" busy={login.isPending} error={login.error} onSubmit={(input) => login.mutate(input, { onSuccess: () => navigate(next, { replace: true }) })} />
+    <AuthSplitLayout
+      title="Welcome back"
+      subtitle="Enter your details to pick up where you left off."
+      tab={{ active: 'login', search: params.get('next') ? `?next=${encodeURIComponent(next)}` : '' }}
+    >
+      <AccountForm mode="login" submitLabel="Continue" busy={login.isPending} error={login.error} onSubmit={(input) => login.mutate(input, { onSuccess: () => navigate(next, { replace: true }) })} />
       {import.meta.env.DEV && (
-        <p className="auth-hint">
+        <p className="auth-hint mt-4">
           Demo login: <span className="mono">demo@stockmotion.local</span> / <span className="mono">stockmotion-demo</span>
         </p>
       )}
-      <p className="auth-switch">
-        New here? <Link className="link" to={`${paths.signup}${params.get('next') ? `?next=${encodeURIComponent(next)}` : ''}`}>Create an account</Link>
-      </p>
-    </AuthLayout>
+    </AuthSplitLayout>
   );
 };

@@ -26,22 +26,23 @@ const TILES: { icon: string; x: number; y: number; size: number; tilt: number; w
 ];
 
 /** The closing ask, after the reference: centred promise and two pills, with the product's world floating around it. */
-export const CtaBand = ({ signedIn }: { signedIn: boolean }) => (
+export const CtaBand = ({ signedIn, more = { to: paths.howItWorks, label: 'See how it works' } }: { signedIn: boolean; more?: { to: string; label: string } }) => (
   <section className="relative isolate overflow-x-clip py-28 sm:py-36" aria-labelledby="cta-title">
-    <div className="landing-cta-backdrop" aria-hidden />
+    <div className="landing-wash" aria-hidden />
     <div className="pointer-events-none absolute inset-0" aria-hidden>
-      {TILES.map((t, i) => (
+      {TILES.map((t) => (
         <span
           key={t.icon}
+          data-pop
           className={Cn('landing-tile absolute', t.wide ? 'hidden lg:block' : 'hidden sm:block')}
-          style={{ left: `${t.x}%`, top: `${t.y}%`, width: t.size, height: t.size, '--tilt': `${t.tilt}deg`, animationDelay: `${-i * 0.9}s` } as CSSProperties}
+          style={{ left: `${t.x}%`, top: `${t.y}%`, width: t.size, height: t.size, '--tilt': `${t.tilt}deg` } as CSSProperties}
         >
           <img src={`/landing/icons/${t.icon}.webp`} alt="" width={400} height={400} loading="lazy" decoding="async" className="size-full object-contain p-[12%]" />
         </span>
       ))}
     </div>
 
-    <div className="relative mx-auto max-w-xl px-4 text-center">
+    <div data-reveal className="relative mx-auto max-w-xl px-4 text-center">
       <span className="mx-auto grid size-10 place-items-center rounded-xl bg-sunken text-ink" aria-hidden>
         <Shapes className="size-5" strokeWidth={1.6} />
       </span>
@@ -58,8 +59,8 @@ export const CtaBand = ({ signedIn }: { signedIn: boolean }) => (
             <ArrowRight className="size-4" />
           </Link>
         </Button>
-        <Link to="/#how-it-works" className="inline-flex h-12 items-center rounded-xl px-4 text-[15px] font-medium text-ink no-underline hover:bg-sunken">
-          See how it works
+        <Link to={more.to} className="inline-flex h-12 items-center rounded-xl px-4 text-[15px] font-medium text-ink no-underline hover:bg-sunken">
+          {more.label}
         </Link>
       </div>
     </div>

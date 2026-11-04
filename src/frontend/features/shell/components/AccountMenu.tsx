@@ -8,13 +8,21 @@ export const AccountMenu = () => {
   const business = businessesService.useBusiness();
   const logout = authService.useLogoutMutation();
   const role = business.template.roles.find((r) => r.code === business.role)?.label ?? business.role;
+
+
+  const handleLogout = () => {
+    logout.mutateAsync().then(() => {
+      window.location.href = '/';
+    });
+  };
+  
   return (
     <div className="account">
       <span className="account-text">
         <span className="strong">{account?.name}</span>
         <span className="muted small">{role}</span>
       </span>
-      <Button variant="ghost" size="sm" icon="logout" aria-label="Sign out" title="Sign out" loading={logout.isPending} onClick={() => logout.mutate()} />
+      <Button variant="ghost" size="sm" icon="logout" aria-label="Sign out" title="Sign out" loading={logout.isPending} onClick={handleLogout} />
     </div>
   );
 };

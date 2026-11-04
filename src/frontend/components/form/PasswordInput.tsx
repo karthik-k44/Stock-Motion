@@ -2,16 +2,19 @@ import { Eye, EyeOff } from 'lucide-react';
 import { useState, type ComponentProps } from 'react';
 import { Cn } from '@/frontend/lib/utils';
 
-type PasswordInputProps = Omit<ComponentProps<'input'>, 'type'>;
+type PasswordInputProps = Omit<ComponentProps<'input'>, 'type'> & {
+  /** `static` lets the eye button fill a larger positioned box around the field */
+  wrapperClassName?: string;
+};
 
 /**
  * A password field with an eye button to show or hide what was typed. The button is a toggle (`aria-pressed`) and
  * doesn't take focus from the field, so typing carries on. Edge's own reveal button is hidden so there is only one.
  */
-export const PasswordInput = ({ className, ...props }: PasswordInputProps) => {
+export const PasswordInput = ({ className, wrapperClassName, ...props }: PasswordInputProps) => {
   const [visible, setVisible] = useState(false);
   return (
-    <div className="relative">
+    <div className={Cn('relative', wrapperClassName)}>
       <input {...props} type={visible ? 'text' : 'password'} className={Cn('input pr-10 [&::-ms-reveal]:hidden', className)} />
       <button
         type="button"

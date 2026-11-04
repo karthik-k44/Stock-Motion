@@ -4,7 +4,6 @@ import { Activity, Boxes, Building2, Coffee, FileSpreadsheet, RadioTower, Store,
 
 export type UseCaseType = { id: string; icon: LucideIcon; title: string; text: string };
 export type FeatureType = { icon: LucideIcon; title: string; text: string };
-export type StepType = { title: string; text: string };
 export type FaqType = { q: string; a: string };
 
 export const USE_CASES: UseCaseType[] = [
@@ -19,7 +18,7 @@ export const USE_CASES: UseCaseType[] = [
 /** Features, pricing and FAQ are pages; `/#…` links scroll to a section of the front page from anywhere. */
 export const NAV_LINKS = [
   { label: 'Features', href: '/features' },
-  { label: 'How it works', href: '/#how-it-works' },
+  { label: 'How it works', href: '/how-it-works' },
   { label: 'Pricing', href: '/pricing' },
   { label: 'FAQ', href: '/faq' },
 ];
@@ -31,12 +30,6 @@ export const FEATURES: FeatureType[] = [
   { icon: Workflow, title: 'Orders that follow your flow', text: 'New → Picking → Packed → Shipped, or Quoted → Scheduled → Done. Stock is reserved and used at the right step.' },
   { icon: Truck, title: 'Deliveries and reordering', text: 'Book incoming stock, or reorder everything that is running low in one go, grouped by supplier.' },
   { icon: FileSpreadsheet, title: 'Import and a full history', text: 'Bring your catalogue in from a CSV with a row-by-row preview. Every change is logged with who made it.' },
-];
-
-export const STEPS: StepType[] = [
-  { title: 'Pick your kind of business', text: 'Retail, café or trades. StockMotion takes on your words, your order flow and your storage — aisles, fridges or vans.' },
-  { title: 'Add what you stock', text: 'Import a spreadsheet or add items by hand, and give each one a home on a shelf, in a fridge or in a van.' },
-  { title: 'Run the day', text: 'Take orders, receive deliveries and invite your team. Watch it all move in the live world.' },
 ];
 
 export const FAQS: FaqType[] = [
@@ -58,7 +51,7 @@ export const FOOTER_COLUMNS: FooterColumnType[] = [
     title: 'Product',
     links: [
       { label: 'Features', href: '/features' },
-      { label: 'How it works', href: '/#how-it-works' },
+      { label: 'How it works', href: '/how-it-works' },
       { label: 'Pricing', href: '/pricing' },
       { label: 'FAQ', href: '/faq' },
     ],

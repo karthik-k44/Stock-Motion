@@ -1,6 +1,7 @@
 import { Outlet, ScrollRestoration } from 'react-router';
 import { LandingFooter } from './components/LandingFooter';
 import { LandingNav } from './components/LandingNav';
+import { useFrameMotion } from './lib/use-landing-motion';
 import { useSignedIn } from './lib/use-signed-in';
 
 /**
@@ -9,8 +10,9 @@ import { useSignedIn } from './lib/use-signed-in';
  */
 export const MarketingLayout = () => {
   const signedIn = useSignedIn();
+  const motion = useFrameMotion();
   return (
-    <div className="landing min-h-dvh bg-canvas text-ink">
+    <div ref={motion} className="landing min-h-dvh bg-canvas text-ink">
       <a href="#marketing-main" className="skip-link">
         Skip to content
       </a>

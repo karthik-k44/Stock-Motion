@@ -4,16 +4,16 @@ import { SectionHeading } from './SectionHeading';
 
 /** The features at work: each illustrated scenario on a flat card, with what StockMotion does about it. */
 export const ScenarioShowcase = () => (
-  <section className="mt-24 bg-sunken py-20">
+  <section className="mt-16 py-16">
     <div className="mx-auto max-w-300 px-4 sm:px-6">
       <SectionHeading
         eyebrow="In practice"
         title="The problems it catches, day to day."
         lead="Each scene is drawn with the live world's own pieces, and each is something StockMotion does today."
       />
-      <ul className="mt-12 grid list-none gap-4 p-0 md:grid-cols-2">
+      <ul data-reveal-group className="mt-12 grid list-none gap-4 p-0 md:grid-cols-2">
         {SCENARIOS.map((s) => (
-          <li key={s.image} className="landing-card flex flex-col rounded-xl border border-transparent bg-white p-3">
+          <li key={s.image} className="landing-card flex flex-col rounded-xl border border-line bg-white p-3">
             <img
               src={`/landing/scenarios/${s.image}.jpg`}
               alt={s.alt}

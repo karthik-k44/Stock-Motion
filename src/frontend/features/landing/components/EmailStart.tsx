@@ -6,9 +6,9 @@ import { Cn } from '@/frontend/lib/utils';
 
 /**
  * The reference's email capture: a field and the orange button side by side. It starts sign-up with the address
- * filled in (there is no mailing list to subscribe to). `dark` is the footer's version on Abyss.
+ * filled in (there is no mailing list to subscribe to).
  */
-export const EmailStart = ({ dark = false, className }: { dark?: boolean; className?: string }) => {
+export const EmailStart = ({ className }: { className?: string }) => {
   const id = useId();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -29,12 +29,7 @@ export const EmailStart = ({ dark = false, className }: { dark?: boolean; classN
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         placeholder="Work email"
-        className={Cn(
-          'h-12 w-full min-w-0 rounded-xl border px-4 text-[15px] tracking-[-0.01em] outline-none focus-visible:ring-[3px] sm:w-auto sm:flex-1',
-          dark
-            ? 'border-white/25 bg-white/5 text-white placeholder:text-white/55 focus-visible:border-white/60 focus-visible:ring-white/15'
-            : 'border-line-strong bg-white text-ink placeholder:text-steel focus-visible:border-primary-600 focus-visible:ring-primary-200',
-        )}
+        className="h-12 w-full min-w-0 rounded-xl border border-line-strong bg-white px-4 text-[15px] tracking-[-0.01em] text-ink outline-none placeholder:text-steel focus-visible:border-primary-600 focus-visible:ring-[3px] focus-visible:ring-primary-200 sm:w-auto sm:flex-1"
       />
       <Button type="submit" className="h-12 rounded-xl px-5 text-[15px] font-semibold">
         Get started

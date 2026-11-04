@@ -4,7 +4,7 @@ import { NavigationMenuLink } from '@/frontend/components/ui/navigation-menu';
 import { Cn } from '@/frontend/lib/utils';
 import { USE_CASES, type UseCaseType } from '../lib/landing-content';
 
-const CARD = 'flex min-h-36 flex-col items-start gap-0 rounded-xl border border-transparent bg-sunken p-5 text-left no-underline transition-colors hover:border-primary-200 hover:bg-primary-50';
+const CARD = 'flex min-h-36 flex-col items-start gap-0 rounded-xl border border-line bg-white p-5 text-left no-underline transition-colors hover:border-primary-200 hover:bg-primary-50';
 
 const Card = ({ useCase, inMenu }: { useCase: UseCaseType; inMenu: boolean }) => {
   const UseCaseIcon = useCase.icon;
