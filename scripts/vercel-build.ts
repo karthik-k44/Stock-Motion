@@ -29,7 +29,19 @@ if (!process.env.DATABASE_URL) {
   process.exit(1);
 }
 
-const run = (command: string) => execSync(command, { stdio: 'inherit' });
+const run = (command: string, env: Record<string, string> = {}) =>
+  execSync(command, { stdio: 'inherit', env: { ...process.env, ...env } });
+
+// The function runs with NODE_ENV=production, where the settings are checked more strictly (JWT_SECRET is required,
+// 32+ characters). A bad value would make it exit as it loads — Vercel then fails every request after a long wait,
+// with nothing pointing at the cause. Check them the same way now, so the build stops and says what is wrong.
+try {
+  run('npx tsx --tsconfig tsconfig.node.json src/backend/config/env.ts', { NODE_ENV: 'production' });
+} catch {
+  console.error('Fix the environment variables above in Vercel (Settings → Environment Variables), then redeploy.');
+  process.exit(1);
+}
+console.log('Environment variables checked for production');
 
 rmSync(OUT, { recursive: true, force: true });
 run('npm run build');

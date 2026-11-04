@@ -1,0 +1,22 @@
+# Render Blueprint: one always-on Docker service that serves the frontend, the API and the realtime socket.
+# Render → New → Blueprint → pick this repository. It asks for DATABASE_URL once; everything else is set here.
+services:
+  - type: web
+    name: stockmotion
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    # Free sleeps after 15 idle minutes and takes about a minute to wake; a paid plan stays on.
+    plan: free
+    # The closest Render region to the Supabase database (Mumbai). A region can't be changed later.
+    region: singapore
+    healthCheckPath: /api/system/health
+    autoDeployTrigger: commit
+    envVars:
+      # Supabase: Connect → Direct → Transaction pooler. Render can't reach the IPv6-only direct connection.
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      # Render's proxy is the one hop in front, so rate limits see each visitor's address.
+      - key: TRUST_PROXY
+        value: "1"

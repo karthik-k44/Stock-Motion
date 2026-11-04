@@ -56,6 +56,10 @@ const startOnVercel = (): Server => {
 
 const start = async (): Promise<Server> => {
   if (ON_VERCEL) return startOnVercel();
+  // Render wipes its disk on every restart and deploy, so the embedded database would silently lose all data.
+  if (process.env.RENDER && !env.DATABASE_URL) {
+    throw new Error('DATABASE_URL is required on Render: its disk is wiped on every restart, so the embedded database would lose all data');
+  }
   await ConnectDb({ url: env.DATABASE_URL, dataDir: env.PGLITE_DIR, poolSize: env.DB_POOL_SIZE });
   // Loaded only here, so the Vercel bundle never runs them (both are also command-line scripts).
   const { RunMigrations } = await import('./db/migrate');
