@@ -24,7 +24,6 @@ COPY --from=build /app/dist ./dist
 RUN mkdir -p /app/.data && chown -R node:node /app/.data
 USER node
 EXPOSE 3000
-VOLUME ["/app/.data"]
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
   CMD wget -qO- "http://127.0.0.1:${PORT}/api/system/health" > /dev/null || exit 1
 # Run node directly (not npm) so SIGTERM reaches the server and it shuts down gracefully.
