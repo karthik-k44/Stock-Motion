@@ -21,7 +21,7 @@ Inventory and orders for any small business, with a live 3D world of the busines
 - **Optimistic updates.** Stock adjustments, moves, order stage changes, receiving, and edits to items, customers and suppliers show at once. If the server refuses, the screen rolls back and a toast says why.
 - **Live everywhere.** Changes reach every open tab of the same business over socket.io.
 - **Live world.** An isometric drawing of the business made only from its own records: racks coloured bin by bin, trucks at the dock doors or on the road, orders on the packing bench, one person per team member. Every label is live; click anything (or any tracker row) for its details. The tracker tabs — deliveries, orders, stock alerts — each bring their own pins and highlights. Zoom, pan and turn the view in quarter turns.
-- **Marketing pages:** the front page at `/` (pitch, use cases, how it works), plus `/features`, `/pricing` (Starter $19, Pro $49 a month — no billing in the app yet) and `/faq`. The hero shows illustrated everyday scenarios as a stack of cards in depth. Style: `docs/design/style-reference.md`.
+- **Marketing pages:** the front page at `/` (pitch, the stock sketch, use cases), plus `/features`, `/how-it-works` (setting up, the daily loop, each business type), `/pricing` (Starter $19, Pro $49 a month, Scale by contact — no billing in the app yet) and `/faq`. Each page opens on a bento hero animated with GSAP; on the front page a hand-drawn sketch of stock moving through a business follows it, inked in with rough.js as it scrolls into view. The footer sets the wordmark behind a rendered skyline of factories and warehouses. Logo files are in `public/brand`. Style: `docs/design/style-reference.md`.
 
 ## Run it
 
@@ -92,7 +92,19 @@ Leave `DATABASE_URL` empty to use the embedded Postgres instead, and mount a vol
 
 **Without Docker:** `npm ci && npm run build && npm start` with the same environment variables (`.env.example` lists them all).
 
-**On Vercel**
+**On Render** (recommended)
+
+`render.yaml` describes one always-on service that serves the frontend, the API and the live-update socket from a single address.
+
+1. Copy your database's **pooled** connection string. For Supabase: **Connect → Direct → Transaction pooler**, then add `?sslmode=no-verify`. Render has no IPv6, so it can't use the direct `db.….supabase.co` address, and its disk is wiped on every restart, so the server refuses to start without `DATABASE_URL`.
+2. In Render: **New → Blueprint**, pick this repository and branch, paste the string when it asks for `DATABASE_URL`, and apply. `JWT_SECRET` is generated for you.
+3. When the deploy is live, open `https://<your-service>.onrender.com/api/system/health` — it should answer `{"ok":true}`.
+
+The Blueprint uses the Free plan in Singapore, the closest region to a Mumbai database; a service's region can't be changed later. Free services sleep after 15 idle minutes and take about a minute to wake, with Render showing a loading page meanwhile. A paid plan stays on.
+
+**On Vercel** (not working yet)
+
+The function fails to start on a real Vercel deployment: every `/api` request hangs for 60 seconds and ends in `INTERNAL_FUNCTION_INVOCATION_FAILED`. The cause wasn't confirmed, so use Render unless you're debugging this. The setup, for reference:
 
 1. Create a PostgreSQL database (Neon or Supabase, e.g. from Vercel's Marketplace) and copy its **pooled** connection string. Vercel can't keep the embedded database.
 2. Import the repository in Vercel. `vercel.json` already sets the build (`npm run vercel-build`); leave the framework preset as "Other".

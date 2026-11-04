@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { NavLink } from 'react-router';
 import { Icon } from '@/frontend/components/icon';
+import { LogoMark, LogoName } from '@/frontend/components/logo';
 import { Cn } from '@/frontend/lib/utils';
 import type { NavItemType } from './nav-type';
 
@@ -19,9 +20,11 @@ export const Sidebar = ({ nav, badges, open, onNavigate, footer, brand }: Sideba
     <nav id="app-nav" className={Cn('sidebar', open && 'sidebar-open')} aria-label="Main">
       <div className="brand">
         <span className="brand-mark" aria-hidden>
-          <Icon name="package" size={20} />
+          <LogoMark className="h-6" />
         </span>
-        <span className="brand-name">StockMotion</span>
+        <span className="brand-name">
+          <LogoName />
+        </span>
       </div>
       {brand && <div className="brand-switch">{brand}</div>}
       <ul className="nav-list">

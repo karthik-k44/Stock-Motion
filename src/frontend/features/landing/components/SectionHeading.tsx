@@ -4,7 +4,7 @@ import { Cn } from '@/frontend/lib/utils';
 
 /** Eyebrow, heading and a line of lead text — the opener of every marketing section. */
 export const SectionHeading = ({ eyebrow, title, lead, center }: { eyebrow: string; title: ReactNode; lead?: ReactNode; center?: boolean }) => (
-  <div className={Cn('max-w-2xl', center && 'mx-auto text-center')}>
+  <div data-reveal className={Cn('max-w-2xl', center && 'mx-auto text-center')}>
     <Text variant="eyebrow" className="mb-4 text-[12px] tracking-[0.06em]">
       {eyebrow}
     </Text>

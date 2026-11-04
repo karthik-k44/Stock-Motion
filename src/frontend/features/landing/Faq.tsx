@@ -1,20 +1,24 @@
 import { Link } from 'react-router';
 import { paths } from '@/frontend/config/paths';
 import { useDocumentTitle } from '@/frontend/hooks/use-document-title';
-import { CtaBand } from './components/CtaBand';
-import { FaqList } from './components/FaqList';
-import { PageHeader } from './components/PageHeader';
+import { PageHero } from './components/BentoHero';
+import { FaqSection } from './components/FaqSection';
+import { FAQ_ART } from './lib/hero-content';
+import { usePageMotion } from './lib/use-landing-motion';
 import { useSignedIn } from './lib/use-signed-in';
 
 /** The FAQ page: questions people ask before signing up. */
 export const Faq = () => {
   useDocumentTitle('FAQ');
   const signedIn = useSignedIn();
+  const motion = usePageMotion();
   return (
-    <>
-      <PageHeader
+    <div ref={motion}>
+      <PageHero
         eyebrow="FAQ"
         title="Questions, answered."
+        accent={['answered']}
+        art={FAQ_ART}
         lead={
           <>
             How StockMotion works and who it's for. Plans and prices are on the{' '}
@@ -25,11 +29,7 @@ export const Faq = () => {
           </>
         }
       />
-      <FaqList />
-      <p className="mx-auto mt-10 mb-0 max-w-3xl px-4 text-center text-[15px] text-ink-2 sm:px-6">
-        Anything else? Create an account and look around — it takes a minute.
-      </p>
-      <CtaBand signedIn={signedIn} />
-    </>
+      <FaqSection signedIn={signedIn} />
+    </div>
   );
 };

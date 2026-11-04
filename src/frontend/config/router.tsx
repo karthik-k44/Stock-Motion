@@ -25,6 +25,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, lazy: async () => ({ Component: (await import('@/frontend/features/landing/Landing')).Landing }) },
       { path: 'features', lazy: async () => ({ Component: (await import('@/frontend/features/landing/Features')).Features }) },
+      { path: 'how-it-works', lazy: async () => ({ Component: (await import('@/frontend/features/landing/HowItWorks')).HowItWorks }) },
       { path: 'pricing', lazy: async () => ({ Component: (await import('@/frontend/features/landing/Pricing')).Pricing }) },
       { path: 'faq', lazy: async () => ({ Component: (await import('@/frontend/features/landing/Faq')).Faq }) },
     ],
