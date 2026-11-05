@@ -46,7 +46,7 @@ export const RestockCard = ({ items, onReview, className }: Props) => {
               : 'Everything is above its reorder level.'}
         </p>
         {(out > 0 || low > 0) && (
-          <Button variant="primary" className="cta-gradient w-full" onClick={() => onReview(out ? ItemFilterStatusTypeEnum.OUT : ItemFilterStatusTypeEnum.LOW)}>
+          <Button variant="primary" className="w-full" onClick={() => onReview(out ? ItemFilterStatusTypeEnum.OUT : ItemFilterStatusTypeEnum.LOW)}>
             Review {out ? 'out of stock' : 'low stock'}
           </Button>
         )}

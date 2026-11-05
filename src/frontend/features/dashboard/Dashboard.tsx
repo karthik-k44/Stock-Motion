@@ -36,7 +36,7 @@ export const Dashboard = () => {
       ) : (
         <KpiGrid kpis={data.kpis} trends={data.trends} />
       )}
-      <div className="grid-3">
+      <div className="grid-3 cards-even">
         {isPending ? <SkeletonRows rows={3} height={60} /> : <StockHealthChart health={data.stockHealth} />}
         <Card title={`Open ${labels.orders.toLowerCase()} by stage`}>
           {isPending ? (
@@ -55,7 +55,7 @@ export const Dashboard = () => {
           )}
         </Card>
       </div>
-      <div className="grid-3">
+      <div className="grid-3 cards-even">
         {isPending ? <SkeletonRows rows={4} /> : <LowStockList items={data.lowStockItems} />}
         {isPending ? <SkeletonRows rows={4} /> : <UpcomingDeliveries deliveries={data.upcomingDeliveries} />}
         <Card title="Recent activity">

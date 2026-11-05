@@ -4,14 +4,14 @@ import { Button as UiButton } from '@/frontend/components/ui/button';
 import { Cn } from '@/frontend/lib/utils';
 
 type ButtonProps = Omit<ComponentProps<'button'>, 'children'> & {
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'danger-ghost';
   size?: 'sm' | 'md';
   icon?: IconName;
   loading?: boolean;
   children?: ReactNode;
 };
 
-const VARIANT = { primary: 'default', secondary: 'outline', ghost: 'ghost', danger: 'destructive' } as const;
+const VARIANT = { primary: 'default', secondary: 'outline', ghost: 'ghost', danger: 'destructive', 'danger-ghost': 'destructive-ghost' } as const;
 
 /** The app's button: shadcn/ui's Button with our icon set and a loading state. */
 export const Button = ({ variant = 'secondary', size = 'md', icon, loading, disabled, className, children, type = 'button', ...rest }: ButtonProps) => {
@@ -22,7 +22,7 @@ export const Button = ({ variant = 'secondary', size = 'md', icon, loading, disa
       type={type}
       variant={VARIANT[variant]}
       size={uiSize}
-      className={Cn('font-semibold', variant === 'secondary' && 'border-input bg-surface', className)}
+      className={Cn('font-semibold', className)}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       {...rest}

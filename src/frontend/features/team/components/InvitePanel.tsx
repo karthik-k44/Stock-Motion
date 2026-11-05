@@ -53,7 +53,7 @@ export const InvitePanel = () => {
                 <span>
                   {label(i.role)} <span className="muted small">· created {FormatDate(i.createdAt)} · expires {FormatDate(i.expiresAt)}</span>
                 </span>
-                <Button size="sm" variant="ghost" onClick={() => revoke.mutate(i.id)}>Revoke</Button>
+                <Button size="sm" variant="danger-ghost" onClick={() => revoke.mutate(i.id)}>Revoke</Button>
               </li>
             ))}
           </ul>

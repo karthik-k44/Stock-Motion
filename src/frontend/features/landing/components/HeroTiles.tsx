@@ -82,7 +82,7 @@ export const LiveCard = ({ index }: { index: number }) => {
       <span className="bento-strip absolute inset-x-5 top-0 h-7 rounded-t-xl" />
       <div className="bento-live relative flex items-center justify-between gap-3 overflow-hidden rounded-xl p-3.5">
         <div ref={body} className="flex min-h-11 min-w-0 items-center gap-3">
-          <span className="grid size-11 flex-none place-items-center rounded-full bg-linear-to-br from-primary-300 to-primary text-ink">
+          <span className="grid size-11 flex-none place-items-center rounded-full bg-linear-to-br from-cta-from to-cta-to text-primary-foreground">
             <EventIcon className="size-5" />
           </span>
           <span className="min-w-0">

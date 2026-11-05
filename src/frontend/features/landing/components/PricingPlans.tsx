@@ -8,7 +8,7 @@ import { PLANS, PRICE, type PlanType } from '../lib/pricing-content';
 
 const LOGOS: Record<PlanType['id'], string> = {
   starter: 'bg-linear-to-br from-primary-100 to-primary-300 text-primary-800',
-  pro: 'bg-linear-to-br from-primary-300 to-primary text-ink',
+  pro: 'bg-linear-to-br from-cta-from to-cta-to text-primary-foreground',
   scale: 'bg-linear-to-br from-carbon to-[#4a4640] text-white',
 };
 
@@ -66,7 +66,7 @@ const PlanCard = ({ plan, featured = false }: { plan: PlanType; featured?: boole
         <Price plan={plan} big={featured} />
       </div>
 
-      <Button asChild variant={featured ? 'default' : 'secondary'} className={Cn('mt-5 w-full rounded-lg font-semibold', featured ? 'pricing-cta h-12 text-[15px]' : 'h-11 border border-line bg-sunken hover:bg-line')}>
+      <Button asChild variant={featured ? 'default' : 'outline'} className={Cn('mt-5 w-full rounded-lg font-semibold', featured ? 'h-12 text-[15px]' : 'h-11')}>
         {contact ? (
           <Link to={paths.contact}>
             <Mail aria-hidden />

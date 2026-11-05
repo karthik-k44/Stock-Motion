@@ -37,7 +37,7 @@ export const OrderLinesEditor = ({ lines, onChange, error }: Props) => {
                   <span className="sr-only">Quantity of {item?.name}</span>
                   <input className="input input-num" type="number" min={1} inputMode="numeric" value={l.qty} onChange={(e) => onChange(lines.map((x) => (x.sku === l.sku ? { ...x, qty: e.target.value } : x)))} />
                 </label>
-                <Button size="sm" variant="ghost" icon="x" aria-label={`Remove ${item?.name ?? l.sku}`} onClick={() => onChange(lines.filter((x) => x.sku !== l.sku))} />
+                <Button size="sm" variant="danger-ghost" icon="x" aria-label={`Remove ${item?.name ?? l.sku}`} onClick={() => onChange(lines.filter((x) => x.sku !== l.sku))} />
               </li>
             );
           })}

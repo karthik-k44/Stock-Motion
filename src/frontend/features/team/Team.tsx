@@ -71,7 +71,7 @@ export const Team = () => {
                     <span className="tag">{roleLabel(m.role)}</span>
                   )}
                   {(owner || m.accountId === me?.id) && (
-                    <Button size="sm" variant="ghost" icon={m.accountId === me?.id ? 'logout' : 'trash'} aria-label={m.accountId === me?.id ? 'Leave this business' : `Remove ${m.name}`} onClick={() => void removeMember(m.accountId, m.name)} />
+                    <Button size="sm" variant="danger-ghost" icon={m.accountId === me?.id ? 'logout' : 'trash'} aria-label={m.accountId === me?.id ? 'Leave this business' : `Remove ${m.name}`} onClick={() => void removeMember(m.accountId, m.name)} />
                   )}
                 </li>
               ))}

@@ -129,7 +129,7 @@ table {
   top: -60px;
   z-index: 200;
   padding: 8px 14px;
-  background: var(--brand);
+  background: var(--color-cta-to);
   color: var(--color-primary-foreground);
   border-radius: var(--radius-sm);
   text-decoration: none;

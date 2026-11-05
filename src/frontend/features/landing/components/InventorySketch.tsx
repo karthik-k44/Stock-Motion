@@ -173,7 +173,7 @@ export const SketchStatus = ({ stop }: { stop: number }) => {
 
   return (
     <p className="m-0 inline-flex max-w-full items-center gap-2.5 rounded-full bg-white py-1 pr-4 pl-1 text-sm shadow-[0_12px_28px_-14px_rgb(107_51_0/0.45)]" aria-hidden>
-      <span className="grid size-7 flex-none place-items-center rounded-full bg-primary text-[13px] font-semibold text-ink tabular-nums">{stop + 1}</span>
+      <span className="grid size-7 flex-none place-items-center rounded-full bg-primary text-[13px] font-semibold text-primary-foreground tabular-nums">{stop + 1}</span>
       <span ref={body} className="flex min-w-0 items-baseline gap-2">
         <span className="flex-none font-semibold text-ink">{current.status}</span>
         <span className="truncate text-ink-2">{current.detail}</span>

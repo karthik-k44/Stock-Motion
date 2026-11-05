@@ -7,7 +7,7 @@ The landing and pricing pages follow the reference below: a white canvas, one or
 | Reference | StockMotion | Why |
 |---|---|---|
 | Ember `#ff5900` | Brand orange `#ff7900` (`--color-primary`) in the same role | The brand colour chosen for the product |
-| White text on Ember buttons | Near-black text (`--color-primary-foreground`) on orange | White on `#ff7900` is 2.6:1 — below WCAG AA |
+| White text on Ember buttons | White text on an orange gradient (`--color-cta-from` to `--color-cta-to`) | Requested look. The gradient is deeper than `#ff7900`, where white is only 2.6:1, and reaches 3:1 to 4.6:1 |
 | Flecha display face | Inter 600 with the reference's tracking | Flecha isn't licensed; the reference's own prompt guide uses Inter 600 for heroes |
 | Customer logo band on Fog | Use-case band on Fog | No customer logos to show yet — none are invented |
 | Abyss footer | Abyss footer in the Watts layout (huge cropped wordmark) | Requested footer layout, reference colours |

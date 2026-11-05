@@ -40,7 +40,7 @@ export const RecipeEditor = ({ value, onChange, error }: Props) => {
                   />
                   <span className="muted small">{item?.unit}</span>
                 </label>
-                <Button size="sm" variant="ghost" icon="x" aria-label={`Remove ${item?.name ?? c.sku}`} onClick={() => onChange(value.filter((x) => x.sku !== c.sku))} />
+                <Button size="sm" variant="danger-ghost" icon="x" aria-label={`Remove ${item?.name ?? c.sku}`} onClick={() => onChange(value.filter((x) => x.sku !== c.sku))} />
               </li>
             );
           })}

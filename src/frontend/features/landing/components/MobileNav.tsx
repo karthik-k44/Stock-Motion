@@ -61,7 +61,7 @@ export const MobileNav = ({ signedIn }: { signedIn: boolean }) => (
               <Button asChild className="h-11 rounded-xl font-semibold">
                 <Link to={paths.signup}>Get started</Link>
               </Button>
-              <Button asChild variant="secondary" className="h-11 rounded-xl border border-line-strong bg-white font-semibold text-ink hover:bg-sunken">
+              <Button asChild variant="outline" className="h-11 rounded-xl font-semibold">
                 <Link to={paths.login}>Log in</Link>
               </Button>
             </>

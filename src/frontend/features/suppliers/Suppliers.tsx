@@ -69,7 +69,7 @@ export const Suppliers = () => {
                         <Button size="sm" variant="ghost" icon="edit" aria-label={`Edit ${s.name}`} onClick={() => setEditing(s)} />
                         <Button
                           size="sm"
-                          variant="ghost"
+                          variant="danger-ghost"
                           icon="trash"
                           aria-label={`Delete ${s.name}`}
                           onClick={async () => {

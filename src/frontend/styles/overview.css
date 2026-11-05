@@ -7,6 +7,25 @@
 .overview-lead { grid-row: span 2; }
 .overview-wide { grid-column: span 2; }
 
+/*
+ * Cards in a row that all stay one height. Whatever doesn't fit scrolls inside the card with no scrollbar showing, and
+ * the fade at the foot is the sign there is more. Stacked on phones they keep their own height: nothing there needs to
+ * line up, and a hidden scroll inside the page's own would catch the thumb.
+ */
+@media (min-width: 761px) {
+  .cards-even { grid-auto-rows: 360px; align-items: stretch; }
+  .cards-even > [data-slot='card'] { min-height: 0; }
+  .cards-even [data-slot='card-content'] {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-bottom: 20px;
+    scrollbar-width: none;
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 24px), transparent);
+  }
+  .cards-even [data-slot='card-content']::-webkit-scrollbar { display: none; }
+}
+
 /* hero */
 .hero-card {
   position: relative;
@@ -18,7 +37,7 @@
   min-height: 216px;
   padding: 20px 22px;
   border-radius: 16px;
-  color: var(--color-primary-foreground);
+  color: var(--color-ink);
   background: linear-gradient(140deg, var(--color-hero-from) 0%, var(--color-hero-via) 52%, var(--color-hero-to) 100%);
   box-shadow: var(--shadow-hero);
 }
@@ -60,10 +79,6 @@
   pointer-events: none;
 }
 .hero-tip strong { color: var(--ink); font-size: 13.5px; font-weight: 700; }
-
-/* the gradient button and meter from the hero, for a card's one main action */
-.cta-gradient { height: 42px; border-radius: 10px; background: linear-gradient(100deg, var(--color-hero-from), var(--color-hero-to)); }
-.cta-gradient:hover { background: linear-gradient(100deg, var(--color-hero-from), var(--color-hero-via)); }
 
 .restock { display: grid; gap: 14px; }
 .restock-panel { display: grid; gap: 10px; padding: 14px; border-radius: 12px; background: var(--surface-2); }

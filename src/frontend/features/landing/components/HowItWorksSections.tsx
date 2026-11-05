@@ -23,7 +23,7 @@ export const SetupSteps = () => (
       {SETUP_STEPS.map((step, i) => (
         <li key={step.title} className="landing-card flex flex-col rounded-2xl border border-line bg-white p-7">
           <div className="flex items-start justify-between gap-4">
-            <span className="grid size-9 place-items-center rounded-full bg-primary text-sm font-semibold text-ink tabular-nums" aria-hidden>
+            <span className="grid size-9 place-items-center rounded-full bg-primary text-sm font-semibold text-primary-foreground tabular-nums" aria-hidden>
               {i + 1}
             </span>
             <img src={`/landing/icons/${step.icon}.webp`} alt="" width={400} height={400} loading="lazy" decoding="async" className="size-16 object-contain" />

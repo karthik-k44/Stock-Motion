@@ -63,7 +63,7 @@ export const ItemDrawer = () => {
             {stocked && <Button icon="move" onClick={() => setDialog('relocate')}>Move</Button>}
             {stocked && <Button icon="locate" onClick={() => navigate(paths.locateItem(item.sku))}>Show in world</Button>}
             {manager && <Button icon="edit" onClick={() => setDialog('edit')}>Edit</Button>}
-            {manager && <Button variant="ghost" icon="trash" aria-label="Archive" title="Archive" loading={archive.isPending} onClick={archiveItem} />}
+            {manager && <Button variant="danger-ghost" icon="trash" aria-label="Archive" title="Archive" loading={archive.isPending} onClick={archiveItem} />}
           </>
         )
       }

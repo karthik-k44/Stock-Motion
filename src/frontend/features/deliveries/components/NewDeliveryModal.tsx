@@ -81,7 +81,7 @@ export const NewDeliveryModal = ({ onClose, onSaved }: { onClose: () => void; on
                       <input className="input input-num" type="number" min={1} value={l.expected} onChange={(e) => setLines(lines.map((x) => (x.sku === l.sku ? { ...x, expected: e.target.value } : x)))} />
                       <span className="muted small">{item?.unit}</span>
                     </label>
-                    <Button size="sm" variant="ghost" icon="x" aria-label={`Remove ${item?.name}`} onClick={() => setLines(lines.filter((x) => x.sku !== l.sku))} />
+                    <Button size="sm" variant="danger-ghost" icon="x" aria-label={`Remove ${item?.name}`} onClick={() => setLines(lines.filter((x) => x.sku !== l.sku))} />
                   </li>
                 );
               })}

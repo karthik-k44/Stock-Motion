@@ -35,7 +35,7 @@ export const CustomerDetail = ({ id }: { id: string }) => {
           {IsManagementRole(business.role) && (
             <Button
               size="sm"
-              variant="ghost"
+              variant="danger-ghost"
               icon="trash"
               aria-label="Delete"
               onClick={async () => {

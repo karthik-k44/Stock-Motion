@@ -144,7 +144,7 @@ const Wizard = () => {
               ) : (
                 <span className="text-[13px] text-muted-foreground">You can add another business any time.</span>
               )}
-              <Button type="submit" variant="primary" loading={create.isPending} className="cta-gradient min-w-36 flex-none px-5 text-[15px]">
+              <Button type="submit" variant="primary" loading={create.isPending} className="min-w-36 flex-none px-5 text-[15px]">
                 {last ? `Create ${trimmed && trimmed.length <= LONGEST_BUTTON_NAME ? trimmed : 'business'}` : 'Continue'}
                 {!last && <ArrowRight aria-hidden />}
               </Button>

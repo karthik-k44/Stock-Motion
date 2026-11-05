@@ -21,8 +21,8 @@ const ACTION = 'inline-flex min-h-10 flex-1 items-center justify-center gap-2 ro
 const Action = ({ action }: { action: WorldActionType }) => {
   const drawer = useItemDrawer();
   const look = action.primary
-    ? Cn(ACTION, 'border border-primary bg-primary text-primary-foreground hover:bg-primary-600')
-    : Cn(ACTION, 'border border-line-strong bg-surface text-ink hover:bg-sunken');
+    ? Cn(ACTION, 'bg-linear-to-br from-cta-from to-cta-to text-primary-foreground hover:brightness-95')
+    : Cn(ACTION, 'border border-primary bg-surface text-cta-ink hover:bg-accent');
   if ('item' in action) {
     return (
       <button type="button" className={look} onClick={() => drawer.open(action.item)}>

@@ -69,7 +69,7 @@ export const OrderActions = ({ order, onEditLines }: { order: OrderResponseType;
       {!order.reserves && order.doneUnits === 0 && <Button icon="edit" onClick={onEditLines}>Edit lines</Button>}
       {IsManagementRole(business.role) && (
         <Button
-          variant="ghost"
+          variant="danger-ghost"
           icon="x"
           loading={cancel.isPending}
           onClick={async () => {

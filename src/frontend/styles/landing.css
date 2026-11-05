@@ -106,7 +106,6 @@ html.reduce-motion .inventory-sketch * { animation: none !important; }
   -webkit-mask-image: linear-gradient(215deg, #000 18%, transparent 74%);
   mask-image: linear-gradient(215deg, #000 18%, transparent 74%);
 }
-.pricing-cta { background: linear-gradient(180deg, #ff9233 0%, var(--color-primary) 100%); }
 
 /* How it works: the line down the side of the box's journey, which fills as the page scrolls, and each stage's number. */
 .journey-rail { position: absolute; inset-block: 6px; left: 15px; width: 2px; border-radius: 2px; background: var(--color-primary-200); }
@@ -128,7 +127,7 @@ html.reduce-motion .inventory-sketch * { animation: none !important; }
   font-variant-numeric: tabular-nums;
   transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease, scale 0.3s ease;
 }
-.journey-step.is-reached .journey-dot { border-color: var(--color-primary); background: var(--color-primary); color: var(--color-ink); scale: 1.1; }
+.journey-step.is-reached .journey-dot { border-color: var(--color-primary); background: var(--color-primary); color: var(--color-primary-foreground); scale: 1.1; }
 @media (min-width: 1024px) {
   .journey-step:nth-child(even) .journey-picture { order: -1; }
 }

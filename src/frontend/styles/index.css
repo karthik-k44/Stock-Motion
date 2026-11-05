@@ -27,8 +27,8 @@
 @import './depth-carousel.css' layer(components);
 
 /*
- * Orange and white on a cool canvas. Brand orange is #ff7900; it and the hero gradient carry near-black text (6.5:1), never white (2.6:1).
- * Orange text on white uses 700+ (#b35500 is 5:1). Every colour in the app comes from these tokens.
+ * Orange and white on a cool canvas. Brand orange is #ff7900. Buttons and filled icons carry white on the deeper cta gradient (3:1 to 4.6:1);
+ * the hero card keeps near-black text. Orange text on white uses cta-ink or 700+. Every colour in the app comes from these tokens.
  */
 @theme static {
   --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -76,10 +76,14 @@
   --color-neutral: #57534e;
   --color-neutral-bg: #eef1f6;
 
-  /* The hero card and the app's strongest calls to action */
+  /* The hero card */
   --color-hero-from: #ff5106;
   --color-hero-via: #f7761e;
   --color-hero-to: #f19e29;
+  /* Primary buttons: white text needs a deeper orange than the hero gradient. Outline labels use the dark end. */
+  --color-cta-from: #f26c00;
+  --color-cta-to: #c85000;
+  --color-cta-ink: var(--color-cta-to);
   /* Chart series, in stacking order. Checked for colour blindness with the dataviz validator; the charts add a table view. */
   --color-chart-1: #1d5fc4;
   --color-chart-2: #5eaef7;
@@ -93,14 +97,14 @@
   --color-popover: var(--color-surface);
   --color-popover-foreground: var(--color-ink);
   --color-primary: var(--color-primary-500);
-  --color-primary-foreground: #111111;
+  --color-primary-foreground: #ffffff;
   --color-secondary: var(--color-sunken);
   --color-secondary-foreground: var(--color-ink);
   --color-muted: var(--color-sunken);
   --color-muted-foreground: #6f6862;
   --color-accent: var(--color-primary-50);
   --color-accent-foreground: var(--color-primary-900);
-  --color-destructive: var(--color-danger);
+  --color-destructive: #dc2626;
   --color-border: var(--color-line);
   --color-input: var(--color-line-strong);
   --color-ring: var(--color-primary-600);
