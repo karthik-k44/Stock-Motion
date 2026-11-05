@@ -23,7 +23,7 @@ export const Customers = () => {
   const [search, setSearch] = useState('');
   const [creating, setCreating] = useState(false);
   const q = useDebouncedValue(search.trim());
-  const list = customersService.useCustomers(q || undefined);
+  const list = customersService.useGetCustomers(q || undefined);
 
   return (
     <div className="page">

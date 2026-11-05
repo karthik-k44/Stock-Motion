@@ -3,21 +3,23 @@ import { PatchWhere, useOptimisticMutation } from '@/frontend/services/optimisti
 import { Biz } from '@/frontend/services/request';
 import type { MemberResponseType } from '../types';
 
-const ListMembers = () => Biz.Get<MemberResponseType[]>('/members');
-const UpdateMemberRole = (accountId: string, role: string) => Biz.Patch<MemberResponseType[]>(`/members/${accountId}`, { role });
-const RemoveMember = (accountId: string) => Biz.Delete<MemberResponseType[]>(`/members/${accountId}`);
-
 const teamKeys = {
   /** Starts with the realtime resource name `members`. */
   all: ['members'] as const,
-  list: () => ['members', 'list'] as const,
+  list: () => [...teamKeys.all, 'list'] as const,
 };
 
-const useMembers = () => useQuery({ queryKey: teamKeys.list(), queryFn: ListMembers, staleTime: 60_000 });
+const useGetMembers = () =>
+  useQuery({
+    queryKey: teamKeys.list(),
+    queryFn: (): Promise<MemberResponseType[]> => Biz.Get('/members'),
+    staleTime: 60_000,
+  });
 
-const useUpdateRoleMutation = () =>
+const useUpdateMemberRole = () =>
   useOptimisticMutation({
-    mutationFn: ({ accountId, role }: { accountId: string; role: string }) => UpdateMemberRole(accountId, role),
+    mutationFn: ({ accountId, role }: { accountId: string; role: string }): Promise<MemberResponseType[]> =>
+      Biz.Patch(`/members/${accountId}`, { role }),
     optimistic: ({ accountId, role }) => [
       { queryKey: teamKeys.all, update: PatchWhere<MemberResponseType>((m) => m.accountId === accountId, (m) => ({ ...m, role })) },
     ],
@@ -25,10 +27,10 @@ const useUpdateRoleMutation = () =>
     errorTitle: 'Role not changed',
   });
 
-const useRemoveMemberMutation = () =>
+const useRemoveMember = () =>
   useOptimisticMutation({
-    mutationFn: RemoveMember,
-    optimistic: (accountId: string) => [
+    mutationFn: (accountId: string): Promise<MemberResponseType[]> => Biz.Delete(`/members/${accountId}`),
+    optimistic: (accountId) => [
       { queryKey: teamKeys.all, update: (old) => (Array.isArray(old) ? old.filter((m: MemberResponseType) => m.accountId !== accountId) : old) },
     ],
     invalidate: [teamKeys.all, ['activity'], ['orders']],
@@ -40,12 +42,9 @@ const MemberName = (members: MemberResponseType[] | undefined, accountId: string
   (accountId && members?.find((m) => m.accountId === accountId)?.name) || null;
 
 export const teamService = {
-  keys: teamKeys,
-  ListMembers,
-  UpdateMemberRole,
-  RemoveMember,
+  teamKeys,
   MemberName,
-  useMembers,
-  useUpdateRoleMutation,
-  useRemoveMemberMutation,
+  useGetMembers,
+  useUpdateMemberRole,
+  useRemoveMember,
 };

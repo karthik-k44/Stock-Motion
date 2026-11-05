@@ -16,8 +16,8 @@ export const Activity = () => {
   const [accountId, setAccountId] = useState('');
   const [search, setSearch] = useState('');
   const q = useDebouncedValue(search.trim());
-  const { data: members = [] } = teamService.useMembers();
-  const query = activityService.useActivity({ kind: kind || undefined, accountId: accountId || undefined, search: q || undefined, limit: 300 });
+  const { data: members = [] } = teamService.useGetMembers();
+  const query = activityService.useGetActivity({ kind: kind || undefined, accountId: accountId || undefined, search: q || undefined, limit: 300 });
 
   return (
     <div className="page">

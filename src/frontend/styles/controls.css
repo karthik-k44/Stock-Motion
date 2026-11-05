@@ -51,8 +51,8 @@ textarea.input { height: auto; padding: 8px 10px; resize: vertical; }
   flex-wrap: wrap;
   gap: 2px;
   padding: 3px;
-  background: #ebece7;
-  border-radius: 9px;
+  background: var(--color-canvas);
+  border-radius: 10px;
 }
 .segment {
   display: inline-flex;
@@ -70,6 +70,11 @@ textarea.input { height: auto; padding: 8px 10px; resize: vertical; }
 .segment:hover { color: var(--ink); }
 .segment-active { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); font-weight: 600; }
 .segment-count { font-size: 11px; color: var(--muted); font-weight: 600; }
+/* Underlined tabs: the look for switching what a whole card shows */
+.segmented-tabs { display: flex; gap: 4px; padding: 0; background: none; border-radius: 0; border-bottom: 1px solid var(--line); }
+.segmented-tabs .segment { height: 38px; margin-bottom: -1px; padding: 0 18px; border-bottom: 2px solid transparent; border-radius: 0; color: var(--muted); }
+.segmented-tabs .segment:hover { color: var(--ink); }
+.segmented-tabs .segment-active { background: none; box-shadow: none; color: var(--ink); border-bottom-color: var(--color-primary-500); }
 
 .field { display: grid; gap: 5px; align-content: start; }
 .field-label { font-weight: 600; font-size: 13px; }

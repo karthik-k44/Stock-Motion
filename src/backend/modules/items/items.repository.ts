@@ -207,6 +207,16 @@ const InsertMovement = async (
   });
 };
 
+/** Past ledger rows in one insert, for sample data only. Real movements take the time they happen. */
+const InsertSampleHistory = async (
+  q: Queryable,
+  rows: { businessId: string; itemId: string; at: Date; type: string; delta: number; balance: number; accountId: string; note: string }[],): Promise<void> => {
+  if (!rows.length) return;
+  await q.getRepository(MovementEntity).insert(
+    rows.map((r) => ({ business_id: r.businessId, item_id: r.itemId, at: r.at, type: r.type, delta: r.delta, balance: r.balance, ref: null, account_id: r.accountId, note: r.note })),
+  );
+};
+
 const ListMovements = (q: Queryable, itemId: string, limit: number): Promise<MovementRow[]> => {
   return q
     .createQueryBuilder(MovementEntity, 'm')
@@ -262,6 +272,7 @@ export const itemsRepository = {
   ReplaceComponents,
   ListUsedIn,
   InsertMovement,
+  InsertSampleHistory,
   ListMovements,
   CountOpenUses,
 };

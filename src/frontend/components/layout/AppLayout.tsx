@@ -1,5 +1,4 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { useLocation } from 'react-router';
 import { Button } from '@/frontend/components/button';
 import type { NavItemType } from './nav-type';
 import { Sidebar } from './Sidebar';
@@ -7,6 +6,7 @@ import { Sidebar } from './Sidebar';
 type AppLayoutProps = {
   nav: NavItemType[];
   badges: Record<string, number | undefined>;
+  topbarStart: ReactNode;
   topbarEnd: ReactNode;
   sidebarFooter?: ReactNode;
   brand?: ReactNode;
@@ -14,10 +14,8 @@ type AppLayoutProps = {
   children: ReactNode;
 };
 
-export const AppLayout = ({ nav, badges, topbarEnd, sidebarFooter, brand, busy, children }: AppLayoutProps) => {
+export const AppLayout = ({ nav, badges, topbarStart, topbarEnd, sidebarFooter, brand, busy, children }: AppLayoutProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
-  const { pathname } = useLocation();
-  const current = nav.find((n) => pathname.startsWith(n.path));
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -44,7 +42,7 @@ export const AppLayout = ({ nav, badges, topbarEnd, sidebarFooter, brand, busy, 
             aria-controls="app-nav"
             onClick={() => setMenuOpen((v) => !v)}
           />
-          <p className="topbar-title">{current?.label ?? 'StockMotion'}</p>
+          <div className="topbar-start">{topbarStart}</div>
           <div className="topbar-end">{topbarEnd}</div>
           {busy && <span className="route-progress" aria-hidden />}
         </header>

@@ -61,14 +61,3 @@ export type UpdateOrderInput = {
 
 /** Stock shortage detail returned with a 409 when an order can't be reserved. */
 export type OrderShortageType = { sku: string; name: string; unit: string; needed: number; available: number };
-
-/** Every order type under one name. */
-export type TOrderType = {
-  Response: OrderResponseType;
-  Line: OrderLineResponseType;
-  ListParams: ListOrdersParams;
-  LineInput: OrderLineInput;
-  NewInput: NewOrderInput;
-  UpdateInput: UpdateOrderInput;
-  Shortage: OrderShortageType;
-};

@@ -19,6 +19,8 @@ export type ZoneSummaryType = {
   outOfStock: number;
 };
 
+export type DailyPointType = { day: string; value: number };
+
 export type DashboardResponseType = {
   generatedAt: string;
   kpis: {
@@ -41,6 +43,8 @@ export type DashboardResponseType = {
     team: number;
   };
   stockHealth: { inStock: number; low: number; out: number };
+  /** The last 14 days, oldest first, ending today */
+  trends: { stockValue: DailyPointType[]; revenue: DailyPointType[] };
   /** Open orders per stage of the template's flow */
   ordersByStatus: Record<string, number>;
   unitsByCategory: { category: string; name: string; units: number }[];

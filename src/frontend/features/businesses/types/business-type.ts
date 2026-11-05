@@ -84,17 +84,3 @@ export const CreateBusinessSchema = z.object({
 export type CreateBusinessInput = z.infer<typeof CreateBusinessSchema>;
 
 export type UpdateBusinessInput = { name?: string; currency?: string };
-
-/** Every business type under one name. */
-export type TBusinessType = {
-  Response: BusinessResponseType;
-  Detail: BusinessDetailResponseType;
-  Template: TemplateResponseType;
-  Labels: TemplateLabelsType;
-  Stage: OrderStageType;
-  Zone: StorageZoneType;
-  CreateInput: CreateBusinessInput;
-  UpdateInput: UpdateBusinessInput;
-  Type: BusinessTypeEnum;
-  BaseRole: BaseRoleTypeEnum;
-};

@@ -8,9 +8,3 @@ export type LocationResponseType = {
 };
 
 export type CreateLocationInput = { code: string; zone: string; name: string };
-
-/** Every location type under one name. */
-export type TLocationType = {
-  Response: LocationResponseType;
-  CreateInput: CreateLocationInput;
-};

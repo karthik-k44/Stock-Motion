@@ -1,6 +1,6 @@
 import type { Queryable } from '@/backend/db/client';
 
-// Reporting aggregates (FILTER, date_trunc) read clearest as SQL, so these four stay parameterised raw queries.
+// Reporting aggregates (FILTER, date_trunc) read clearest as SQL, so these stay parameterised raw queries.
 
 export type SalesSummaryRow = {
   orders_today: number;
@@ -52,6 +52,47 @@ const TopSellers = async (q: Queryable, businessId: string, limit: number): Prom
   return rows;
 };
 
+export type DailyValueRow = { day: string; value: number };
+
+/** One row per day, oldest first. `daily` selects (day, total); days it has nothing for come back as 0. */
+const dailySeries = async (q: Queryable, daily: string, businessId: string, days: number): Promise<DailyValueRow[]> => {
+  const rows: DailyValueRow[] = await q.query(
+    `WITH daily AS (${daily})
+     SELECT to_char(d.day, 'YYYY-MM-DD') AS day, COALESCE(daily.total, 0)::float8 AS value
+     FROM generate_series(date_trunc('day', now()) - ($2::int - 1) * interval '1 day', date_trunc('day', now()), interval '1 day') AS d(day)
+     LEFT JOIN daily ON daily.day = d.day
+     ORDER BY d.day`,
+    [businessId, days],
+  );
+  return rows;
+};
+
+/** How much stock value each day added or removed, for the items stocked today at today's cost. */
+const DailyStockChange = (q: Queryable, businessId: string, days: number): Promise<DailyValueRow[]> =>
+  dailySeries(
+    q,
+    `SELECT date_trunc('day', m.at) AS day, SUM(m.delta * i.cost) AS total
+     FROM items i JOIN movements m ON m.item_id = i.id
+     WHERE i.business_id = $1 AND i.kind = 'STOCK' AND i.archived_at IS NULL
+       AND m.at >= date_trunc('day', now()) - ($2::int - 1) * interval '1 day'
+     GROUP BY 1`,
+    businessId,
+    days,
+  );
+
+/** Revenue per day, counted the same way as SalesSummary: closed, non-cancelled orders by the day they closed. */
+const DailyRevenue = (q: Queryable, businessId: string, days: number): Promise<DailyValueRow[]> =>
+  dailySeries(
+    q,
+    `SELECT date_trunc('day', o.closed_at) AS day, SUM(ol.qty * ol.unit_price) AS total
+     FROM orders o JOIN order_lines ol ON ol.order_id = o.id
+     WHERE o.business_id = $1 AND o.closed AND NOT o.cancelled
+       AND o.closed_at >= date_trunc('day', now()) - ($2::int - 1) * interval '1 day'
+     GROUP BY 1`,
+    businessId,
+    days,
+  );
+
 const Counts = async (q: Queryable, businessId: string): Promise<{ customers: number; new_customers_month: number; team: number }> => {
   const rows: { customers: number; new_customers_month: number; team: number }[] = await q.query(
     `SELECT
@@ -63,4 +104,4 @@ const Counts = async (q: Queryable, businessId: string): Promise<{ customers: nu
   return rows[0];
 };
 
-export const dashboardRepository = { SalesSummary, OpenByStatus, TopSellers, Counts };
+export const dashboardRepository = { SalesSummary, OpenByStatus, TopSellers, DailyStockChange, DailyRevenue, Counts };

@@ -12,7 +12,7 @@ type Props = { lines: LineDraftType[]; onChange: (lines: LineDraftType[]) => voi
 /** Pick what's on the order: anything you sell (stock, made items, services) × quantity. */
 export const OrderLinesEditor = ({ lines, onChange, error }: Props) => {
   const business = businessesService.useBusiness();
-  const { data: items = [] } = inventoryService.useItems();
+  const { data: items = [] } = inventoryService.useGetItems();
   const [adding, setAdding] = useState('');
   const sellable = items.filter((i) => i.kind !== 'STOCK' || i.price > 0);
   const priceOf = (sku: string) => items.find((i) => i.sku === sku)?.price ?? 0;

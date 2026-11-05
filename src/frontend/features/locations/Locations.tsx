@@ -9,7 +9,7 @@ import { locationsService } from './services';
 export const Locations = () => {
   const { template } = businessesService.useBusiness();
   useDocumentTitle(template.labels.locations);
-  const { data, isPending, isError, error, refetch } = locationsService.useLocations();
+  const { data, isPending, isError, error, refetch } = locationsService.useGetLocations();
   const [issuesOnly, setIssuesOnly] = useState(false);
   const zones = [
     ...template.zones,

@@ -34,8 +34,8 @@ export const ItemFormModal = (props: Props) => {
   const [values, setValues] = useState(() => toValues(props.item, template.units[0] ?? 'ea'));
   const [components, setComponents] = useState<ComponentInput[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const create = inventoryService.useCreateItemMutation();
-  const update = inventoryService.useUpdateItemMutation();
+  const create = inventoryService.useCreateItem();
+  const update = inventoryService.useUpdateItem();
   const label = KindLabel(template.labels, kind);
 
   const submit = () => {

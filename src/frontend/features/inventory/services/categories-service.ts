@@ -3,21 +3,22 @@ import { useOptimisticMutation } from '@/frontend/services/optimistic';
 import { Biz } from '@/frontend/services/request';
 import type { CategoryResponseType } from '../types';
 
-const ListCategories = () => Biz.Get<CategoryResponseType[]>('/categories');
-const CreateCategory = (name: string) => Biz.Post<CategoryResponseType[]>('/categories', { name });
-const DeleteCategory = (code: string) => Biz.Delete<CategoryResponseType[]>(`/categories/${encodeURIComponent(code)}`);
-
 const categoriesKeys = {
   all: ['categories'] as const,
-  list: () => ['categories', 'list'] as const,
+  list: () => [...categoriesKeys.all, 'list'] as const,
 };
 
-const useCategories = () => useQuery({ queryKey: categoriesKeys.list(), queryFn: ListCategories, staleTime: 60_000 });
+const useGetCategories = () =>
+  useQuery({
+    queryKey: categoriesKeys.list(),
+    queryFn: (): Promise<CategoryResponseType[]> => Biz.Get('/categories'),
+    staleTime: 60_000,
+  });
 
-const useCreateCategoryMutation = () =>
+const useCreateCategory = () =>
   useOptimisticMutation({
-    mutationFn: CreateCategory,
-    optimistic: (name: string) => [
+    mutationFn: (name: string): Promise<CategoryResponseType[]> => Biz.Post('/categories', { name }),
+    optimistic: (name) => [
       {
         queryKey: categoriesKeys.all,
         update: (old) => (Array.isArray(old) ? [...old, { code: `pending-${name}`, name, itemCount: 0 }] : old),
@@ -28,10 +29,10 @@ const useCreateCategoryMutation = () =>
     successToast: (_, name) => ({ title: `${name} added` }),
   });
 
-const useDeleteCategoryMutation = () =>
+const useDeleteCategory = () =>
   useOptimisticMutation({
-    mutationFn: DeleteCategory,
-    optimistic: (code: string) => [
+    mutationFn: (code: string): Promise<CategoryResponseType[]> => Biz.Delete(`/categories/${encodeURIComponent(code)}`),
+    optimistic: (code) => [
       { queryKey: categoriesKeys.all, update: (old) => (Array.isArray(old) ? old.filter((c: CategoryResponseType) => c.code !== code) : old) },
     ],
     invalidate: [categoriesKeys.all],
@@ -43,12 +44,9 @@ const CategoryName = (categories: CategoryResponseType[] | undefined, code: stri
   categories?.find((c) => c.code === code)?.name ?? code;
 
 export const categoriesService = {
-  keys: categoriesKeys,
-  ListCategories,
-  CreateCategory,
-  DeleteCategory,
+  categoriesKeys,
   CategoryName,
-  useCategories,
-  useCreateCategoryMutation,
-  useDeleteCategoryMutation,
+  useGetCategories,
+  useCreateCategory,
+  useDeleteCategory,
 };

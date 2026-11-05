@@ -20,13 +20,14 @@
 @import './data.css' layer(components);
 @import './overlay.css' layer(components);
 @import './pages.css' layer(components);
+@import './overview.css' layer(components);
 @import './app.css' layer(components);
 @import './world.css' layer(components);
 @import './landing.css' layer(components);
 @import './depth-carousel.css' layer(components);
 
 /*
- * Orange and white. Brand orange is #ff7900; it carries near-black text (6.5:1), never white (2.6:1).
+ * Orange and white on a cool canvas. Brand orange is #ff7900; it and the hero gradient carry near-black text (6.5:1), never white (2.6:1).
  * Orange text on white uses 700+ (#b35500 is 5:1). Every colour in the app comes from these tokens.
  */
 @theme static {
@@ -46,10 +47,10 @@
   --color-primary-900: #6b3300;
 
   --color-surface: #ffffff;
-  --color-canvas: #faf8f6;
-  --color-sunken: #f4f1ee;
-  --color-line: #ebe6e1;
-  --color-line-strong: #d6cfc8;
+  --color-canvas: #eceff7;
+  --color-sunken: #f4f6fa;
+  --color-line: #e6e9f1;
+  --color-line-strong: #d3d8e3;
   --color-ink: #1c1917;
   --color-ink-2: #44403c;
 
@@ -73,7 +74,16 @@
   --color-carbon: #15191e;
   --color-steel: #8b8d98;
   --color-neutral: #57534e;
-  --color-neutral-bg: #f1eeeb;
+  --color-neutral-bg: #eef1f6;
+
+  /* The hero card and the app's strongest calls to action */
+  --color-hero-from: #ff5106;
+  --color-hero-via: #f7761e;
+  --color-hero-to: #f19e29;
+  /* Chart series, in stacking order. Checked for colour blindness with the dataviz validator; the charts add a table view. */
+  --color-chart-1: #1d5fc4;
+  --color-chart-2: #5eaef7;
+  --color-chart-3: #ff7a1a;
 
   /* shadcn/ui's semantic names, pointed at the same palette */
   --color-background: var(--color-surface);
@@ -95,7 +105,8 @@
   --color-input: var(--color-line-strong);
   --color-ring: var(--color-primary-600);
 
-  --shadow-card: 0 1px 2px rgb(28 25 23 / 0.05), 0 8px 24px rgb(28 25 23 / 0.07);
+  --shadow-card: 0 1px 2px rgb(30 41 70 / 0.04), 0 10px 28px rgb(30 41 70 / 0.05);
+  --shadow-hero: 0 18px 34px -16px rgb(255 98 20 / 0.6);
   --shadow-float: 0 4px 14px rgb(107 51 0 / 0.18);
 }
 

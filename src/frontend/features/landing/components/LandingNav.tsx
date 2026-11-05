@@ -68,7 +68,7 @@ export const LandingNav = ({ signedIn }: { signedIn: boolean }) => {
             </NavigationMenuItem>
 
             {NAV_LINKS.map((l) => (
-              <NavigationMenuItem key={l.href} className="hidden md:block">
+              <NavigationMenuItem key={l.href} className={l.wideOnly ? 'hidden lg:block' : 'hidden md:block'}>
                 <NavigationMenuLink asChild active={pathname === l.href} className={Cn(ITEM, 'flex-row items-center data-[active=true]:bg-sunken')}>
                   <Link to={l.href} aria-current={pathname === l.href ? 'page' : undefined}>
                     {l.label}

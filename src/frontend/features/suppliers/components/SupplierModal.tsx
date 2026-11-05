@@ -13,8 +13,8 @@ export const SupplierModal = ({ supplier, onClose }: { supplier?: SupplierRespon
     name: supplier?.name ?? '', contact: supplier?.contact ?? '', email: supplier?.email ?? '', phone: supplier?.phone ?? '', leadDays: String(supplier?.leadDays ?? 2),
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const create = suppliersService.useCreateSupplierMutation();
-  const update = suppliersService.useUpdateSupplierMutation();
+  const create = suppliersService.useCreateSupplier();
+  const update = suppliersService.useUpdateSupplier();
   const set = (key: keyof typeof values) => (e: React.ChangeEvent<HTMLInputElement>) => setValues((v) => ({ ...v, [key]: e.target.value }));
 
   const submit = () => {

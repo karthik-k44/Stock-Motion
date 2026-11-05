@@ -14,8 +14,8 @@ export const ImportModal = ({ onClose }: { onClose: () => void }) => {
   const [csv, setCsv] = useState('');
   const [fileName, setFileName] = useState('');
   const [preview, setPreview] = useState<ImportPreviewResponseType | null>(null);
-  const check = importsService.usePreviewImportMutation();
-  const commit = importsService.useCommitImportMutation();
+  const check = importsService.usePreviewImport();
+  const commit = importsService.useCommitImport();
   const error = check.error ?? commit.error;
 
   const load = async (file: File | undefined) => {

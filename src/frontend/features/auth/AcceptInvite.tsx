@@ -16,14 +16,14 @@ export const AcceptInvite = () => {
   const { token = '' } = useParams();
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const preview = authService.useInvitePreview(token);
-  const session = authService.useSession();
-  const accept = authService.useAcceptInviteMutation();
-  const register = authService.useRegisterFromInviteMutation();
+  const preview = authService.useGetInvitePreview(token);
+  const session = authService.useGetSession();
+  const accept = authService.useAcceptInvite();
+  const register = authService.useRegisterFromInvite();
 
   const enter = async (businessId: string) => {
     businessesService.SelectBusiness(qc, businessId);
-    await qc.invalidateQueries({ queryKey: businessesService.keys.mine });
+    await qc.invalidateQueries({ queryKey: businessesService.businessesKeys.mine() });
     navigate(paths.dashboard, { replace: true });
   };
 
@@ -81,7 +81,7 @@ export const AcceptInvite = () => {
             busy={register.isPending}
             error={register.error}
             onSubmit={(input) =>
-              register.mutate({ token, input }, { onSuccess: () => void qc.fetchQuery({ queryKey: businessesService.keys.mine, queryFn: businessesService.ListMine }).then((mine) => enter(mine[mine.length - 1].id)) })
+              register.mutate({ token, input }, { onSuccess: () => void qc.fetchQuery({ queryKey: businessesService.businessesKeys.mine(), queryFn: businessesService.ListMine }).then((mine) => enter(mine[mine.length - 1].id)) })
             }
           />
           <p className="auth-switch mt-4">

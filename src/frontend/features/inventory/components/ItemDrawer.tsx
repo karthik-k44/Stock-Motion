@@ -26,9 +26,9 @@ export const ItemDrawer = () => {
   const navigate = useNavigate();
   const business = businessesService.useBusiness();
   const { labels } = business.template;
-  const { data: categories } = categoriesService.useCategories();
-  const { data: item, isPending, isError, error, refetch } = inventoryService.useItem(sku);
-  const archive = inventoryService.useArchiveItemMutation();
+  const { data: categories } = categoriesService.useGetCategories();
+  const { data: item, isPending, isError, error, refetch } = inventoryService.useGetItem(sku);
+  const archive = inventoryService.useArchiveItem();
   const [dialog, setDialog] = useState<'adjust' | 'relocate' | 'edit' | null>(null);
   const manager = IsManagementRole(business.role);
   const stocked = item?.kind === ItemKindTypeEnum.STOCK;

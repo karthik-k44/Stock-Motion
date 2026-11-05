@@ -15,8 +15,8 @@ export const CustomerDetail = ({ id }: { id: string }) => {
   const business = businessesService.useBusiness();
   const { labels } = business.template;
   const navigate = useNavigate();
-  const { data: c, isPending, isError, error, refetch } = customersService.useCustomer(id);
-  const remove = customersService.useDeleteCustomerMutation();
+  const { data: c, isPending, isError, error, refetch } = customersService.useGetCustomer(id);
+  const remove = customersService.useDeleteCustomer();
   const [editing, setEditing] = useState(false);
 
   if (isPending) return <SkeletonRows rows={5} height={48} label="Loading" />;

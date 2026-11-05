@@ -10,7 +10,7 @@ import { FullPageStatus } from './FullPageStatus';
 export const SessionGate = ({ children }: { children: ReactNode }) => {
   const qc = useQueryClient();
   const location = useLocation();
-  const { data: account, isPending } = authService.useSession();
+  const { data: account, isPending } = authService.useGetSession();
 
   // A refresh that fails mid-session (signed out on another device) ends this one too.
   useEffect(() => OnSignedOut(() => authService.EndSession(qc)), [qc]);

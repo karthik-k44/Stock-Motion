@@ -1,18 +1,35 @@
 import { useNavigate } from 'react-router';
-import { StatCard } from '@/frontend/components/card';
+import { HeroCard, StatCard } from '@/frontend/components/card';
 import { paths } from '@/frontend/config/paths';
 import { businessesService } from '@/frontend/features/businesses/services';
+import { PercentChange } from '@/frontend/utils/chart';
 import { FormatMoney, FormatNumber } from '@/frontend/utils/format';
-import type { DashboardKpisType } from '../types';
+import type { DashboardResponseType } from '../types';
 
-export const KpiGrid = ({ kpis }: { kpis: DashboardKpisType }) => {
+const WEEK = 7;
+
+const total = (days: { value: number }[]) => days.reduce((s, d) => s + d.value, 0);
+
+export const KpiGrid = ({ kpis, trends }: Pick<DashboardResponseType, 'kpis' | 'trends'>) => {
   const navigate = useNavigate();
   const business = businessesService.useBusiness();
   const { labels } = business.template;
   const money = (n: number) => FormatMoney(n, business.currency);
+  const lastWeek = total(trends.revenue.slice(-WEEK));
+  const weekBefore = total(trends.revenue.slice(-2 * WEEK, -WEEK));
   return (
-    <div className="kpis">
-      <StatCard label="Revenue today" value={money(kpis.revenueToday)} hint={`${kpis.closedToday} closed today · ${money(kpis.revenueMonth)} this month`} icon="dashboard" />
+    <div className="overview overview-dense">
+      <HeroCard
+        className="overview-lead"
+        label="Revenue this month"
+        value={money(kpis.revenueMonth)}
+        trend={trends.revenue}
+        trendLabel="Revenue per day"
+        formatValue={money}
+        change={PercentChange(weekBefore, lastWeek)}
+        changeLabel={weekBefore ? 'last 7 days against the 7 before' : 'last 14 days below'}
+      />
+      <StatCard label="Revenue today" value={money(kpis.revenueToday)} hint={`${kpis.closedToday} closed today`} icon="money" />
       <StatCard label={`Open ${labels.orders.toLowerCase()}`} value={kpis.openOrders} hint={`${kpis.ordersToday} new today · avg ${money(kpis.averageOrder)}`} icon="orders" onClick={() => navigate(paths.orders)} />
       <StatCard
         label="Low or out of stock"

@@ -8,15 +8,17 @@ import { StockStatusBadge } from './StockStatusBadge';
 
 type Props = { kind: ItemKindTypeEnum; items: ItemResponseType[]; selectedSku: string | null; onSelect: (sku: string) => void };
 
+const initials = (name: string) => name.slice(0, 2).toUpperCase();
+
 /** Stock items show on hand / reserved / available; made items how many can be made; services just a price. */
 export const InventoryTable = ({ kind, items, selectedSku, onSelect }: Props) => {
   const business = businessesService.useBusiness();
-  const { data: categories } = categoriesService.useCategories();
+  const { data: categories } = categoriesService.useGetCategories();
   const stocked = kind === ItemKindTypeEnum.STOCK;
   const made = kind === ItemKindTypeEnum.MADE;
   return (
-    <div className="table-wrap">
-      <table className="table table-cards">
+    <div className="table-wrap table-strips-wrap">
+      <table className="table table-cards table-strips">
         <caption className="sr-only">Select a row to see details.</caption>
         <thead>
           <tr>
@@ -31,17 +33,24 @@ export const InventoryTable = ({ kind, items, selectedSku, onSelect }: Props) =>
           </tr>
         </thead>
         <tbody>
-          {items.map((item) => (
+          {items.map((item) => {
+            const color = CategoryColor(categories, item.category);
+            return (
             <tr key={item.sku} className={Cn('row-click', selectedSku === item.sku && 'row-selected')} onClick={() => onSelect(item.sku)}>
               <th scope="row" data-label="Item">
-                <button type="button" className="row-title" onClick={(e) => (e.stopPropagation(), onSelect(item.sku))}>
-                  <span className="cell-strong">{item.name}</span>
-                  <span className="cell-sub mono">{item.sku}</span>
+                <button type="button" className="row-item" onClick={(e) => (e.stopPropagation(), onSelect(item.sku))}>
+                  <span className="item-thumb" style={{ background: `color-mix(in srgb, ${color} 18%, white)` }} aria-hidden>
+                    {initials(item.name)}
+                  </span>
+                  <span className="row-title">
+                    <span className="cell-strong">{item.name}</span>
+                    <span className="cell-sub mono">{item.sku}</span>
+                  </span>
                 </button>
               </th>
               <td data-label="Category">
                 <span className="cat">
-                  <span className="cat-swatch" style={{ background: CategoryColor(categories, item.category) }} aria-hidden />
+                  <span className="cat-swatch" style={{ background: color }} aria-hidden />
                   {categoriesService.CategoryName(categories, item.category)}
                 </span>
               </td>
@@ -63,7 +72,8 @@ export const InventoryTable = ({ kind, items, selectedSku, onSelect }: Props) =>
                 </td>
               )}
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>

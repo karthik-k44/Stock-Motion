@@ -25,7 +25,7 @@ export const AdjustStockModal = ({ item, onClose }: Props) => {
   const [reviewing, setReviewing] = useState(false);
   // What was on hand when the count started: a count is absolute, so the server refuses it if stock moved since.
   const [countedFrom] = useState(item.onHand);
-  const adjust = inventoryService.useAdjustStockMutation();
+  const adjust = inventoryService.useAdjustStock();
   const qtyNum = ToNumber(qty);
   const next = Number.isFinite(qtyNum) ? NextOnHand(item.onHand, mode, qtyNum) : item.onHand;
   const u = (n: number) => FormatQty(n, item.unit);

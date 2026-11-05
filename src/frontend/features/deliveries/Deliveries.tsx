@@ -32,8 +32,8 @@ export const Deliveries = () => {
   const [search, setSearch] = useState('');
   const [creating, setCreating] = useState(false);
   const q = useDebouncedValue(search.trim());
-  const list = deliveriesService.useDeliveries({ view, search: q || undefined });
-  const reorder = deliveriesService.useReorderMutation();
+  const list = deliveriesService.useGetDeliveries({ view, search: q || undefined });
+  const reorder = deliveriesService.useReorder();
   const manager = IsManagementRole(business.role);
 
   return (

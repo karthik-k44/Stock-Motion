@@ -25,10 +25,3 @@ export const CustomerSchema = z.object({
   notes: z.string().trim().max(500),
 });
 export type CustomerInput = z.infer<typeof CustomerSchema>;
-
-/** Every customer type under one name. */
-export type TCustomerType = {
-  Response: CustomerResponseType;
-  Detail: CustomerDetailResponseType;
-  Input: CustomerInput;
-};

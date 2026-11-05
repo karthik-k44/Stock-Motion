@@ -21,10 +21,10 @@ export const Team = () => {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const business = businessesService.useBusiness();
-  const { data: me } = authService.useSession();
-  const { data, isPending, isError, error, refetch } = teamService.useMembers();
-  const updateRole = teamService.useUpdateRoleMutation();
-  const remove = teamService.useRemoveMemberMutation();
+  const { data: me } = authService.useGetSession();
+  const { data, isPending, isError, error, refetch } = teamService.useGetMembers();
+  const updateRole = teamService.useUpdateMemberRole();
+  const remove = teamService.useRemoveMember();
   const owner = business.role === BaseRoleTypeEnum.OWNER;
   const roleLabel = (code: string) => business.template.roles.find((r) => r.code === code)?.label ?? code;
 
@@ -41,7 +41,7 @@ export const Team = () => {
       onSuccess: async () => {
         if (!leaving) return;
         businessesService.SelectBusiness(qc, null);
-        await qc.invalidateQueries({ queryKey: businessesService.keys.mine });
+        await qc.invalidateQueries({ queryKey: businessesService.businessesKeys.mine() });
         navigate(paths.home);
       },
     });

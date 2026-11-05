@@ -14,9 +14,9 @@ export const InvitePanel = () => {
   const roles = business.template.roles.filter((r) => r.code !== BaseRoleTypeEnum.OWNER || business.role === BaseRoleTypeEnum.OWNER);
   const [role, setRole] = useState(roles.find((r) => r.code !== BaseRoleTypeEnum.OWNER && r.code !== BaseRoleTypeEnum.MANAGER)?.code ?? roles[0].code);
   const [link, setLink] = useState<string | null>(null);
-  const invites = invitesService.useInvites(true);
-  const create = invitesService.useCreateInviteMutation();
-  const revoke = invitesService.useRevokeInviteMutation();
+  const invites = invitesService.useGetInvites(true);
+  const create = invitesService.useCreateInvite();
+  const revoke = invitesService.useRevokeInvite();
   const label = (code: string) => business.template.roles.find((r) => r.code === code)?.label ?? code;
 
   const copy = async (text: string) => {

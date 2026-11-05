@@ -8,7 +8,7 @@ import { locationsService } from '@/frontend/features/locations/services';
 /** Add a shelf / bin beyond the ones the template created. */
 export const LocationsCard = () => {
   const { template } = businessesService.useBusiness();
-  const create = locationsService.useCreateLocationMutation();
+  const create = locationsService.useCreateLocation();
   const [zone, setZone] = useState(template.zones[0]?.code ?? '');
   const [code, setCode] = useState('');
   const [name, setName] = useState('');

@@ -12,14 +12,18 @@ import { ConnectionStatus } from '@/frontend/features/system/components/Connecti
 import { useRealtime } from '@/frontend/hooks/use-realtime';
 import { AccountMenu } from './components/AccountMenu';
 import { BusinessGate } from './components/BusinessGate';
+import { Greeting } from './components/Greeting';
 import { SessionGate } from './components/SessionGate';
+import { SignOutButton } from './components/SignOutButton';
+import { TopbarLinks } from './components/TopbarLinks';
+import { TopbarSearch } from './components/TopbarSearch';
 
 /** The signed-in app: navigation in the business's vocabulary, plus everything that lives across screens. */
 const Frame = () => {
   const { connected } = useRealtime();
   const navigation = useNavigation();
   const business = businessesService.useBusiness();
-  const { data } = dashboardService.useDashboard();
+  const { data } = dashboardService.useGetDashboard();
   const badges = {
     inventory: data ? data.kpis.lowStock + data.kpis.outOfStock : undefined,
     orders: data?.kpis.openOrders,
@@ -32,13 +36,21 @@ const Frame = () => {
         badges={badges}
         busy={navigation.state === 'loading'}
         brand={<BusinessSwitcher />}
+        topbarStart={<Greeting />}
         topbarEnd={
           <>
+            <TopbarSearch />
             <MotionToggle />
+            <TopbarLinks kpis={data?.kpis} />
             <AccountMenu />
           </>
         }
-        sidebarFooter={<ConnectionStatus connected={connected} />}
+        sidebarFooter={
+          <>
+            <ConnectionStatus connected={connected} />
+            <SignOutButton />
+          </>
+        }
       >
         <Outlet />
       </AppLayout>

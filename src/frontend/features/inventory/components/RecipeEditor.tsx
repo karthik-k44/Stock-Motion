@@ -9,7 +9,7 @@ type Props = { value: ComponentInput[]; onChange: (next: ComponentInput[]) => vo
 
 /** What a made item (menu item, job kit, bundle) is built from: stock items × quantity in their unit. */
 export const RecipeEditor = ({ value, onChange, error }: Props) => {
-  const { data: stock = [] } = inventoryService.useItems({ kind: ItemKindTypeEnum.STOCK });
+  const { data: stock = [] } = inventoryService.useGetItems({ kind: ItemKindTypeEnum.STOCK });
   const [adding, setAdding] = useState('');
   const unused = stock.filter((s) => !value.some((c) => c.sku === s.sku));
   const canMake = value.length

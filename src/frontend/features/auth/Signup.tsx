@@ -10,8 +10,8 @@ export const Signup = () => {
   useDocumentTitle('Create an account');
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const session = authService.useSession();
-  const register = authService.useRegisterMutation();
+  const session = authService.useGetSession();
+  const register = authService.useRegister();
   // A brand-new account has no business yet: set one up, unless they came from an invite link.
   const next = params.get('next') ? SafeNext(params.get('next')) : paths.onboarding;
 

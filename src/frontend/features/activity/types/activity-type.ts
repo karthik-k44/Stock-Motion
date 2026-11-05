@@ -41,12 +41,3 @@ export type ListActivityParams = {
   search?: string;
   limit?: number;
 };
-
-/** Every activity type under one name. */
-export type TActivityType = {
-  Response: ActivityResponseType;
-  Kind: ActivityKindTypeEnum;
-  RefType: ActivityRefTypeEnum;
-  Meta: ActivityMetaType;
-  ListParams: ListActivityParams;
-};

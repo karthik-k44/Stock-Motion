@@ -3,7 +3,7 @@ import { HumanizeReason } from '@/frontend/utils/humanize';
 import { AdjustModeTypeEnum, AdjustReasonTypeEnum, ItemFilterStatusTypeEnum, ItemKindTypeEnum } from '../types';
 
 export const STATUS_FILTERS: { value: ItemFilterStatusTypeEnum | 'ALL'; label: string }[] = [
-  { value: 'ALL', label: 'All' },
+  { value: 'ALL', label: 'All statuses' },
   { value: ItemFilterStatusTypeEnum.IN_STOCK, label: 'In stock' },
   { value: ItemFilterStatusTypeEnum.LOW, label: 'Low' },
   { value: ItemFilterStatusTypeEnum.OUT, label: 'Out' },

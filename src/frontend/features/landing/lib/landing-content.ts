@@ -1,27 +1,137 @@
 import { Activity, Boxes, Building2, Coffee, FileSpreadsheet, RadioTower, Store, Truck, Users, Workflow, Wrench, Zap, type LucideIcon } from 'lucide-react';
 
-/** Every word on the landing page. Only what the product really does — nothing here is a placeholder. */
+/** Every word on the landing page. Only what the product really does; the one placeholder is CONTACT, marked below. */
 
-export type UseCaseType = { id: string; icon: LucideIcon; title: string; text: string };
+export type UseCaseType = {
+  id: string;
+  icon: LucideIcon;
+  /** The short name, for the jump links */
+  name: string;
+  title: string;
+  /** One line, for the navbar's mega menu */
+  text: string;
+  /** The opening sentence of its row on the front page */
+  lead: string;
+  /** A scene from public/landing/scenarios */
+  image: string;
+  points: { title: string; text: string }[];
+  /** What the row ends on. `steps` read as a flow, in order; otherwise they are a plain list. */
+  chips: { label: string; items: string[]; steps?: boolean };
+};
 export type FeatureType = { icon: LucideIcon; title: string; text: string };
 export type FaqType = { q: string; a: string };
 
 export const USE_CASES: UseCaseType[] = [
-  { id: 'retail', icon: Store, title: 'For Retail & E-commerce', text: 'Aisles, bins and pick lists. Orders picked, packed and shipped on time.' },
-  { id: 'cafes', icon: Coffee, title: 'For Cafés & Restaurants', text: 'Recipes that use up ingredients, tickets from counter to served.' },
-  { id: 'trades', icon: Wrench, title: 'For Trades & Field Service', text: 'Depot, vans and job sites. Materials logged against every job.' },
-  { id: 'owners', icon: Building2, title: 'For Multi-business Owners', text: 'Run every business from one login, each in its own words.' },
-  { id: 'teams', icon: Users, title: 'For Growing Teams', text: 'Invite staff with a role and see who did what, and when.' },
-  { id: 'operations', icon: Activity, title: 'For Operations Leads', text: 'One live view of stock, orders and deliveries as they happen.' },
+  {
+    id: 'retail',
+    icon: Store,
+    name: 'Retail',
+    title: 'For Retail & E-commerce',
+    text: 'Aisles, bins and pick lists. Orders picked, packed and shipped on time.',
+    lead: 'Lay StockMotion out like your warehouse, down to the aisle and bin, then run every sales order from the first pick to the truck.',
+    image: 'picking',
+    points: [
+      { title: 'Stock held for the order that needs it', text: 'Releasing an order to picking reserves its units, so two orders can’t promise the same stock.' },
+      { title: 'Deliveries counted in at the dock', text: 'Receive line by line. Anything short or over is noted, and what arrived goes straight onto the shelf.' },
+      { title: 'Bundles sold as one product', text: 'Group products into a bundle and see how many you can put together from what is available.' },
+    ],
+    chips: { label: 'Sales order flow', items: ['New', 'Picking', 'Packed', 'Shipped'], steps: true },
+  },
+  {
+    id: 'cafes',
+    icon: Coffee,
+    name: 'Cafés',
+    title: 'For Cafés & Restaurants',
+    text: 'Recipes that use up ingredients, tickets from counter to served.',
+    lead: 'Build your menu from recipes, and every ticket takes its ingredients off the fridge and pantry counts as it goes out.',
+    image: 'cafe',
+    points: [
+      { title: 'Recipes that know what you have left', text: 'Each menu item lists its ingredients, so you can see how many more you can make right now.' },
+      { title: 'Ingredients used when they really are', text: 'Starting a ticket sets its ingredients aside, and serving it takes them off the count.' },
+      { title: 'Supplier drop-offs without the guesswork', text: 'Running-low ingredients are flagged, and you can reorder them all in one go, grouped by supplier.' },
+    ],
+    chips: { label: 'Ticket flow', items: ['New', 'Preparing', 'Served'], steps: true },
+  },
+  {
+    id: 'trades',
+    icon: Wrench,
+    name: 'Trades',
+    title: 'For Trades & Field Service',
+    text: 'Depot, vans and job sites. Materials logged against every job.',
+    lead: 'Keep the depot, every van and each site store on one map, and always know which materials went to which job.',
+    image: 'trades',
+    points: [
+      { title: 'Stock tracked wherever it travels', text: 'Depot shelves, van racks and site stores are locations of their own, so a count means something.' },
+      { title: 'Materials booked with the job', text: 'Booking a job sets its materials aside, and your crew logs what they use while they’re on site.' },
+      { title: 'Job kits ready to grab', text: 'Group what a common job needs into a kit and see how many you can make up from the shelves.' },
+    ],
+    chips: { label: 'Job flow', items: ['Quoted', 'Scheduled', 'In progress', 'Done'], steps: true },
+  },
+  {
+    id: 'owners',
+    icon: Building2,
+    name: 'Owners',
+    title: 'For Multi-business Owners',
+    text: 'Run every business from one login, each in its own words.',
+    lead: 'Own a warehouse and a café? One login runs both, and each one keeps its own stock, team and way of working.',
+    image: 'today',
+    points: [
+      { title: 'One account, every business', text: 'Own or join as many as you need, and switch between them in a click from the sidebar.' },
+      { title: 'Each business speaks its own language', text: 'Pick a type and get the right labels, order flow, storage layout and roles from the first day.' },
+      { title: 'Nothing crosses over', text: 'Stock, staff and settings stay inside their own business, however many you run.' },
+    ],
+    chips: { label: 'Business types', items: ['Retail / e-commerce', 'Café / restaurant', 'Trades / agency'] },
+  },
+  {
+    id: 'teams',
+    icon: Users,
+    name: 'Teams',
+    title: 'For Growing Teams',
+    text: 'Invite staff with a role and see who did what, and when.',
+    lead: 'Bring new people on with a link and a role, and keep a clear record of who did what as the team grows.',
+    image: 'history',
+    points: [
+      { title: 'Invites that come with a role', text: 'Send a one-time link with a role from your business type, such as picker, barista or technician.' },
+      { title: 'The right access for the job', text: 'Managers run the catalogue and settings, and everyone can work orders and stock.' },
+      { title: 'Every change has a name on it', text: 'Counts, moves and adjustments are all written to the history with who made them and when.' },
+    ],
+    chips: { label: 'Roles you can give', items: ['Manager', 'Picker', 'Barista', 'Chef', 'Technician'] },
+  },
+  {
+    id: 'operations',
+    icon: Activity,
+    name: 'Operations',
+    title: 'For Operations Leads',
+    text: 'One live view of stock, orders and deliveries as they happen.',
+    lead: 'See the whole operation in one place instead of chasing updates, from what is on the shelf to what is on the road.',
+    image: 'dock',
+    points: [
+      { title: 'A live world of your business', text: 'Every shelf, truck and ticket is drawn from your own records and moves as your team works.' },
+      { title: 'Everyone looking at the same numbers', text: 'Changes reach every open screen the moment they happen, with no refresh button.' },
+      { title: 'Problems raised before they cost you', text: 'Items below their reorder level are flagged straight away, and today’s numbers sit on one dashboard.' },
+    ],
+    chips: { label: 'Where you’ll see it', items: ['Live world', 'Dashboard', 'Activity history'] },
+  },
 ];
 
-/** Features, pricing and FAQ are pages; `/#…` links scroll to a section of the front page from anywhere. */
-export const NAV_LINKS = [
+/**
+ * Features, pricing and FAQ are pages; `/#…` links scroll to a section of the front page from anywhere.
+ * `wideOnly` links leave the bar below 1024px, where they don't fit; the footer and the phone menu still have them.
+ */
+export const NAV_LINKS: { label: string; href: string; wideOnly?: boolean }[] = [
   { label: 'Features', href: '/features' },
   { label: 'How it works', href: '/how-it-works' },
   { label: 'Pricing', href: '/pricing' },
   { label: 'FAQ', href: '/faq' },
+  { label: 'Contact us', href: '/contact', wideOnly: true },
 ];
+
+/** The contact page's details and the inbox its form writes to. Placeholders: set the real ones before launch. */
+export const CONTACT = {
+  email: 'hello@example.com',
+  phone: '+1 (555) 000-0000',
+  office: 'Your office address, City',
+};
 
 export const FEATURES: FeatureType[] = [
   { icon: Boxes, title: 'A live world of your business', text: 'Every shelf, truck and ticket is drawn from your own records and moves as your team works.' },
@@ -54,6 +164,7 @@ export const FOOTER_COLUMNS: FooterColumnType[] = [
       { label: 'How it works', href: '/how-it-works' },
       { label: 'Pricing', href: '/pricing' },
       { label: 'FAQ', href: '/faq' },
+      { label: 'Contact us', href: '/contact' },
     ],
   },
   { title: 'Built for', links: USE_CASES.slice(0, 4).map((u) => ({ label: u.title.replace(/^For /, ''), href: `/#${u.id}` })) },

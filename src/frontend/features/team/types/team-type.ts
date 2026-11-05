@@ -16,10 +16,3 @@ export type InviteResponseType = {
 };
 
 export type CreatedInviteResponseType = InviteResponseType & { token: string };
-
-/** Every team type under one name. */
-export type TTeamType = {
-  Member: MemberResponseType;
-  Invite: InviteResponseType;
-  CreatedInvite: CreatedInviteResponseType;
-};

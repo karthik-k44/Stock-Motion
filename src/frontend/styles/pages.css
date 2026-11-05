@@ -25,7 +25,7 @@
 /* lists */
 .order-list { display: grid; }
 .order-row { display: grid; gap: 3px; padding: 12px 16px; border-bottom: 1px solid var(--line); text-decoration: none; }
-.order-row:hover { background: #f6f7f3; }
+.order-row:hover { background: var(--surface-2); }
 .order-row-active { background: var(--color-primary-50); box-shadow: inset 3px 0 0 var(--accent); }
 .order-row-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .order-row-customer { font-weight: 500; }
@@ -53,7 +53,7 @@
   text-align: left;
   text-decoration: none;
 }
-.mini-row:hover { background: #f8f8f5; }
+.mini-row:hover { background: var(--surface-2); }
 
 /* activity */
 .feed { display: grid; }
@@ -61,7 +61,7 @@
 .feed-days section:first-child .feed-day { margin-top: 0; }
 .activity { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
 .activity:last-child { border-bottom: 0; }
-.activity-icon { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; flex: none; background: #eef0ec; color: var(--ink-2); }
+.activity-icon { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; flex: none; background: var(--surface-2); color: var(--ink-2); }
 .activity-delivery .activity-icon { background: var(--incoming-bg); color: var(--incoming-ink); }
 .activity-pick .activity-icon, .activity-allocation .activity-icon { background: var(--reserved-bg); color: var(--reserved-ink); }
 .activity-ship .activity-icon, .activity-pack .activity-icon { background: var(--good-bg); color: var(--good-ink); }
@@ -120,7 +120,7 @@ button.loc-cell:hover { border-color: var(--line-strong); box-shadow: var(--shad
 .bars { display: grid; gap: 10px; }
 .bar-row { display: grid; grid-template-columns: minmax(96px, 130px) 1fr 52px; gap: 10px; align-items: center; font-size: 13px; }
 .bar-label { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.bar-track { height: 10px; background: #eeefea; border-radius: 0 4px 4px 0; }
+.bar-track { height: 10px; background: var(--surface-2); border-radius: 0 4px 4px 0; }
 .bar-fill { display: block; height: 100%; min-width: 2px; background: var(--accent); border-radius: 0 4px 4px 0; transition: width 0.4s ease; }
 .bar-value { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
 

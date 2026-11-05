@@ -55,14 +55,3 @@ export const NewDeliverySchema = z.object({
     .min(1, 'Add at least one line'),
 });
 export type NewDeliveryInput = z.infer<typeof NewDeliverySchema>;
-
-/** Every delivery type under one name. */
-export type TDeliveryType = {
-  Response: DeliveryResponseType;
-  Line: DeliveryLineResponseType;
-  Status: DeliveryStatusTypeEnum;
-  View: DeliveryViewTypeEnum;
-  ListParams: ListDeliveriesParams;
-  ReceiveInput: ReceiveDeliveryInput;
-  NewInput: NewDeliveryInput;
-};
