@@ -3,20 +3,21 @@ import { useOptimisticMutation } from '@/frontend/services/optimistic';
 import { Biz } from '@/frontend/services/request';
 import type { CreateLocationInput, LocationResponseType } from '../types';
 
-const ListLocations = () => Biz.Get<LocationResponseType[]>('/locations');
-const CreateLocation = (input: CreateLocationInput) => Biz.Post<LocationResponseType[]>('/locations', input);
-
 const locationsKeys = {
   all: ['locations'] as const,
-  list: () => ['locations', 'list'] as const,
+  list: () => [...locationsKeys.all, 'list'] as const,
 };
 
-const useLocations = () => useQuery({ queryKey: locationsKeys.list(), queryFn: ListLocations });
+const useGetLocations = () =>
+  useQuery({
+    queryKey: locationsKeys.list(),
+    queryFn: (): Promise<LocationResponseType[]> => Biz.Get('/locations'),
+  });
 
-const useCreateLocationMutation = () =>
+const useCreateLocation = () =>
   useOptimisticMutation({
-    mutationFn: CreateLocation,
-    optimistic: (input: CreateLocationInput) => [
+    mutationFn: (input: CreateLocationInput): Promise<LocationResponseType[]> => Biz.Post('/locations', input),
+    optimistic: (input) => [
       { queryKey: locationsKeys.all, update: (old) => (Array.isArray(old) ? [...old, { ...input, items: [] }] : old) },
     ],
     invalidate: [locationsKeys.all, ['dashboard']],
@@ -24,4 +25,4 @@ const useCreateLocationMutation = () =>
     successToast: (_, input) => ({ title: `${input.code} added`, message: input.name }),
   });
 
-export const locationsService = { keys: locationsKeys, ListLocations, CreateLocation, useLocations, useCreateLocationMutation };
+export const locationsService = { locationsKeys, useGetLocations, useCreateLocation };

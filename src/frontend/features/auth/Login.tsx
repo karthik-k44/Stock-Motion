@@ -10,8 +10,8 @@ export const Login = () => {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const next = SafeNext(params.get('next'));
-  const session = authService.useSession();
-  const login = authService.useLoginMutation();
+  const session = authService.useGetSession();
+  const login = authService.useLogin();
 
   if (session.data) return <Navigate to={next} replace />;
 

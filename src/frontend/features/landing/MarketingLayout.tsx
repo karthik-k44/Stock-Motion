@@ -5,7 +5,7 @@ import { useFrameMotion } from './lib/use-landing-motion';
 import { useSignedIn } from './lib/use-signed-in';
 
 /**
- * The frame of the public pages (`/`, `/features`, `/pricing`, `/faq`): navbar, the page, footer. Scroll restoration
+ * The frame of the public pages (`/`, `/features`, `/pricing`, `/faq`, `/contact`): navbar, the page, footer. Scroll restoration
  * starts each page at the top and scrolls `/#…` links to their section, after the page has rendered.
  */
 export const MarketingLayout = () => {

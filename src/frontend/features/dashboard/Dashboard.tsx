@@ -19,9 +19,9 @@ export const Dashboard = () => {
   useDocumentTitle('Dashboard');
   const business = businessesService.useBusiness();
   const { labels, orderFlow } = business.template;
-  const { data, isPending, isError, error, refetch } = dashboardService.useDashboard();
-  const { data: categories } = categoriesService.useCategories();
-  const activity = activityService.useActivity({ limit: 8 });
+  const { data, isPending, isError, error, refetch } = dashboardService.useGetDashboard();
+  const { data: categories } = categoriesService.useGetCategories();
+  const activity = activityService.useGetActivity({ limit: 8 });
 
   if (isError) return <ErrorState message={error.message} onRetry={() => refetch()} />;
 
@@ -29,11 +29,12 @@ export const Dashboard = () => {
     <div className="page">
       <PageHeader title={business.name} description={`${business.template.name} · money, stock and ${labels.orders.toLowerCase()} at a glance. Updates live as your team works.`} />
       {isPending ? (
-        <div className="kpis" role="status" aria-label="Loading dashboard">
-          {Array.from({ length: 6 }, (_, i) => <Skeleton key={i} height={104} />)}
+        <div className="overview overview-dense" role="status" aria-label="Loading dashboard">
+          <Skeleton className="overview-lead" height={216} />
+          {Array.from({ length: 6 }, (_, i) => <Skeleton key={i} height={100} />)}
         </div>
       ) : (
-        <KpiGrid kpis={data.kpis} />
+        <KpiGrid kpis={data.kpis} trends={data.trends} />
       )}
       <div className="grid-3">
         {isPending ? <SkeletonRows rows={3} height={60} /> : <StockHealthChart health={data.stockHealth} />}

@@ -20,8 +20,9 @@ src/
 │   ├── tests/              # vitest integration tests (in-memory Postgres)
 │   └── types/              # backend domain types, one file per domain + index.ts barrel
 └── frontend/               # React 19 + Vite + React Query + Tailwind CSS v4 + shadcn/ui
+    ├── App.tsx              # every route: the lazy pages, then the <Route> tree
     ├── components/          # shared UI (button/, card/, form/, modal/, drawer/, toast/, layout/, …)
-    ├── config/              # paths.ts, navigation.ts (built from the template's labels), router.tsx
+    ├── config/              # paths.ts, navigation.ts (built from the template's labels)
     ├── features/<feature>/  # landing, auth, onboarding, shell, businesses, world, dashboard, inventory, orders, deliveries,
     │                        # locations, customers, suppliers, team, settings, activity, system, not-found
     ├── hooks/               # cross-cutting hooks (use-realtime, use-connection, use-item-drawer, use-motion, …)
@@ -74,9 +75,12 @@ No `pages/` or `hooks/` folder inside a feature. Features with nothing to fetch 
 
 Each `services/<resource>-service.ts` exports exactly one object (`inventoryService`, `ordersService`, `deliveriesService` …) holding:
 
-- raw requests as PascalCase verbs (`ListItems`, `AdjustStock`, `ReceiveDelivery`), built on `Biz.*` from `@/frontend/services/request` for business data (never `httpClient` directly);
-- a `keys` factory whose first segment is the **realtime resource name** (`['items', …]`, `['members', …]`), so a `data:changed` event refreshes exactly the right queries;
-- `useXxx` query hooks and `useXxxMutation` mutation hooks.
+- a `<resource>Keys` factory (`all`, `lists()`, `list(filter)`, `details()`, `detail(id)`) whose first segment is the **realtime resource name** (`['items', …]`, `['members', …]`), so a `data:changed` event refreshes exactly the right queries;
+- `useGetXxx` query hooks and verb-named mutation hooks (`useCreateItem`, `useAdjustStock`, `useReceiveDelivery`), with the request written inline and its return type spelled out with the normal type name (`Promise<ItemResponseType[]>`);
+- requests built on `Biz.*` from `@/frontend/services/request` for business data (never `httpClient` directly);
+- pure helpers that belong to the resource (`CategoryName`, `InviteLink`). A request stays a named function only when something outside a hook needs it too (`ListMine`).
+
+Invalidating another resource uses its plain name (`['dashboard']`) rather than importing its service: services invalidate each other in both directions, and those imports would be cycles.
 
 ### Optimistic mutations
 
@@ -100,7 +104,7 @@ There is no `ApiResponse<T>` envelope; the API returns resources directly. Error
 
 ## Marketing pages
 
-`features/landing` holds the public pages — `Landing.tsx` (`/`), `Features.tsx` (`/features`), `Pricing.tsx` (`/pricing`) and `Faq.tsx` (`/faq`) — as children of one layout route, `MarketingLayout.tsx` (navbar, footer, scroll restoration). They follow `docs/design/style-reference.md` — the palette is scoped to `.landing` in `styles/landing.css`, so the app keeps its own.
+`features/landing` holds the public pages — `Landing.tsx` (`/`), `Features.tsx` (`/features`), `Pricing.tsx` (`/pricing`), `Faq.tsx` (`/faq`) and `Contact.tsx` (`/contact`) — as children of one layout route, `MarketingLayout.tsx` (navbar, footer, scroll restoration). They follow `docs/design/style-reference.md` — the palette is scoped to `.landing` in `styles/landing.css`, so the app keeps its own.
 - **Copy and plans** live in `lib/landing-content.ts` and `lib/pricing-content.ts`; components only lay them out. Nothing there is invented: features are real, prices are the owner's, there are no fake customer logos or counts.
 - **Hero:** the pitch on the left, the scenario illustrations on the right in `components/ui/depth-carousel` (cards in 3D depth — `sides="both"`: previous images to the left, next to the right — eased by GSAP; drag, horizontal wheel, arrow keys, arrows and dots; follows the app's motion setting). Styles in `styles/depth-carousel.css`.
 - **Illustrations:** `scripts/illustrations/` draws each scenario with the live world's isometric kit and renders it to `public/landing/scenarios/` — `npm run illustrations`.

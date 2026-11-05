@@ -1,4 +1,4 @@
-import { SearchInput, SegmentedControl, Select } from '@/frontend/components/form';
+import { SearchInput, Select } from '@/frontend/components/form';
 import { businessesService } from '@/frontend/features/businesses/services';
 import { STATUS_FILTERS } from '../lib/inventory-options';
 import { categoriesService } from '../services';
@@ -20,7 +20,7 @@ type Props = {
 
 export const InventoryFilters = ({ kind, value, onChange, searching }: Props) => {
   const { template } = businessesService.useBusiness();
-  const { data: categories = [] } = categoriesService.useCategories();
+  const { data: categories = [] } = categoriesService.useGetCategories();
   const set = <K extends keyof InventoryFilterState>(key: K, v: InventoryFilterState[K]) => onChange({ ...value, [key]: v });
   const stocked = kind === ItemKindTypeEnum.STOCK;
   return (
@@ -41,12 +41,11 @@ export const InventoryFilters = ({ kind, value, onChange, searching }: Props) =>
         />
       )}
       {kind !== ItemKindTypeEnum.SERVICE && (
-        <SegmentedControl
-          label="Filter by stock status"
-          size="sm"
+        <Select
+          aria-label="Filter by stock status"
           value={value.status}
           options={stocked ? STATUS_FILTERS : STATUS_FILTERS.slice(0, 4)}
-          onChange={(v) => set('status', v)}
+          onChange={(v) => set('status', v as InventoryFilterState['status'])}
         />
       )}
     </div>

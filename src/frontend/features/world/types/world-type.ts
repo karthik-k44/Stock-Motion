@@ -185,31 +185,3 @@ export type CameraCommandType = 'zoomIn' | 'zoomOut' | 'rotateLeft' | 'rotateRig
 
 /** Space the floating panels cover on each side of the scene, in px. */
 export type InsetsType = { top: number; right: number; bottom: number; left: number };
-
-/** Every world type under one name. */
-export type TWorldType = {
-  Context: WorldContextType;
-  Stat: WorldStatType;
-  Tone: WorldToneType;
-  Tag: WorldTagType;
-  Selection: WorldSelectionType;
-  Box: BoxType;
-  Group: IsoGroupType;
-  Dir: DirType;
-  Mover: IsoMoverType;
-  Hotspot: IsoHotspotType;
-  Pin: IsoPinType;
-  Scene: IsoSceneType;
-  View: ViewType;
-  ObjectSpec: WorldObjectSpecType;
-  Layout: WorldLayoutType;
-  Bin: WorldBinType;
-  Fact: WorldFactType;
-  Action: WorldActionType;
-  Inspector: WorldInspectorType;
-  Kpi: WorldKpiType;
-  TrackerTab: WorldTrackerTabType;
-  Row: WorldRowType;
-  CameraCommand: CameraCommandType;
-  Insets: InsetsType;
-};

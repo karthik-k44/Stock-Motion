@@ -16,6 +16,7 @@ type SidebarProps = {
 };
 
 export const Sidebar = ({ nav, badges, open, onNavigate, footer, brand }: SidebarProps) => {
+  const groups = [...new Set(nav.map((item) => item.group))];
   return (
     <nav id="app-nav" className={Cn('sidebar', open && 'sidebar-open')} aria-label="Main">
       <div className="brand">
@@ -27,24 +28,31 @@ export const Sidebar = ({ nav, badges, open, onNavigate, footer, brand }: Sideba
         </span>
       </div>
       {brand && <div className="brand-switch">{brand}</div>}
-      <ul className="nav-list">
-        {nav.map((item) => {
-          const count = item.badge ? badges[item.badge] : undefined;
-          return (
-            <li key={item.path}>
-              <NavLink to={item.path} className={({ isActive }) => Cn('nav-link', isActive && 'nav-link-active')} onClick={onNavigate}>
-                <Icon name={item.icon} size={18} />
-                <span className="nav-label">{item.label}</span>
-                {count ? (
-                  <span className="nav-badge" aria-label={`${count} need attention`}>
-                    {count}
-                  </span>
-                ) : null}
-              </NavLink>
-            </li>
-          );
-        })}
-      </ul>
+      <div className="nav-scroll">
+        {groups.map((group) => (
+          <div key={group} className="nav-group">
+            <p className="nav-heading">{group}</p>
+            <ul className="nav-list">
+              {nav.filter((item) => item.group === group).map((item) => {
+                const count = item.badge ? badges[item.badge] : undefined;
+                return (
+                  <li key={item.path}>
+                    <NavLink to={item.path} className={({ isActive }) => Cn('nav-link', isActive && 'nav-link-active')} onClick={onNavigate}>
+                      <Icon name={item.icon} size={18} />
+                      <span className="nav-label">{item.label}</span>
+                      {count ? (
+                        <span className="nav-badge" aria-label={`${count} need attention`}>
+                          {count}
+                        </span>
+                      ) : null}
+                    </NavLink>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
+      </div>
       {footer && <div className="sidebar-foot">{footer}</div>}
     </nav>
   );

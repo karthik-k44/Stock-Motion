@@ -18,9 +18,9 @@ export const Suppliers = () => {
   const business = businessesService.useBusiness();
   const { labels } = business.template;
   useDocumentTitle(labels.suppliers);
-  const { data, isPending, isError, error, refetch } = suppliersService.useSuppliers();
-  const remove = suppliersService.useDeleteSupplierMutation();
-  const reorder = deliveriesService.useReorderMutation();
+  const { data, isPending, isError, error, refetch } = suppliersService.useGetSuppliers();
+  const remove = suppliersService.useDeleteSupplier();
+  const reorder = deliveriesService.useReorder();
   const [editing, setEditing] = useState<SupplierResponseType | 'new' | null>(null);
   const manager = IsManagementRole(business.role);
 

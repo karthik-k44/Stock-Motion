@@ -35,6 +35,10 @@ const STREAKS = [
   { left: 92, top: 34, height: 22 },
 ];
 
+/** The light streaks for a panel with the `auth-art` background. */
+export const ArtStreaks = () =>
+  STREAKS.map((s) => <span key={s.left} className="auth-art-streak" style={{ left: `${s.left}%`, top: `${s.top}%`, height: `${s.height}%` } as CSSProperties} aria-hidden />);
+
 /** Sign-in, sign-up and invites: the form on the left, the artwork on the right (from 1024px; below that, the form alone). */
 export const AuthSplitLayout = ({ title, subtitle, tab, children }: AuthSplitLayoutProps) => (
   <div className="grid min-h-dvh bg-surface lg:grid-cols-2">
@@ -89,9 +93,7 @@ export const AuthSplitLayout = ({ title, subtitle, tab, children }: AuthSplitLay
     </main>
 
     <aside className="auth-art relative hidden place-items-center overflow-hidden lg:grid" aria-hidden>
-      {STREAKS.map((s) => (
-        <span key={s.left} className="auth-art-streak" style={{ left: `${s.left}%`, top: `${s.top}%`, height: `${s.height}%` } as CSSProperties} />
-      ))}
+      <ArtStreaks />
       <img src="/auth/stock-stack.webp" alt="" width={1800} height={1800} decoding="async" className="auth-art-object relative h-auto w-[min(86%,640px)]" />
     </aside>
 

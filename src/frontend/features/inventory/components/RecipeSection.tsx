@@ -8,7 +8,7 @@ import { RecipeEditor } from './RecipeEditor';
 /** The components of a made item, editable by managers. */
 export const RecipeSection = ({ item, canEdit, onOpen }: { item: ItemDetailResponseType; canEdit: boolean; onOpen: (sku: string) => void }) => {
   const [draft, setDraft] = useState<ComponentInput[] | null>(null);
-  const save = inventoryService.useSetComponentsMutation();
+  const save = inventoryService.useSetItemComponents();
 
   if (draft) {
     return (

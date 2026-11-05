@@ -3,24 +3,29 @@ import { useOptimisticMutation } from '@/frontend/services/optimistic';
 import { Biz } from '@/frontend/services/request';
 import type { CreatedInviteResponseType, InviteResponseType } from '../types';
 
-const ListInvites = () => Biz.Get<InviteResponseType[]>('/invites');
-const CreateInvite = (role: string) => Biz.Post<CreatedInviteResponseType>('/invites', { role });
-const RevokeInvite = (id: string) => Biz.Delete<void>(`/invites/${id}`);
-
 const invitesKeys = {
   all: ['invites'] as const,
-  list: () => ['invites', 'list'] as const,
+  list: () => [...invitesKeys.all, 'list'] as const,
 };
 
-const useInvites = (enabled: boolean) => useQuery({ queryKey: invitesKeys.list(), queryFn: ListInvites, enabled });
+const useGetInvites = (enabled: boolean) =>
+  useQuery({
+    queryKey: invitesKeys.list(),
+    queryFn: (): Promise<InviteResponseType[]> => Biz.Get('/invites'),
+    enabled,
+  });
 
-const useCreateInviteMutation = () =>
-  useOptimisticMutation({ mutationFn: CreateInvite, invalidate: [invitesKeys.all], errorTitle: 'Invite not created' });
-
-const useRevokeInviteMutation = () =>
+const useCreateInvite = () =>
   useOptimisticMutation({
-    mutationFn: RevokeInvite,
-    optimistic: (id: string) => [
+    mutationFn: (role: string): Promise<CreatedInviteResponseType> => Biz.Post('/invites', { role }),
+    invalidate: [invitesKeys.all],
+    errorTitle: 'Invite not created',
+  });
+
+const useRevokeInvite = () =>
+  useOptimisticMutation({
+    mutationFn: (id: string): Promise<void> => Biz.Delete(`/invites/${id}`),
+    optimistic: (id) => [
       { queryKey: invitesKeys.all, update: (old) => (Array.isArray(old) ? old.filter((i: InviteResponseType) => i.id !== id) : old) },
     ],
     invalidate: [invitesKeys.all],
@@ -32,12 +37,9 @@ const useRevokeInviteMutation = () =>
 const InviteLink = (token: string) => `${window.location.origin}/invite/${token}`;
 
 export const invitesService = {
-  keys: invitesKeys,
-  ListInvites,
-  CreateInvite,
-  RevokeInvite,
+  invitesKeys,
   InviteLink,
-  useInvites,
-  useCreateInviteMutation,
-  useRevokeInviteMutation,
+  useGetInvites,
+  useCreateInvite,
+  useRevokeInvite,
 };

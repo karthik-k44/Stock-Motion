@@ -14,8 +14,8 @@ import { FullPageStatus } from './FullPageStatus';
 export const BusinessGate = ({ children }: { children: ReactNode }) => {
   const qc = useQueryClient();
   const selected = businessesService.useBusinessId();
-  const mine = businessesService.useMyBusinesses();
-  const current = businessesService.useCurrentBusiness();
+  const mine = businessesService.useGetMyBusinesses();
+  const current = businessesService.useGetCurrentBusiness();
   const valid = mine.data?.some((b) => b.id === selected);
 
   useEffect(() => {

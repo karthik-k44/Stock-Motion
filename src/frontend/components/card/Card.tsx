@@ -14,7 +14,7 @@ type CardProps = {
 
 /** The app's card: shadcn/ui's Card with an optional header (title, subtitle, actions). */
 export const Card = ({ title, subtitle, actions, children, className, flush }: CardProps) => (
-  <UiCard className={Cn('min-w-0 gap-4 rounded-2xl border-line bg-surface py-5 shadow-card', flush && 'overflow-hidden', className)}>
+  <UiCard className={Cn('min-w-0 gap-4 rounded-2xl border-transparent bg-surface py-5 shadow-card', flush && 'overflow-hidden', className)}>
     {(title || actions) && (
       <CardHeader className="px-5">
         {title && <CardTitle className="text-[15px] leading-snug font-semibold text-ink">{title}</CardTitle>}

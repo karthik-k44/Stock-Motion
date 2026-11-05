@@ -5,9 +5,9 @@ import { categoriesService } from '@/frontend/features/inventory/services';
 import { CategoryColor } from '@/frontend/utils/category';
 
 export const CategoriesCard = () => {
-  const { data: categories = [] } = categoriesService.useCategories();
-  const create = categoriesService.useCreateCategoryMutation();
-  const remove = categoriesService.useDeleteCategoryMutation();
+  const { data: categories = [] } = categoriesService.useGetCategories();
+  const create = categoriesService.useCreateCategory();
+  const remove = categoriesService.useDeleteCategory();
   const [name, setName] = useState('');
 
   return (

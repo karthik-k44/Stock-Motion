@@ -9,11 +9,14 @@ export const paths = {
   howItWorks: '/how-it-works',
   pricing: '/pricing',
   faq: '/faq',
+  contact: '/contact',
   /** Where the signed-in app starts */
   home: '/world',
   world: '/world',
   dashboard: '/dashboard',
   inventory: '/inventory',
+  /** Inventory with its filters already set. The page applies these once, then clears them from the URL. */
+  inventoryWith: (filters: { search?: string; status?: string }) => `/inventory?${new URLSearchParams(filters)}`,
   orders: '/orders',
   order: (number: string) => `/orders/${encodeURIComponent(number)}`,
   deliveries: '/deliveries',

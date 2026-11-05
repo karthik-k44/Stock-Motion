@@ -6,7 +6,7 @@ import { businessesService } from '@/frontend/features/businesses/services';
 
 export const BusinessDetailsCard = () => {
   const business = businessesService.useBusiness();
-  const save = businessesService.useUpdateBusinessMutation();
+  const save = businessesService.useUpdateBusiness();
   const [name, setName] = useState(business.name);
   const [currency, setCurrency] = useState(business.currency);
   const [error, setError] = useState('');

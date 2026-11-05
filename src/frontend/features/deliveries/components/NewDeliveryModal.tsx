@@ -18,9 +18,9 @@ const STATUS = [
 /** Book stock coming in from a supplier. */
 export const NewDeliveryModal = ({ onClose, onSaved }: { onClose: () => void; onSaved: (number: string) => void }) => {
   const { labels } = businessesService.useBusiness().template;
-  const { data: suppliers = [] } = suppliersService.useSuppliers();
-  const { data: stock = [] } = inventoryService.useItems({ kind: ItemKindTypeEnum.STOCK });
-  const create = deliveriesService.useCreateDeliveryMutation();
+  const { data: suppliers = [] } = suppliersService.useGetSuppliers();
+  const { data: stock = [] } = inventoryService.useGetItems({ kind: ItemKindTypeEnum.STOCK });
+  const create = deliveriesService.useCreateDelivery();
   const [supplierId, setSupplierId] = useState('');
   const [expectedAt, setExpectedAt] = useState('');
   const [vehicle, setVehicle] = useState('');

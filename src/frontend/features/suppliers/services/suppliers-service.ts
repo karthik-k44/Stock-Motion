@@ -3,22 +3,21 @@ import { PatchWhere, useOptimisticMutation } from '@/frontend/services/optimisti
 import { Biz } from '@/frontend/services/request';
 import type { SupplierInput, SupplierResponseType } from '../types';
 
-const ListSuppliers = () => Biz.Get<SupplierResponseType[]>('/suppliers');
-const CreateSupplier = (input: SupplierInput) => Biz.Post<SupplierResponseType>('/suppliers', input);
-const UpdateSupplier = (id: string, input: SupplierInput) => Biz.Put<SupplierResponseType>(`/suppliers/${id}`, input);
-const DeleteSupplier = (id: string) => Biz.Delete<void>(`/suppliers/${id}`);
-
 const suppliersKeys = {
   all: ['suppliers'] as const,
-  list: () => ['suppliers', 'list'] as const,
+  list: () => [...suppliersKeys.all, 'list'] as const,
 };
 
-const useSuppliers = () => useQuery({ queryKey: suppliersKeys.list(), queryFn: ListSuppliers });
+const useGetSuppliers = () =>
+  useQuery({
+    queryKey: suppliersKeys.list(),
+    queryFn: (): Promise<SupplierResponseType[]> => Biz.Get('/suppliers'),
+  });
 
-const useCreateSupplierMutation = () =>
+const useCreateSupplier = () =>
   useOptimisticMutation({
-    mutationFn: CreateSupplier,
-    optimistic: (input: SupplierInput) => [
+    mutationFn: (input: SupplierInput): Promise<SupplierResponseType> => Biz.Post('/suppliers', input),
+    optimistic: (input) => [
       {
         queryKey: suppliersKeys.all,
         update: (old) =>
@@ -33,9 +32,10 @@ const useCreateSupplierMutation = () =>
     successToast: (s) => ({ title: `${s.name} added` }),
   });
 
-const useUpdateSupplierMutation = () =>
+const useUpdateSupplier = () =>
   useOptimisticMutation({
-    mutationFn: ({ id, input }: { id: string; input: SupplierInput }) => UpdateSupplier(id, input),
+    mutationFn: ({ id, input }: { id: string; input: SupplierInput }): Promise<SupplierResponseType> =>
+      Biz.Put(`/suppliers/${id}`, input),
     optimistic: ({ id, input }) => [
       { queryKey: suppliersKeys.all, update: PatchWhere<SupplierResponseType>((s) => s.id === id, (s) => ({ ...s, ...input })) },
     ],
@@ -45,10 +45,10 @@ const useUpdateSupplierMutation = () =>
     successToast: (s) => ({ title: 'Saved', message: s.name }),
   });
 
-const useDeleteSupplierMutation = () =>
+const useDeleteSupplier = () =>
   useOptimisticMutation({
-    mutationFn: DeleteSupplier,
-    optimistic: (id: string) => [
+    mutationFn: (id: string): Promise<void> => Biz.Delete(`/suppliers/${id}`),
+    optimistic: (id) => [
       { queryKey: suppliersKeys.all, update: (old) => (Array.isArray(old) ? old.filter((s: SupplierResponseType) => s.id !== id) : old) },
     ],
     invalidate: [suppliersKeys.all, ['items']],
@@ -56,13 +56,9 @@ const useDeleteSupplierMutation = () =>
   });
 
 export const suppliersService = {
-  keys: suppliersKeys,
-  ListSuppliers,
-  CreateSupplier,
-  UpdateSupplier,
-  DeleteSupplier,
-  useSuppliers,
-  useCreateSupplierMutation,
-  useUpdateSupplierMutation,
-  useDeleteSupplierMutation,
+  suppliersKeys,
+  useGetSuppliers,
+  useCreateSupplier,
+  useUpdateSupplier,
+  useDeleteSupplier,
 };

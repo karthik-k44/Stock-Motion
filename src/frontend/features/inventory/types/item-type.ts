@@ -126,23 +126,3 @@ export type ImportPreviewResponseType = {
   newCategories: string[];
   newSuppliers: string[];
 };
-
-/** Every inventory type under one name. */
-export type TItemType = {
-  Response: ItemResponseType;
-  Detail: ItemDetailResponseType;
-  Movement: MovementResponseType;
-  Component: ComponentResponseType;
-  Category: CategoryResponseType;
-  ListParams: ListItemsParams;
-  AdjustInput: AdjustStockInput;
-  RelocateInput: RelocateInput;
-  FormInput: ItemFormInput;
-  UpdateInput: UpdateItemInput;
-  ImportPreview: ImportPreviewResponseType;
-  Kind: ItemKindTypeEnum;
-  StockStatus: StockStatusTypeEnum;
-  FilterStatus: ItemFilterStatusTypeEnum;
-  AdjustMode: AdjustModeTypeEnum;
-  AdjustReason: AdjustReasonTypeEnum;
-};

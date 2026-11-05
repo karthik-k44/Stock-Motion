@@ -32,10 +32,14 @@ export type ZoneSummaryType = {
   outOfStock: number;
 };
 
+export type DailyPointType = { day: string; value: number };
+
 export type DashboardResponseType = {
   generatedAt: string;
   kpis: DashboardKpisType;
   stockHealth: { inStock: number; low: number; out: number };
+  /** The last 14 days, oldest first, ending today */
+  trends: { stockValue: DailyPointType[]; revenue: DailyPointType[] };
   ordersByStatus: Record<string, number>;
   unitsByCategory: { category: string; name: string; units: number }[];
   zones: ZoneSummaryType[];
@@ -43,11 +47,4 @@ export type DashboardResponseType = {
   lowStockItems: ItemResponseType[];
   upcomingDeliveries: DeliveryResponseType[];
   recentActivity: ActivityResponseType[];
-};
-
-/** Every dashboard type under one name. */
-export type TDashboardType = {
-  Response: DashboardResponseType;
-  Kpis: DashboardKpisType;
-  Zone: ZoneSummaryType;
 };

@@ -38,12 +38,12 @@ export const World = () => {
   useDocumentTitle('Live world');
   const business = businessesService.useBusiness();
   const layout = WORLDS[business.template.type];
-  const dashboard = dashboardService.useDashboard();
-  const locations = locationsService.useLocations();
-  const orders = ordersService.useOrders(OPEN_ORDERS);
-  const deliveries = deliveriesService.useDeliveries(UPCOMING);
-  const items = inventoryService.useItems();
-  const { data: members = [] } = teamService.useMembers();
+  const dashboard = dashboardService.useGetDashboard();
+  const locations = locationsService.useGetLocations();
+  const orders = ordersService.useGetOrders(OPEN_ORDERS);
+  const deliveries = deliveriesService.useGetDeliveries(UPCOMING);
+  const items = inventoryService.useGetItems();
+  const { data: members = [] } = teamService.useGetMembers();
   const connected = useConnection();
   const { reduced } = useMotion();
   const lite = useMediaQuery('(max-width: 760px)');

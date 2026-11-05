@@ -23,8 +23,8 @@ export const CustomerModal = ({ customer, onClose, onSaved }: Props) => {
     name: customer?.name ?? '', email: customer?.email ?? '', phone: customer?.phone ?? '', address: customer?.address ?? '', notes: customer?.notes ?? '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const create = customersService.useCreateCustomerMutation();
-  const update = customersService.useUpdateCustomerMutation();
+  const create = customersService.useCreateCustomer();
+  const update = customersService.useUpdateCustomer();
 
   const submit = () => {
     const parsed = CustomerSchema.safeParse(values);

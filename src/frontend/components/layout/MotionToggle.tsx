@@ -17,10 +17,12 @@ export const MotionToggle = () => {
       <SelectTrigger
         aria-label="Animation preference"
         title={reduced ? 'Animations are reduced' : 'Animations are on'}
-        className="h-[34px] max-w-[210px] gap-1.5 rounded-lg bg-surface px-2.5 text-[13px] text-ink-2 shadow-none max-[760px]:max-w-[150px]"
+        className="grid size-[38px] flex-none place-items-center rounded-full border-line bg-surface p-0 text-ink-2 shadow-none hover:bg-sunken [&>svg:last-child]:hidden"
       >
-        <Icon name="motion" size={16} />
-        <SelectValue />
+        <Icon name="motion" size={17} />
+        <span className="sr-only">
+          <SelectValue />
+        </span>
       </SelectTrigger>
       {/* Above modals and drawers (z-index 100–150 in overlay.css) */}
       <SelectContent position="popper" align="end" className="z-300">

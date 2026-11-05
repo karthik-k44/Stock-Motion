@@ -12,8 +12,8 @@ import { ReceiveLinesForm } from './ReceiveLinesForm';
 export const DeliveryDetail = ({ number }: { number: string }) => {
   const business = businessesService.useBusiness();
   const { labels } = business.template;
-  const { data: d, isPending, isError, error, refetch } = deliveriesService.useDelivery(number);
-  const status = deliveriesService.useUpdateStatusMutation();
+  const { data: d, isPending, isError, error, refetch } = deliveriesService.useGetDelivery(number);
+  const status = deliveriesService.useUpdateDeliveryStatus();
 
   if (isPending) return <SkeletonRows rows={5} height={48} label="Loading" />;
   if (isError) return <ErrorState message={error.message} onRetry={() => refetch()} />;

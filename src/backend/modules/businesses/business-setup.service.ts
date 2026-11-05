@@ -11,7 +11,10 @@ import type { SampleDataType } from '@/backend/modules/templates/definitions/def
 import { templatesService } from '@/backend/modules/templates/templates.service';
 import { ActivityKindTypeEnum, ActivityRefTypeEnum } from '@/backend/types/activity';
 import { DeliveryStatusTypeEnum } from '@/backend/types/delivery';
-import { ItemKindTypeEnum } from '@/backend/types/item';
+import { ItemKindTypeEnum, MovementTypeEnum } from '@/backend/types/item';
+
+/** A made-up fortnight behind the sample stock, oldest day first: how much came in or went out, as a percentage of today's count. */
+const SAMPLE_FORTNIGHT = [8, -5, -7, 11, -4, -8, 6, 9, -6, -3, 7, -5, 4];
 
 const minutesAgo = (m: number) => new Date(Date.now() - m * 60_000);
 
@@ -141,4 +144,25 @@ const loadSample = async (tx: Queryable, business: { id: string; type: string },
       });
     }
   }
+
+  // Worked backwards from today's counts, so the ledger ends exactly on what is on the shelf.
+  const stocked = sample.items.filter((i) => (i.kind ?? ItemKindTypeEnum.STOCK) === ItemKindTypeEnum.STOCK);
+  await itemsRepository.InsertSampleHistory(
+    tx,
+    stocked.flatMap((i) => {
+      const onHand = i.onHand ?? 0;
+      let balance = onHand;
+      return [...SAMPLE_FORTNIGHT].reverse().flatMap((percent, day) => {
+        const delta = Math.round((onHand * percent) / 100);
+        if (!delta) return [];
+        const row = {
+          businessId: business.id, itemId: itemOf(i.sku).id, at: at(-(day + 1), 11), accountId: ownerId, delta, balance,
+          type: delta > 0 ? MovementTypeEnum.RECEIPT : MovementTypeEnum.CONSUME,
+          note: delta > 0 ? 'Sample stock in' : 'Sample stock out',
+        };
+        balance -= delta;
+        return [row];
+      });
+    }),
+  );
 };

@@ -75,7 +75,7 @@ export const PageHero = ({ eyebrow, title, accent, lead, art }: PageHeroProps) =
   return (
     <section ref={root} className="relative isolate overflow-hidden pt-[116px] pb-14 lg:pb-16">
       <div aria-hidden />
-      <div className={Cn('mx-auto grid max-w-[1360px] px-3 sm:px-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,0.82fr)_minmax(0,0.68fr)]', GRID_GAP)}>
+      <div className={Cn('mx-auto grid max-w-300 px-4 sm:px-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,0.82fr)_minmax(0,0.68fr)]', GRID_GAP)}>
         <HeadlineTile className="justify-center gap-5 lg:min-h-[440px] lg:p-10">
           <Text data-rise variant="eyebrow" tone="primary" className="text-[12px] tracking-[0.06em]">
             {eyebrow}

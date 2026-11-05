@@ -14,7 +14,7 @@
   flex-direction: column;
   gap: 12px;
   padding: 12px;
-  background: #f6f2ee;
+  background: var(--color-canvas);
 }
 
 .world-scene {
@@ -73,7 +73,7 @@
 }
 
 /* ---- isometric scene ---- */
-.iso-host { position: absolute; inset: 0; overflow: hidden; touch-action: none; user-select: none; background: #f6f2ee; }
+.iso-host { position: absolute; inset: 0; overflow: hidden; touch-action: none; user-select: none; background: var(--color-canvas); }
 .iso-camera { position: absolute; transform-origin: center; will-change: transform; }
 .iso-camera-ease { transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1); }
 .iso-svg { display: block; width: 100%; height: 100%; overflow: visible; animation: scene-in 0.45s ease-out both; }

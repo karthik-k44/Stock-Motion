@@ -17,10 +17,10 @@ import { OrderStepper } from './OrderStepper';
 
 export const OrderDetail = ({ number }: { number: string }) => {
   const { template } = businessesService.useBusiness();
-  const { data: order, isPending, isError, error, refetch } = ordersService.useOrder(number);
-  const { data: items = [] } = inventoryService.useItems();
-  const { data: members = [] } = teamService.useMembers();
-  const update = ordersService.useUpdateOrderMutation();
+  const { data: order, isPending, isError, error, refetch } = ordersService.useGetOrder(number);
+  const { data: items = [] } = inventoryService.useGetItems();
+  const { data: members = [] } = teamService.useGetMembers();
+  const update = ordersService.useUpdateOrder();
   const [editing, setEditing] = useState(false);
   const stock = useMemo(() => new Map(items.map((i) => [i.sku, i])), [items]);
 

@@ -14,9 +14,9 @@ import type { OrderResponseType } from '../types';
 export const OrderActions = ({ order, onEditLines }: { order: OrderResponseType; onEditLines: () => void }) => {
   const business = businessesService.useBusiness();
   const { orderFlow, labels } = business.template;
-  const advance = ordersService.useAdvanceMutation();
-  const consume = ordersService.useConsumeMutation();
-  const cancel = ordersService.useCancelMutation();
+  const advance = ordersService.useAdvanceOrder();
+  const consume = ordersService.useConsumeOrder();
+  const cancel = ordersService.useCancelOrder();
   const stage = StageOf(orderFlow, order.status);
   const next = NextStage(orderFlow, order.status);
   const shortages = advance.error ? ShortagesFromError(advance.error.details) : [];

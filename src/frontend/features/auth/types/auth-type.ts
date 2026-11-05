@@ -32,12 +32,3 @@ export const RegisterSchema = z.object({
   password: z.string().min(8, 'Use at least 8 characters').max(72, 'Use at most 72 characters'),
 });
 export type RegisterInput = z.infer<typeof RegisterSchema>;
-
-/** Every auth type under one name. */
-export type TAuthType = {
-  Account: AccountResponseType;
-  Session: AuthSessionResponseType;
-  InvitePreview: InvitePreviewResponseType;
-  LoginInput: LoginInput;
-  RegisterInput: RegisterInput;
-};

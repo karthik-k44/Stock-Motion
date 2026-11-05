@@ -8,21 +8,36 @@ import { ToItemResponse } from '@/backend/modules/items/items.mapper';
 import { itemsRepository } from '@/backend/modules/items/items.repository';
 import { locationsRepository } from '@/backend/modules/locations/locations.repository';
 import type { ScopeType } from '@/backend/types/business';
-import type { DashboardResponseType, ZoneSummaryType } from '@/backend/types/dashboard';
+import type { DailyPointType, DashboardResponseType, ZoneSummaryType } from '@/backend/types/dashboard';
 import { ItemKindTypeEnum, StockStatusTypeEnum, type ItemResponseType } from '@/backend/types/item';
-import { dashboardRepository } from './dashboard.repository';
+import { dashboardRepository, type DailyValueRow } from './dashboard.repository';
+
+const TREND_DAYS = 14;
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
+/** Walks today's stock value back through each day's change, so the series ends on the live figure. */
+const stockValueTrend = (today: number, changes: DailyValueRow[]): DailyPointType[] => {
+  let closing = today;
+  const newestFirst = [...changes].reverse().map(({ day, value }) => {
+    const point = { day, value: round2(Math.max(0, closing)) };
+    closing -= value;
+    return point;
+  });
+  return newestFirst.reverse();
+};
+
 /** Everything the dashboard and the 3D world's stat cards show, in one round trip. */
 const Get = async (scope: ScopeType): Promise<DashboardResponseType> => {
-  const [itemRows, categories, locations, sales, openByStatus, topSellers, counts, deliveryRows, activityRows] = await Promise.all([
+  const [itemRows, categories, locations, sales, openByStatus, topSellers, stockChanges, dailyRevenue, counts, deliveryRows, activityRows] = await Promise.all([
     itemsRepository.ListViews(db, scope.businessId),
     categoriesRepository.List(db, scope.businessId),
     locationsRepository.List(db, scope.businessId),
     dashboardRepository.SalesSummary(db, scope.businessId),
     dashboardRepository.OpenByStatus(db, scope.businessId),
     dashboardRepository.TopSellers(db, scope.businessId, 5),
+    dashboardRepository.DailyStockChange(db, scope.businessId, TREND_DAYS),
+    dashboardRepository.DailyRevenue(db, scope.businessId, TREND_DAYS),
     dashboardRepository.Counts(db, scope.businessId),
     deliveriesRepository.List(db, scope.businessId, { view: 'UPCOMING' }),
     activityRepository.List(db, scope.businessId, { limit: 8 }),
@@ -53,13 +68,15 @@ const Get = async (scope: ScopeType): Promise<DashboardResponseType> => {
     };
   });
 
+  const stockValue = round2(stock.reduce((s, i) => s + i.onHand * i.cost, 0));
+
   return {
     generatedAt: new Date().toISOString(),
     kpis: {
       totalItems: stock.length,
       madeItems: items.filter((i) => i.kind === ItemKindTypeEnum.MADE).length,
       unitsInStock: stock.reduce((s, i) => s + i.onHand, 0),
-      stockValue: round2(stock.reduce((s, i) => s + i.onHand * i.cost, 0)),
+      stockValue,
       lowStock: count(stock, StockStatusTypeEnum.LOW),
       outOfStock: count(stock, StockStatusTypeEnum.OUT),
       openOrders: openByStatus.reduce((s, r) => s + r.n, 0),
@@ -78,6 +95,10 @@ const Get = async (scope: ScopeType): Promise<DashboardResponseType> => {
       inStock: count(stock, StockStatusTypeEnum.IN_STOCK),
       low: count(stock, StockStatusTypeEnum.LOW),
       out: count(stock, StockStatusTypeEnum.OUT),
+    },
+    trends: {
+      stockValue: stockValueTrend(stockValue, stockChanges),
+      revenue: dailyRevenue.map((r) => ({ day: r.day, value: round2(r.value) })),
     },
     ordersByStatus,
     unitsByCategory: categories

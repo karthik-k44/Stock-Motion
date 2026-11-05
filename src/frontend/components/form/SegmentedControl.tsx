@@ -8,10 +8,13 @@ type SegmentedControlProps<T extends string> = {
   options: Segment<T>[];
   onChange: (value: T) => void;
   size?: 'sm' | 'md';
+  /** Underlined tabs instead of a pill, for switching what a whole card shows */
+  tabs?: boolean;
+  className?: string;
 };
 
 /** A radio group styled as segmented tabs; arrow keys move between options. */
-export const SegmentedControl = <T extends string>({ label, value, options, onChange, size = 'md' }: SegmentedControlProps<T>) => {
+export const SegmentedControl = <T extends string>({ label, value, options, onChange, size = 'md', tabs, className }: SegmentedControlProps<T>) => {
   const move = (dir: 1 | -1) => {
     const i = options.findIndex((o) => o.value === value);
     onChange(options[(i + dir + options.length) % options.length].value);
@@ -20,7 +23,7 @@ export const SegmentedControl = <T extends string>({ label, value, options, onCh
     <div
       role="radiogroup"
       aria-label={label}
-      className={Cn('segmented', size === 'sm' && 'segmented-sm')}
+      className={Cn('segmented', size === 'sm' && 'segmented-sm', tabs && 'segmented-tabs', className)}
       onKeyDown={(e) => {
         if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
           e.preventDefault();

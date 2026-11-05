@@ -1,0 +1,134 @@
+/*
+ * The overview at the top of Inventory and the Dashboard: one hero card, tiles beside it, and on Inventory a chart
+ * row sharing the same columns. `.overview-lead` is the tall first cell and `.overview-wide` spans two columns.
+ */
+.overview { display: grid; gap: 16px; grid-template-columns: minmax(0, 1.55fr) repeat(2, minmax(0, 1fr)); grid-auto-rows: minmax(100px, auto); }
+.overview-dense { grid-template-columns: minmax(0, 1.55fr) repeat(3, minmax(0, 1fr)); }
+.overview-lead { grid-row: span 2; }
+.overview-wide { grid-column: span 2; }
+
+/* hero */
+.hero-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  min-height: 216px;
+  padding: 20px 22px;
+  border-radius: 16px;
+  color: var(--color-primary-foreground);
+  background: linear-gradient(140deg, var(--color-hero-from) 0%, var(--color-hero-via) 52%, var(--color-hero-to) 100%);
+  box-shadow: var(--shadow-hero);
+}
+.hero-label { font-size: 13.5px; font-weight: 600; }
+.hero-value { font-size: clamp(30px, 3.1vw, 42px); font-weight: 750; line-height: 1.15; letter-spacing: -0.02em; }
+.hero-change { display: flex; align-items: center; gap: 8px; margin-top: 4px; font-size: 12.5px; font-weight: 500; }
+.hero-pill { padding: 1px 8px; border-radius: 999px; background: rgb(255 255 255 / 0.78); font-size: 11.5px; font-weight: 700; }
+
+.hero-trend { position: absolute; z-index: -1; inset: auto 0 0; height: 56%; outline-offset: -4px; }
+.hero-trend svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.hero-trend-line { fill: none; stroke: #fff; stroke-opacity: 0.9; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.hero-crosshair { position: absolute; top: 0; bottom: 0; width: 1px; background: rgb(255 255 255 / 0.55); pointer-events: none; }
+.hero-marker {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--color-hero-via);
+  border: 3px solid #fff;
+  box-shadow: 0 2px 6px rgb(107 51 0 / 0.35);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  transition: top 0.12s ease-out, left 0.12s ease-out;
+}
+.hero-tip {
+  position: absolute;
+  display: grid;
+  min-width: 112px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink-2);
+  font-size: 11.5px;
+  line-height: 1.35;
+  white-space: nowrap;
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+  transform: translate(-50%, calc(-100% - 14px));
+  pointer-events: none;
+}
+.hero-tip strong { color: var(--ink); font-size: 13.5px; font-weight: 700; }
+
+/* the gradient button and meter from the hero, for a card's one main action */
+.cta-gradient { height: 42px; border-radius: 10px; background: linear-gradient(100deg, var(--color-hero-from), var(--color-hero-to)); }
+.cta-gradient:hover { background: linear-gradient(100deg, var(--color-hero-from), var(--color-hero-via)); }
+
+.restock { display: grid; gap: 14px; }
+.restock-panel { display: grid; gap: 10px; padding: 14px; border-radius: 12px; background: var(--surface-2); }
+.restock-value { font-size: 26px; font-weight: 750; line-height: 1.15; letter-spacing: -0.02em; text-align: center; }
+.restock-caption { margin-top: 2px; color: var(--muted); font-size: 12px; font-weight: 500; text-align: center; letter-spacing: 0; }
+.restock-meter { display: grid; gap: 5px; }
+.restock-meter-labels { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 12px; }
+.restock-meter-labels strong { color: var(--ink); font-weight: 650; }
+.restock-text { color: var(--ink-2); font-size: 13px; line-height: 1.55; padding-top: 12px; border-top: 1px solid var(--line); }
+.meter-gradient { height: 8px; }
+.meter-gradient [data-slot='progress-indicator'] { background: linear-gradient(90deg, var(--color-hero-from), var(--color-hero-to)); }
+
+/* stacked columns */
+.columns { position: relative; display: grid; grid-template-columns: 44px minmax(0, 1fr); grid-template-rows: 200px auto; column-gap: 8px; row-gap: 8px; }
+.columns-grid { position: relative; grid-column: 1 / -1; grid-row: 1; }
+.columns-tick { position: absolute; left: 0; right: 0; display: flex; align-items: center; gap: 8px; transform: translateY(50%); color: var(--muted); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+.columns-tick span { flex: none; width: 44px; text-align: right; }
+.columns-tick::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+.columns-plot { grid-column: 2; grid-row: 1; position: relative; display: grid; grid-template-columns: repeat(var(--columns), minmax(0, 1fr)); height: 200px; }
+.column { position: relative; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; min-width: 0; outline-offset: 2px; border-radius: 6px; }
+.column-stack { display: flex; flex-direction: column-reverse; gap: 2px; width: min(24px, 58%); min-height: 2px; transition: height 0.4s ease; }
+.column-seg { display: block; min-height: 2px; }
+.column-seg:last-child { border-radius: 4px 4px 0 0; }
+.seg-available { background: var(--color-chart-1); }
+.seg-reserved { background: var(--color-chart-2); }
+.seg-incoming { background: var(--color-chart-3); }
+.column:hover .column-stack, .column:focus-visible .column-stack { filter: brightness(1.08); }
+.column-tip {
+  position: absolute;
+  z-index: 5;
+  bottom: calc(var(--stack) + 8px);
+  left: 50%;
+  display: none;
+  gap: 2px;
+  min-width: 160px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: 12px;
+  box-shadow: var(--shadow-lg);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.column:hover .column-tip, .column:focus-visible .column-tip { display: grid; }
+.column:first-child .column-tip { left: 0; transform: none; }
+.column:last-child .column-tip { left: auto; right: 0; transform: none; }
+.column-tip-name { color: var(--muted); font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+.column-tip-row { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; align-items: center; gap: 6px; }
+.column-tip-row strong { color: var(--ink); font-weight: 650; font-variant-numeric: tabular-nums; }
+.column-key { height: 2px; border-radius: 1px; }
+.columns-axis { grid-column: 2; grid-row: 2; display: grid; grid-template-columns: repeat(var(--columns), minmax(0, 1fr)); gap: 4px; color: var(--muted); font-size: 11.5px; text-align: center; }
+.columns-axis span { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.columns-legend { justify-content: center; margin-top: 14px; }
+.columns-legend .legend-dot { width: 18px; height: 4px; border-radius: 2px; }
+
+@media (max-width: 1180px) {
+  .overview, .overview-dense { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .overview-dense { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .overview-lead { grid-row: auto; grid-column: 1 / -1; }
+  .overview-wide { grid-column: 1 / -1; }
+  .overview-side { grid-column: 1 / -1; }
+}
+
+@media (max-width: 760px) {
+  .overview, .overview-dense { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .hero-card { min-height: 200px; padding: 18px; }
+}

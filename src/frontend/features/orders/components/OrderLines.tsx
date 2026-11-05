@@ -14,7 +14,7 @@ export const OrderLines = ({ order, stock }: Props) => {
   const business = businessesService.useBusiness();
   const { labels, orderFlow } = business.template;
   const drawer = useItemDrawer();
-  const consume = ordersService.useConsumeMutation();
+  const consume = ordersService.useConsumeOrder();
   const stage = StageOf(orderFlow, order.status);
   const working = Boolean(stage?.consumeLines) && !order.closed;
   const before = !order.reserves && !order.closed;

@@ -22,9 +22,9 @@ type Props = {
 export const ItemFields = ({ kind, values, errors, onChange, editing }: Props) => {
   const business = businessesService.useBusiness();
   const { template } = business;
-  const { data: categories = [] } = categoriesService.useCategories();
-  const { data: locations = [] } = locationsService.useLocations();
-  const { data: suppliers = [] } = suppliersService.useSuppliers();
+  const { data: categories = [] } = categoriesService.useGetCategories();
+  const { data: locations = [] } = locationsService.useGetLocations();
+  const { data: suppliers = [] } = suppliersService.useGetSuppliers();
   const stocked = kind === ItemKindTypeEnum.STOCK;
   const free = locations.filter((l) => !template.exclusiveLocations || !l.items.length);
   // The template's units, plus the item's own if it came in with another one (CSV import accepts any unit).

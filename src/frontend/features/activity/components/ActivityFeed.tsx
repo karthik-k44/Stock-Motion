@@ -4,7 +4,7 @@ import type { activityService } from '../services';
 import { ActivityItem } from './ActivityItem';
 
 type Props = {
-  query: ReturnType<typeof activityService.useActivity>;
+  query: ReturnType<typeof activityService.useGetActivity>;
   compact?: boolean;
   /** Group entries under day headings */
   grouped?: boolean;

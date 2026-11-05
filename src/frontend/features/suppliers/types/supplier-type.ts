@@ -20,9 +20,3 @@ export const SupplierSchema = z.object({
   leadDays: z.number({ invalid_type_error: 'Enter a number of days' }).int('Whole days').min(0).max(120),
 });
 export type SupplierInput = z.infer<typeof SupplierSchema>;
-
-/** Every supplier type under one name. */
-export type TSupplierType = {
-  Response: SupplierResponseType;
-  Input: SupplierInput;
-};

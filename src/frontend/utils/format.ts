@@ -38,18 +38,32 @@ export const IsPast = (iso: string) => new Date(iso).getTime() < Date.now();
 
 const moneyFormats = new Map<string, Intl.NumberFormat>();
 
-/** Money in the business's currency, e.g. $1,240.50. Falls back to a plain number for unknown codes. */
-export const FormatMoney = (n: number, currency: string): string => {
-  let format = moneyFormats.get(currency);
+const moneyFormat = (currency: string, compact: boolean): Intl.NumberFormat => {
+  const key = `${currency}:${compact}`;
+  let format = moneyFormats.get(key);
   if (!format) {
+    const notation = compact ? ({ notation: 'compact', maximumFractionDigits: 1 } as const) : undefined;
     try {
-      format = new Intl.NumberFormat('en-US', { style: 'currency', currency });
+      format = new Intl.NumberFormat('en-US', { style: 'currency', currency, ...notation });
     } catch {
-      format = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      format = new Intl.NumberFormat('en-US', notation ?? { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
-    moneyFormats.set(currency, format);
+    moneyFormats.set(key, format);
   }
-  return format.format(n);
+  return format;
+};
+
+/** Money in the business's currency, e.g. $1,240.50. Falls back to a plain number for unknown codes. */
+export const FormatMoney = (n: number, currency: string): string => moneyFormat(currency, false).format(n);
+
+/** Money for chart axes, e.g. $12.5K. */
+export const FormatMoneyCompact = (n: number, currency: string): string => moneyFormat(currency, true).format(n);
+
+/** A signed percentage for trend pills, e.g. +12% or −3.4%. */
+export const FormatPercentChange = (pct: number): string => {
+  const size = Math.abs(pct);
+  const text = size >= 10 ? Math.round(size) : Number(size.toFixed(1));
+  return pct > 0 ? `+${text}%` : pct < 0 ? `−${text}%` : '0%';
 };
 
 /** Quantity with its unit; large gram / millilitre amounts read as kg / L. */

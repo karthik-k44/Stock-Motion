@@ -16,10 +16,10 @@ type Props = { onClose: () => void; onSaved: (number: string) => void; order?: O
 export const NewOrderModal = ({ onClose, onSaved, order }: Props) => {
   const { template } = businessesService.useBusiness();
   const { labels } = template;
-  const { data: customers = [] } = customersService.useCustomers();
-  const { data: members = [] } = teamService.useMembers();
-  const create = ordersService.useCreateOrderMutation();
-  const setLines = ordersService.useSetLinesMutation();
+  const { data: customers = [] } = customersService.useGetCustomers();
+  const { data: members = [] } = teamService.useGetMembers();
+  const create = ordersService.useCreateOrder();
+  const setLines = ordersService.useSetOrderLines();
   const [customerId, setCustomerId] = useState('');
   const [customerName, setCustomerName] = useState('');
   const [dueAt, setDueAt] = useState('');

@@ -160,4 +160,24 @@ describe('retail · deliveries', () => {
     expect(res.body.ordersByStatus).toEqual({ NEW: 4, PICKING: 2, PACKED: 1 });
     expect(res.body.zones.map((z: { zone: string }) => z.zone)).toEqual(['A', 'B', 'C', 'D']);
   });
+
+  it('charts the last 14 days, ending on the live figures', async () => {
+    const { api } = await retail();
+    const { kpis, trends } = (await api.get('/dashboard')).body;
+    expect(trends.stockValue).toHaveLength(14);
+    expect(trends.revenue).toHaveLength(14);
+    expect(trends.stockValue.at(-1).value).toBeCloseTo(kpis.stockValue, 2);
+    expect(trends.revenue.at(-1).value).toBeCloseTo(kpis.revenueToday, 2);
+    expect(trends.revenue.at(-1).day).toBe(trends.stockValue.at(-1).day);
+  });
+
+  it('walks stock value back through the movements of each day', async () => {
+    const { api } = await retail();
+    const before = (await api.get('/dashboard')).body.trends.stockValue;
+    const { cost } = (await api.get('/items/OFC-2001')).body;
+    await api.post('/items/OFC-2001/adjustments', { mode: 'ADD', qty: 10, reason: 'FOUND', note: 'Behind returns cage' });
+    const after = (await api.get('/dashboard')).body.trends.stockValue;
+    expect(after.at(-1).value).toBeCloseTo(before.at(-1).value + 10 * cost, 2);
+    expect(after.at(-2).value).toBeCloseTo(before.at(-2).value, 2); // the day before closed where it closed
+  });
 });

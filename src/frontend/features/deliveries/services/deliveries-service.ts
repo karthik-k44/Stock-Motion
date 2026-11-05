@@ -9,47 +9,49 @@ import {
   type ReceiveDeliveryInput,
 } from '../types';
 
-const path = (number: string) => `/deliveries/${encodeURIComponent(number)}`;
-
-const ListDeliveries = (params: ListDeliveriesParams) => Biz.Get<DeliveryResponseType[]>('/deliveries', { params });
-const GetDelivery = (number: string) => Biz.Get<DeliveryResponseType>(path(number));
-const CreateDelivery = (input: NewDeliveryInput) =>
-  Biz.Post<DeliveryResponseType>('/deliveries', { ...input, expectedAt: new Date(input.expectedAt).toISOString() });
-const Reorder = (supplierId: string | null) => Biz.Post<DeliveryResponseType[]>('/deliveries/reorder', { supplierId });
-const UpdateStatus = (number: string, to: DeliveryStatusTypeEnum) => Biz.Post<DeliveryResponseType>(`${path(number)}/status`, { to });
-const ReceiveDelivery = (number: string, input: ReceiveDeliveryInput) => Biz.Post<DeliveryResponseType>(`${path(number)}/receive`, input);
-
 const deliveriesKeys = {
   all: ['deliveries'] as const,
-  listPrefix: ['deliveries', 'list'] as const,
-  list: (params: ListDeliveriesParams) => ['deliveries', 'list', params] as const,
-  detail: (number: string) => ['deliveries', 'detail', number] as const,
+  lists: () => [...deliveriesKeys.all, 'list'] as const,
+  list: (filter: ListDeliveriesParams) => [...deliveriesKeys.lists(), filter] as const,
+  details: () => [...deliveriesKeys.all, 'detail'] as const,
+  detail: (number: string) => [...deliveriesKeys.details(), number] as const,
 };
 
-const DELIVERY_KEYS: QueryKey[] = [['deliveries'], ['items'], ['locations'], ['dashboard'], ['activity'], ['suppliers']];
+const DELIVERY_KEYS: QueryKey[] = [deliveriesKeys.all, ['items'], ['locations'], ['dashboard'], ['activity'], ['suppliers']];
 
-const useDeliveries = (params: ListDeliveriesParams = {}) =>
-  useQuery({ queryKey: deliveriesKeys.list(params), queryFn: () => ListDeliveries(params), placeholderData: keepPreviousData });
+const path = (number: string) => `/deliveries/${encodeURIComponent(number)}`;
 
-const useDelivery = (number: string | undefined) =>
-  useQuery({ queryKey: deliveriesKeys.detail(number ?? ''), queryFn: () => GetDelivery(number!), enabled: Boolean(number) });
+const useGetDeliveries = (filter: ListDeliveriesParams = {}) =>
+  useQuery({
+    queryKey: deliveriesKeys.list(filter),
+    queryFn: (): Promise<DeliveryResponseType[]> => Biz.Get('/deliveries', { params: filter }),
+    placeholderData: keepPreviousData,
+  });
+
+const useGetDelivery = (number: string | undefined) =>
+  useQuery({
+    queryKey: deliveriesKeys.detail(number ?? ''),
+    queryFn: (): Promise<DeliveryResponseType> => Biz.Get(path(number!)),
+    enabled: Boolean(number),
+  });
 
 const patchDelivery = (number: string, fn: (d: DeliveryResponseType) => DeliveryResponseType) => [
   { queryKey: deliveriesKeys.all, update: PatchWhere<DeliveryResponseType>((d) => d.number === number, fn) },
 ];
 
-const useCreateDeliveryMutation = () =>
+const useCreateDelivery = () =>
   useOptimisticMutation({
-    mutationFn: CreateDelivery,
+    mutationFn: (input: NewDeliveryInput): Promise<DeliveryResponseType> =>
+      Biz.Post('/deliveries', { ...input, expectedAt: new Date(input.expectedAt).toISOString() }),
     invalidate: DELIVERY_KEYS,
     errorTitle: 'Not booked',
     quietError: true,
     successToast: (d) => ({ title: `${d.number} booked`, message: `${d.supplierName} · ${d.totalExpected} units` }),
   });
 
-const useReorderMutation = () =>
+const useReorder = () =>
   useOptimisticMutation({
-    mutationFn: Reorder,
+    mutationFn: (supplierId: string | null): Promise<DeliveryResponseType[]> => Biz.Post('/deliveries/reorder', { supplierId }),
     invalidate: DELIVERY_KEYS,
     errorTitle: 'Nothing reordered',
     successToast: (list) => ({
@@ -58,17 +60,19 @@ const useReorderMutation = () =>
     }),
   });
 
-const useUpdateStatusMutation = () =>
+const useUpdateDeliveryStatus = () =>
   useOptimisticMutation({
-    mutationFn: ({ number, to }: { number: string; to: DeliveryStatusTypeEnum }) => UpdateStatus(number, to),
+    mutationFn: ({ number, to }: { number: string; to: DeliveryStatusTypeEnum }): Promise<DeliveryResponseType> =>
+      Biz.Post(`${path(number)}/status`, { to }),
     optimistic: ({ number, to }) => patchDelivery(number, (d) => ({ ...d, status: to })),
     invalidate: DELIVERY_KEYS,
     errorTitle: 'Status not changed',
   });
 
-const useReceiveMutation = () =>
+const useReceiveDelivery = () =>
   useOptimisticMutation({
-    mutationFn: ({ number, input }: { number: string; input: ReceiveDeliveryInput }) => ReceiveDelivery(number, input),
+    mutationFn: ({ number, input }: { number: string; input: ReceiveDeliveryInput }): Promise<DeliveryResponseType> =>
+      Biz.Post(`${path(number)}/receive`, input),
     optimistic: ({ number, input }) =>
       patchDelivery(number, (d) => ({
         ...d,
@@ -85,17 +89,11 @@ const useReceiveMutation = () =>
   });
 
 export const deliveriesService = {
-  keys: deliveriesKeys,
-  ListDeliveries,
-  GetDelivery,
-  CreateDelivery,
-  Reorder,
-  UpdateStatus,
-  ReceiveDelivery,
-  useDeliveries,
-  useDelivery,
-  useCreateDeliveryMutation,
-  useReorderMutation,
-  useUpdateStatusMutation,
-  useReceiveMutation,
+  deliveriesKeys,
+  useGetDeliveries,
+  useGetDelivery,
+  useCreateDelivery,
+  useReorder,
+  useUpdateDeliveryStatus,
+  useReceiveDelivery,
 };

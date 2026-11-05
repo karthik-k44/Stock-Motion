@@ -5,23 +5,14 @@ import { Get, Post } from '@/frontend/services/request';
 import { sessionState } from '@/frontend/services/session-state';
 import { realtime } from '@/frontend/services/socket';
 import { tokenStore } from '@/frontend/services/token-store';
-import type {
-  AccountResponseType,
-  AuthSessionResponseType,
-  InvitePreviewResponseType,
-  LoginInput,
-  RegisterInput,
-} from '../types';
+import type { AccountResponseType, AuthSessionResponseType, InvitePreviewResponseType, LoginInput, RegisterInput } from '../types';
 
 const NO_REFRESH = { skipAuthRefresh: true };
 
-const Register = (input: RegisterInput) => Post<AuthSessionResponseType>('/auth/register', input, NO_REFRESH);
-const Login = (input: LoginInput) => Post<AuthSessionResponseType>('/auth/login', input, NO_REFRESH);
-const Logout = () => Post<void>('/auth/logout', undefined, NO_REFRESH);
-const PreviewInvite = (token: string) => Get<InvitePreviewResponseType>(`/invites/${token}`, NO_REFRESH);
-const AcceptInvite = (token: string) => Post<{ id: string }>(`/invites/${token}/accept`);
-const RegisterFromInvite = (token: string, input: RegisterInput) =>
-  Post<AuthSessionResponseType>(`/invites/${token}/register`, input, NO_REFRESH);
+const authKeys = {
+  session: () => ['session'] as const,
+  invite: (token: string) => ['invite', token] as const,
+};
 
 /** Restore the session from the refresh cookie on page load; null when signed out. */
 const Restore = async (): Promise<AccountResponseType | null> => {
@@ -32,17 +23,12 @@ const Restore = async (): Promise<AccountResponseType | null> => {
   }
 };
 
-const authKeys = {
-  session: ['session'] as const,
-  invite: (token: string) => ['invite', token] as const,
-};
-
 /** Signed in as someone new: drop everything cached for the previous person. */
 const StartSession = (qc: QueryClient, session: AuthSessionResponseType) => {
   tokenStore.Advance();
   tokenStore.Set(session.accessToken);
   qc.clear();
-  qc.setQueryData(authKeys.session, session.account);
+  qc.setQueryData(authKeys.session(), session.account);
   realtime.Disconnect();
   realtime.Connect();
 };
@@ -53,14 +39,18 @@ const EndSession = (qc: QueryClient) => {
   sessionState.SetBusinessId(null);
   realtime.Disconnect();
   qc.clear();
-  qc.setQueryData(authKeys.session, null);
+  qc.setQueryData(authKeys.session(), null);
 };
 
-const useSession = () =>
-  useQuery({ queryKey: authKeys.session, queryFn: Restore, staleTime: Infinity, gcTime: Infinity, retry: false });
+const useGetSession = () =>
+  useQuery({ queryKey: authKeys.session(), queryFn: Restore, staleTime: Infinity, gcTime: Infinity, retry: false });
 
-const useInvitePreview = (token: string) =>
-  useQuery({ queryKey: authKeys.invite(token), queryFn: () => PreviewInvite(token), retry: false });
+const useGetInvitePreview = (token: string) =>
+  useQuery({
+    queryKey: authKeys.invite(token),
+    queryFn: (): Promise<InvitePreviewResponseType> => Get(`/invites/${token}`, NO_REFRESH),
+    retry: false,
+  });
 
 const useSessionMutation = <V>(fn: (vars: V) => Promise<AuthSessionResponseType>, after?: (session: AuthSessionResponseType) => void) => {
   const qc = useQueryClient();
@@ -73,38 +63,39 @@ const useSessionMutation = <V>(fn: (vars: V) => Promise<AuthSessionResponseType>
   });
 };
 
-const useLoginMutation = () => useSessionMutation((input: LoginInput) => Login(input));
-const useRegisterMutation = () => useSessionMutation((input: RegisterInput) => Register(input));
-const useRegisterFromInviteMutation = () =>
-  useSessionMutation(({ token, input }: { token: string; input: RegisterInput }) => RegisterFromInvite(token, input));
+const useLogin = () =>
+  useSessionMutation((input: LoginInput): Promise<AuthSessionResponseType> => Post('/auth/login', input, NO_REFRESH));
 
-const useAcceptInviteMutation = () => useMutation<{ id: string }, ApiError, string>({ mutationFn: AcceptInvite });
+const useRegister = () =>
+  useSessionMutation((input: RegisterInput): Promise<AuthSessionResponseType> => Post('/auth/register', input, NO_REFRESH));
 
-const useLogoutMutation = () => {
+const useRegisterFromInvite = () =>
+  useSessionMutation(({ token, input }: { token: string; input: RegisterInput }): Promise<AuthSessionResponseType> =>
+    Post(`/invites/${token}/register`, input, NO_REFRESH),
+  );
+
+const useAcceptInvite = () =>
+  useMutation<{ id: string }, ApiError, string>({ mutationFn: (token) => Post(`/invites/${token}/accept`) });
+
+const useLogout = () => {
   const qc = useQueryClient();
   return useMutation<void, ApiError, void>({
-    mutationFn: Logout,
+    mutationFn: () => Post('/auth/logout', undefined, NO_REFRESH),
     // Even if the server is unreachable, this browser forgets the session.
     onSettled: () => EndSession(qc),
   });
 };
 
 export const authService = {
-  keys: authKeys,
-  Register,
-  Login,
-  Logout,
+  authKeys,
   Restore,
-  PreviewInvite,
-  AcceptInvite,
-  RegisterFromInvite,
   StartSession,
   EndSession,
-  useSession,
-  useInvitePreview,
-  useLoginMutation,
-  useRegisterMutation,
-  useRegisterFromInviteMutation,
-  useAcceptInviteMutation,
-  useLogoutMutation,
+  useGetSession,
+  useGetInvitePreview,
+  useLogin,
+  useRegister,
+  useRegisterFromInvite,
+  useAcceptInvite,
+  useLogout,
 };

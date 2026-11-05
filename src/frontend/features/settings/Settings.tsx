@@ -14,7 +14,7 @@ import { LocationsCard } from './components/LocationsCard';
 export const Settings = () => {
   useDocumentTitle('Settings');
   const business = businessesService.useBusiness();
-  const reset = businessesService.useResetDataMutation();
+  const reset = businessesService.useResetData();
   if (!IsManagementRole(business.role)) return <Navigate to={paths.dashboard} replace />;
 
   const ask = async (sampleData: boolean) => {

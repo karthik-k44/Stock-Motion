@@ -9,7 +9,7 @@ import { ReceiveDeliverySchema, type DeliveryResponseType } from '../types';
 export const ReceiveLinesForm = ({ delivery }: { delivery: DeliveryResponseType }) => {
   const [counts, setCounts] = useState<Record<string, string>>(() => Object.fromEntries(delivery.lines.map((l) => [l.sku, String(l.expected)])));
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const receive = deliveriesService.useReceiveMutation();
+  const receive = deliveriesService.useReceiveDelivery();
 
   const submit = async () => {
     const input = { lines: delivery.lines.map((l) => ({ sku: l.sku, received: counts[l.sku] === '' ? Number.NaN : Number(counts[l.sku]) })) };

@@ -20,9 +20,6 @@ export type PlanType = {
   cta: string;
 };
 
-/** Where Scale's "Contact us" goes. A placeholder: set the real inbox before launch. */
-export const CONTACT_EMAIL = 'hello@example.com';
-
 export const PLANS: Record<PlanType['id'], PlanType> = {
   starter: {
     id: 'starter',

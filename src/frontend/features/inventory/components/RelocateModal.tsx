@@ -13,8 +13,8 @@ type Props = { item: ItemResponseType; onClose: () => void };
 
 export const RelocateModal = ({ item, onClose }: Props) => {
   const { template } = businessesService.useBusiness();
-  const { data: locations, isPending } = locationsService.useLocations();
-  const relocate = inventoryService.useRelocateMutation();
+  const { data: locations, isPending } = locationsService.useGetLocations();
+  const relocate = inventoryService.useRelocateItem();
   const [target, setTarget] = useState('');
   const [error, setError] = useState('');
   // Warehouse bins hold one product; shelves in a café or van hold many.

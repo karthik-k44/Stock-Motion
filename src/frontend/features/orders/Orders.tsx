@@ -28,11 +28,11 @@ export const Orders = () => {
   const [search, setSearch] = useState('');
   const [creating, setCreating] = useState(false);
   const q = useDebouncedValue(search.trim());
-  const open = ordersService.useOrders({ open: true });
+  const open = ordersService.useGetOrders({ open: true });
 
   const params: ListOrdersParams =
     filter === OPEN ? { open: true } : filter === CLOSED ? { open: false } : { status: filter };
-  const list = ordersService.useOrders({ ...params, search: q || undefined });
+  const list = ordersService.useGetOrders({ ...params, search: q || undefined });
   const count = (status: string) => open.data?.filter((o) => o.status === status).length;
   const options = [
     { value: OPEN, label: 'Open', count: open.data?.length },
