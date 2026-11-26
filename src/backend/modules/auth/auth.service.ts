@@ -1,4 +1,4 @@
-import { Conflict, Unauthorized } from '@/backend/common/errors';
+import { Conflict, Forbidden, Unauthorized } from '@/backend/common/errors';
 import { GenerateOpaqueToken, HashOpaqueToken, HashPassword, VerifyPassword } from '@/backend/common/utils/crypto';
 import { ToIso } from '@/backend/common/utils/dates';
 import { SignAccessToken } from '@/backend/common/utils/jwt';
@@ -6,6 +6,7 @@ import { env } from '@/backend/config/env';
 import { db, type Queryable } from '@/backend/db/client';
 import type { AccountRow } from '@/backend/db/schema';
 import type { AccountResponseType } from '@/backend/types/account';
+import { demoService } from '@/backend/modules/demo/demo.service';
 import { authRepository } from './auth.repository';
 import type { LoginInput, RegisterInput, UpdateProfileInput } from './auth.validators';
 
@@ -30,6 +31,9 @@ const PrepareAccount = async (input: RegisterInput): Promise<NewAccountType> => 
 
 /** Create an account. Used by sign-up and by accepting an invite as a new person. */
 const CreateAccount = async (q: Queryable, account: NewAccountType): Promise<AccountResponseType> => {
+  if (demoService.IsDemoEmail(account.email)) {
+    throw Conflict('This email belongs to the shared demo account — sign in with it, or use your own email');
+  }
   if (await authRepository.FindAccountByEmail(q, account.email)) {
     throw Conflict('An account with this email already exists — sign in instead');
   }
@@ -42,6 +46,7 @@ const Register = async (input: RegisterInput): Promise<IssuedSessionType> => {
 };
 
 const Login = async (input: LoginInput): Promise<IssuedSessionType> => {
+  if (demoService.IsDemoEmail(input.email)) await demoService.Prepare();
   const row = await authRepository.FindAccountByEmail(db, input.email);
   // Same message for an unknown email and a wrong password, so accounts can't be probed.
   if (!row || !(await VerifyPassword(input.password, row.password_hash))) {
@@ -78,6 +83,8 @@ const FindAccount = async (id: string, q: Queryable = db): Promise<AccountRespon
 };
 
 const UpdateProfile = async (id: string, input: UpdateProfileInput): Promise<AccountResponseType> => {
+  const account = await authRepository.FindAccountById(db, id);
+  if (account && demoService.IsDemoEmail(account.email)) throw Forbidden('The demo account is shared, so its name stays as it is');
   return toAccount(await authRepository.UpdateAccountName(db, id, input.name));
 };
 

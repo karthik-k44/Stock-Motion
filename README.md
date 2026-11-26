@@ -32,11 +32,13 @@ npm install
 npm run dev          # http://localhost:3000 — API + frontend (Vite HMR) on one port
 ```
 
-In development an empty database gets a demo login with one sample business of each type:
+To look around without setting anything up, sign in to the shared **demo account** — it is on the login page too, with a one-click button:
 
 ```
-demo@stockmotion.local / stockmotion-demo
+sampledata@gmail.com / sampledata123
 ```
+
+It holds one sample business of each type and is the only account with sample data: every other account starts empty. It is created on its first sign-in in any environment, anyone can change it, and a sign-in after a day reloads it fresh.
 
 Or create your own account at `/signup`.
 
@@ -58,7 +60,7 @@ TRUST_PROXY=loopback        # "1" behind one load balancer (most hosts), "true",
 SHUTDOWN_TIMEOUT_MS=10000   # grace period for open requests on SIGTERM
 ```
 
-- **Your local PostgreSQL:** the database is created on first start and migrations run automatically (TypeORM, recorded in `typeorm_migrations`). A database made by an earlier version is adopted as it is — its data is kept.
+- **Your local PostgreSQL:** the database is created on first start and migrations run automatically (Drizzle, recorded in `drizzle.__drizzle_migrations`). A database made by an earlier version is adopted: its data is kept and its ids renamed (see Structure).
 - **No database install:** leave `DATABASE_URL` empty and an embedded Postgres is stored in `.data/pglite`.
 
 Sessions use a short-lived access token held in memory, plus a rotating, httpOnly refresh cookie. Replaying an already-used refresh token ends every session of that account.
@@ -75,9 +77,8 @@ Sessions use a short-lived access token held in memory, plus a rotating, httpOnl
 | `npm run typecheck` | `tsc -b --noEmit` |
 | `npm run vercel-build` | Vercel's build: frontend, migrations, and the backend bundled as one function in `.vercel/output` (needs `DATABASE_URL`) |
 | `npm run illustrations` | Re-render the landing page's scenario illustrations into `public/landing/scenarios/` (uses your installed Chrome) |
-| `npm run db:seed` | Wipe the database and recreate the demo login (refuses in production) |
 | `npm run db:migrate` | Apply pending migrations (the server also does this on start) |
-| `npm run db:migration:create -- Name` | Start a new migration in `src/backend/db/migrations/` |
+| `npm run db:generate -- --name <change>` | Write a migration from changes to `src/backend/db/schema/` (drizzle-kit) |
 
 ## Deploy
 
@@ -148,9 +149,10 @@ All of these are derived in one place, the `item_views` SQL view (`src/backend/d
 ## Structure
 
 See `docs/STRUCTURE.md`:
-- **Backend** (`src/backend`): Express + PostgreSQL through TypeORM, one folder per domain module. Database access lives only in each module's `*.repository.ts`.
+- **Backend** (`src/backend`): Express + PostgreSQL through Drizzle ORM, one folder per domain module. Database access lives only in each module's `*.repository.ts`, through Drizzle's query builder — no hand-written SQL queries.
+- **Ids** are a readable prefix and a number from 100000: `ACID100000` is the first account, then `BSID` businesses, `ITID` items, `ORID` orders, `DLID` deliveries, `CSID` customers, `SPID` suppliers, `INID` invites, `MVID` stock movements and `ATID` activity (`src/backend/db/schema/ids.ts`). The database assigns them from one sequence per table.
 - **Frontend** (`src/frontend`): React 19 + Vite + React Query, one folder per feature, each with a single service object. Business templates live in `src/backend/modules/templates`; the frontend reads them from the API.
 
 ## Credits
 
-3D icons on the landing page: [3dicons](https://github.com/realvjy/3dicons) by realvjy, CC0. Font: Inter (SIL Open Font License), self-hosted via Fontsource. Data access: [TypeORM](https://typeorm.io) (MIT). Animation: [GSAP](https://gsap.com) (free under its standard license).
+3D icons on the landing page: [3dicons](https://github.com/realvjy/3dicons) by realvjy, CC0. Font: Inter (SIL Open Font License), self-hosted via Fontsource. Data access: [Drizzle ORM](https://orm.drizzle.team) (Apache-2.0). Animation: [GSAP](https://gsap.com) (free under its standard license).

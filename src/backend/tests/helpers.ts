@@ -1,7 +1,8 @@
 import request from 'supertest';
 import { CreateApp } from '@/backend/app';
-import { ConnectDb, WipeDatabase } from '@/backend/db/client';
+import { ConnectDb, db, WipeDatabase } from '@/backend/db/client';
 import { RunMigrations } from '@/backend/db/migrate';
+import { LoadSampleData } from '@/backend/modules/businesses/business-setup.service';
 import type { BusinessTypeEnum } from '@/backend/types/template';
 
 /**
@@ -38,13 +39,19 @@ export const RefreshCookie = (res: request.Response): string => {
   return (header ?? []).find((c) => c.startsWith('sm_refresh='))?.split(';')[0] ?? '';
 };
 
-export const CreateBusiness = async (token: string, type: BusinessTypeEnum, sampleData = true) => {
+/**
+ * A business owned by `owner`, created through the API. With `sampleData` it is then filled with the template's sample
+ * data the way the demo account is: sample data is no longer something an owner can ask for.
+ */
+export const CreateBusiness = async (owner: SessionType, type: BusinessTypeEnum, sampleData = true) => {
   const res = await request(app)
     .post('/api/businesses')
-    .set('authorization', `Bearer ${token}`)
-    .send({ name: `Test ${type}`, type, sampleData });
+    .set('authorization', `Bearer ${owner.token}`)
+    .send({ name: `Test ${type}`, type });
   if (res.status !== 201) throw new Error(`Create business failed: ${res.status} ${JSON.stringify(res.body)}`);
-  return res.body as { id: string; template: { orderFlow: { status: string }[] } };
+  const business = res.body as { id: string; name: string; type: BusinessTypeEnum; template: { orderFlow: { status: string }[] } };
+  if (sampleData) await db.transaction((tx) => LoadSampleData(tx, business, owner.accountId));
+  return business;
 };
 
 /** Requests against `/api/businesses/:businessId/…` as one signed-in account. */
@@ -63,6 +70,6 @@ export const Client = (token: string, businessId: string) => {
 /** A signed-up owner with one business of `type`, ready to call. */
 export const OwnerWithBusiness = async (type: BusinessTypeEnum, sampleData = true) => {
   const session = await SignUp();
-  const business = await CreateBusiness(session.token, type, sampleData);
+  const business = await CreateBusiness(session, type, sampleData);
   return { session, business, api: Client(session.token, business.id) };
 };

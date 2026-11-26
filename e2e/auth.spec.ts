@@ -4,7 +4,7 @@ import { CreateBusiness, PASSWORD, SignUp } from './helpers';
 test.describe('signing in', () => {
   test('keeps the session across a reload through the refresh cookie', async ({ page }) => {
     await SignUp(page);
-    await CreateBusiness(page, { type: /Retail/, name: 'Reload Test', sampleData: false });
+    await CreateBusiness(page, { type: /Retail/, name: 'Reload Test' });
 
     // The access token lives in memory only, so a reload must renew it from the httpOnly cookie.
     await page.goto('/dashboard');
@@ -15,7 +15,7 @@ test.describe('signing in', () => {
 
   test('logs out, refuses a wrong password, and signs back in', async ({ page }) => {
     const email = await SignUp(page);
-    await CreateBusiness(page, { type: /Retail/, name: 'Sign In Test', sampleData: false });
+    await CreateBusiness(page, { type: /Retail/, name: 'Sign In Test' });
 
     await page.getByRole('button', { name: 'Log out' }).click();
     await expect(page).toHaveURL(/\/$/);

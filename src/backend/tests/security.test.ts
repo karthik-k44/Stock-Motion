@@ -5,6 +5,7 @@ import express from 'express';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { CloseDb, db } from '@/backend/db/client';
+import { activity, movements, rateLimits } from '@/backend/db/schema';
 import { ErrorHandler } from '@/backend/middleware/error.middleware';
 import { RateLimitWrites } from '@/backend/middleware/rate-limit.middleware';
 import { AttachRealtime, CloseRealtime, SOCKET_PATH } from '@/backend/realtime/socket';
@@ -143,10 +144,10 @@ describe('permissions', () => {
   it('history cannot be rewritten, even directly in the database', async () => {
     const { api } = await shop(1);
     await api.post(`/items/${SKU}/adjustments`, { mode: 'ADD', qty: 2, reason: 'FOUND' });
-    await expect(db.query(`UPDATE activity SET message = 'rewritten'`)).rejects.toThrow(/append-only/);
-    await expect(db.query('UPDATE movements SET delta = 99')).rejects.toThrow(/append-only/);
+    await expect(db.update(activity).set({ message: 'rewritten' })).rejects.toMatchObject({ cause: { message: expect.stringMatching(/append-only/) } });
+    await expect(db.update(movements).set({ delta: 99 })).rejects.toMatchObject({ cause: { message: expect.stringMatching(/append-only/) } });
     // Deleting is still possible: an owner can reset a business's data, history included.
-    expect((await api.post('/reset', { sampleData: false })).status).toBe(200);
+    expect((await api.post('/reset')).status).toBe(200);
     expect((await api.get('/activity')).body).toHaveLength(1);
   });
 
@@ -222,7 +223,7 @@ describe('rate limits', () => {
     const app = instance(true);
     for (let i = 0; i < 3; i++) await request(app).post('/login');
     expect((await request(app).post('/login')).status).toBe(429);
-    await db.query(`UPDATE rate_limits SET reset_at = now() - interval '1 second'`);
+    await db.update(rateLimits).set({ reset_at: new Date(Date.now() - 1000) });
     expect((await request(app).post('/login')).status).toBe(200);
   });
 

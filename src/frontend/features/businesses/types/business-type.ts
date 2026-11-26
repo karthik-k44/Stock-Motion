@@ -79,7 +79,6 @@ export const CreateBusinessSchema = z.object({
   name: z.string().trim().min(1, 'Name your business').max(80),
   type: z.nativeEnum(BusinessTypeEnum, { errorMap: () => ({ message: 'Choose a business type' }) }),
   currency: z.string().trim().toUpperCase().regex(/^[A-Z]{3}$/, 'Use a 3-letter code, e.g. USD'),
-  sampleData: z.boolean(),
 });
 export type CreateBusinessInput = z.infer<typeof CreateBusinessSchema>;
 

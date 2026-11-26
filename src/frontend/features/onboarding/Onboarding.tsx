@@ -17,14 +17,12 @@ import { FieldErrors } from '@/frontend/lib/form';
 import { BusinessPreview } from './components/BusinessPreview';
 import { DetailsStep } from './components/DetailsStep';
 import { OnboardingSteps, STEPS } from './components/OnboardingSteps';
-import { StartChoice } from './components/StartChoice';
 import { TemplateCard } from './components/TemplateCard';
 import { DefaultCurrency, MoveRadio, OTHER_CURRENCY } from './lib/onboarding-options';
 
 const COPY = [
   { title: 'What kind of business do you run?', lead: 'StockMotion sets up its words, screens and live world to match.' },
   { title: 'Name your business', lead: 'You can change both of these later in Settings.' },
-  { title: 'How do you want to start?', lead: 'Your storage, categories and order flow are ready either way.' },
 ];
 
 /** Past this the name no longer fits on the button, which then just says "Create business". */
@@ -42,11 +40,9 @@ const Wizard = () => {
   const [name, setName] = useState('');
   const [currencyChoice, setCurrencyChoice] = useState(DefaultCurrency);
   const [otherCurrency, setOtherCurrency] = useState('');
-  const [sampleData, setSampleData] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const list = templates.data ?? [];
-  const template = list.find((t) => t.type === type);
   const shown = list.find((t) => t.type === (previewing ?? type)) ?? list[0];
   const currency = currencyChoice === OTHER_CURRENCY ? otherCurrency : currencyChoice;
   const last = step === STEPS.length - 1;
@@ -67,7 +63,7 @@ const Wizard = () => {
     e.preventDefault();
     if (step === 0 && !type) return setErrors({ type: 'Choose the kind of business you run' });
     if (step === 0) return goTo(1);
-    const parsed = CreateBusinessSchema.safeParse({ name, type, currency, sampleData });
+    const parsed = CreateBusinessSchema.safeParse({ name, type, currency });
     if (!parsed.success) return setErrors(FieldErrors(parsed.error));
     if (!last) return goTo(step + 1);
     create.mutate(parsed.data, { onSuccess: () => navigate(paths.world, { replace: true }) });
@@ -130,8 +126,6 @@ const Wizard = () => {
               />
             )}
 
-            {step === 2 && template && <StartChoice template={template} sampleData={sampleData} onChange={setSampleData} />}
-
             {errors.type && <p className="form-error mt-3" role="alert">{errors.type}</p>}
             {create.error && <p className="form-error mt-3" role="alert">{create.error.message}</p>}
 
@@ -160,7 +154,6 @@ const Wizard = () => {
             template={shown}
             name={name}
             currency={step > 0 ? currency : ''}
-            start={last ? (sampleData ? 'With sample data' : 'Starting empty') : null}
           />
         )}
       </aside>

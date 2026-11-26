@@ -31,7 +31,7 @@ export type ActivityMetaType = {
 };
 
 export type ActivityResponseType = {
-  id: number;
+  id: string;
   at: string;
   kind: ActivityKindTypeEnum;
   accountId: string | null;

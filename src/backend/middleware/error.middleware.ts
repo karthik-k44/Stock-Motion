@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import { ZodError } from 'zod';
 import { AppError } from '@/backend/common/errors';
+import { PgErrorCode } from '@/backend/common/utils/pg-error';
 import { logger } from '@/backend/config/logger';
 
 /** Postgres errors that mean "your request clashes with existing data", never SQL details. */
@@ -30,7 +31,8 @@ export const ErrorHandler = (err: unknown, _req: Request, res: Response, _next: 
     res.status(err.status).json({ error: { code: err.code, message: err.message, details: err.details } });
     return;
   }
-  const pg = typeof err === 'object' && err !== null && 'code' in err ? PG_ERRORS[String(err.code)] : undefined;
+  const pgCode = PgErrorCode(err);
+  const pg = pgCode ? PG_ERRORS[pgCode] : undefined;
   if (pg) {
     res.status(pg.status).json({ error: { code: pg.code, message: pg.message } });
     return;

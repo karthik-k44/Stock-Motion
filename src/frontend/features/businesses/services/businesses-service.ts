@@ -93,11 +93,11 @@ const useUpdateBusiness = () => {
 
 const useResetData = () => {
   const qc = useQueryClient();
-  return useMutation<{ ok: true }, ApiError, boolean>({
-    mutationFn: (sampleData) => Biz.Post('/reset', { sampleData }),
-    onSuccess: async (_, sampleData) => {
+  return useMutation<{ ok: true }, ApiError, void>({
+    mutationFn: () => Biz.Post('/reset'),
+    onSuccess: async () => {
       await qc.invalidateQueries({ predicate: (q) => !GLOBAL_KEYS.has(String(q.queryKey[0])) });
-      ToastManager.Success(sampleData ? 'Sample data reloaded' : 'All data cleared', 'Your team and settings were kept');
+      ToastManager.Success('All data cleared', 'Your team and settings were kept');
     },
     onError: (err) => ToastManager.Error('Could not reset', err.message),
   });

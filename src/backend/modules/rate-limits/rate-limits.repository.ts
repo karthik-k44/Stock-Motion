@@ -1,23 +1,28 @@
+import { lte, sql } from 'drizzle-orm';
 import type { Queryable } from '@/backend/db/client';
-import { RateLimitEntity } from '@/backend/db/entities';
+import { rateLimits } from '@/backend/db/schema';
 
 /** Count one hit against `key` and return the count in its current window. Atomic, so concurrent instances all count. */
 const Hit = async (q: Queryable, key: string, windowMs: number): Promise<number> => {
-  const rows: { count: number }[] = await q.query(
-    `INSERT INTO rate_limits AS r (key, count, reset_at)
-     VALUES ($1, 1, now() + make_interval(secs => $2::double precision / 1000))
-     ON CONFLICT (key) DO UPDATE SET
-       count    = CASE WHEN r.reset_at <= now() THEN 1 ELSE r.count + 1 END,
-       reset_at = CASE WHEN r.reset_at <= now() THEN EXCLUDED.reset_at ELSE r.reset_at END
-     RETURNING count`,
-    [key, windowMs],
-  );
-  return rows[0].count;
+  const now = new Date();
+  const expired = sql`${rateLimits.reset_at} <= ${now}`;
+  const [row] = await q
+    .insert(rateLimits)
+    .values({ key, count: 1, reset_at: new Date(now.getTime() + windowMs) })
+    .onConflictDoUpdate({
+      target: rateLimits.key,
+      set: {
+        count: sql`CASE WHEN ${expired} THEN 1 ELSE ${rateLimits.count} + 1 END`,
+        reset_at: sql`CASE WHEN ${expired} THEN excluded.reset_at ELSE ${rateLimits.reset_at} END`,
+      },
+    })
+    .returning({ count: rateLimits.count });
+  return row.count;
 };
 
 /** Drop counters whose window has passed. */
 const DeleteExpired = async (q: Queryable): Promise<void> => {
-  await q.getRepository(RateLimitEntity).createQueryBuilder().delete().where('reset_at <= now()').execute();
+  await q.delete(rateLimits).where(lte(rateLimits.reset_at, new Date()));
 };
 
 export const rateLimitsRepository = { Hit, DeleteExpired };

@@ -8,7 +8,7 @@ export type DataChangedEvent = {
   businessId: string;
   resources: string[];
   activity: {
-    id: number;
+    id: string;
     at: string;
     kind: string;
     accountId: string | null;

@@ -1,7 +1,7 @@
+import { and, asc, eq, getTableColumns, ilike, inArray, not, or, sql } from 'drizzle-orm';
 import type { Queryable } from '@/backend/db/client';
-import { AccountEntity, ItemEntity, NameOf, OrderEntity, OrderLineEntity } from '@/backend/db/entities';
 import { NextNumber } from '@/backend/db/next-number';
-import type { DbDate, OrderLineRow, OrderRow } from '@/backend/db/schema';
+import { accounts, items, orderLines, orders, type DbDate, type OrderLineRow, type OrderRow } from '@/backend/db/schema';
 
 export type OrderFiltersType = {
   status?: string;
@@ -12,59 +12,7 @@ export type OrderFiltersType = {
   limit?: number;
 };
 
-const orders = (q: Queryable) => q.getRepository(OrderEntity);
-const lines = (q: Queryable) => q.getRepository(OrderLineEntity);
-
-/** Orders of a business with their assignee's name. */
-const select = (q: Queryable, businessId: string) =>
-  q
-    .createQueryBuilder(OrderEntity, 'o')
-    .select('o.*')
-    .addSelect('a.name', 'assignee_name')
-    .leftJoin(NameOf(AccountEntity), 'a', 'a.id = o.assignee_id')
-    .where('o.business_id = :businessId', { businessId });
-
-const List = (q: Queryable, businessId: string, filters: OrderFiltersType = {}): Promise<OrderRow[]> => {
-  const query = select(q, businessId);
-  if (filters.status) query.andWhere('o.status = :status', { status: filters.status });
-  if (filters.open !== undefined) query.andWhere('o.closed = :closed', { closed: !filters.open });
-  if (filters.customerId) query.andWhere('o.customer_id = :customerId', { customerId: filters.customerId });
-  if (filters.search) query.andWhere('(o.number ILIKE :search OR o.customer_name ILIKE :search)', { search: `%${filters.search}%` });
-  return query
-    .orderBy('o.closed')
-    .addOrderBy('CASE WHEN o.closed THEN o.closed_at END', 'DESC')
-    .addOrderBy('o.due_at', 'ASC', 'NULLS LAST')
-    .addOrderBy('o.created_at')
-    .limit(filters.limit ?? 500)
-    .getRawMany<OrderRow>();
-};
-
-const FindByNumber = (q: Queryable, businessId: string, number: string): Promise<OrderRow | undefined> => {
-  return select(q, businessId).andWhere('o.number = :number', { number }).getRawOne<OrderRow>();
-};
-
-/** The order row is locked for the rest of the transaction, so its stage changes one request at a time. */
-const LockByNumber = (q: Queryable, businessId: string, number: string): Promise<OrderRow | undefined> => {
-  return select(q, businessId).andWhere('o.number = :number', { number }).setLock('pessimistic_write', undefined, ['o']).getRawOne<OrderRow>();
-};
-
-const ListLines = async (q: Queryable, orderIds: string[]): Promise<OrderLineRow[]> => {
-  if (!orderIds.length) return [];
-  return q
-    .createQueryBuilder(OrderLineEntity, 'ol')
-    .select(['ol.order_id AS order_id', 'ol.item_id AS item_id', 'ol.qty AS qty', 'ol.done AS done', 'ol.unit_price AS unit_price'])
-    .addSelect(['i.sku AS sku', 'i.name AS name', 'i.kind AS kind', 'i.unit AS unit', 'i.location AS location'])
-    .innerJoin(NameOf(ItemEntity), 'i', 'i.id = ol.item_id')
-    .where('ol.order_id IN (:...orderIds)', { orderIds })
-    .orderBy('ol.position')
-    .getRawMany<OrderLineRow>();
-};
-
-const Next = (q: Queryable, businessId: string, prefix: string) => NextNumber(q, 'orders', businessId, prefix, 1001);
-
 export type OrderInsertType = {
-  /** Set by callers that need the id before the row exists (sample data links lines to it in the same batch) */
-  id?: string;
   businessId: string;
   number: string;
   customerId: string | null;
@@ -81,8 +29,74 @@ export type OrderInsertType = {
 
 export type OrderLineInsertType = { orderId: string; itemId: string; position: number; qty: number; done?: number; unitPrice: number };
 
+const toDate = (value: DbDate | null | undefined) => (value === null || value === undefined ? value : new Date(value));
+
+/** Orders with their assignee's name. */
+const selectOrders = (q: Queryable) =>
+  q
+    .select({ ...getTableColumns(orders), assignee_name: accounts.name })
+    .from(orders)
+    .leftJoin(accounts, eq(accounts.id, orders.assignee_id));
+
+const List = (q: Queryable, businessId: string, filters: OrderFiltersType = {}): Promise<OrderRow[]> => {
+  const like = filters.search ? `%${filters.search}%` : undefined;
+  return selectOrders(q)
+    .where(
+      and(
+        eq(orders.business_id, businessId),
+        filters.status ? eq(orders.status, filters.status) : undefined,
+        filters.open === undefined ? undefined : eq(orders.closed, !filters.open),
+        filters.customerId ? eq(orders.customer_id, filters.customerId) : undefined,
+        like ? or(ilike(orders.number, like), ilike(orders.customer_name, like)) : undefined,
+      ),
+    )
+    // Open first, by due date; then closed, most recently closed first.
+    .orderBy(
+      asc(orders.closed),
+      sql`case when ${orders.closed} then ${orders.closed_at} end desc`,
+      sql`${orders.due_at} asc nulls last`,
+      asc(orders.created_at),
+    )
+    .limit(filters.limit ?? 500);
+};
+
+const FindByNumber = async (q: Queryable, businessId: string, number: string): Promise<OrderRow | undefined> => {
+  const [row] = await selectOrders(q).where(and(eq(orders.business_id, businessId), eq(orders.number, number)));
+  return row;
+};
+
+/** The order row is locked for the rest of the transaction, so its stage changes one request at a time. */
+const LockByNumber = async (q: Queryable, businessId: string, number: string): Promise<OrderRow | undefined> => {
+  const [row] = await selectOrders(q)
+    .where(and(eq(orders.business_id, businessId), eq(orders.number, number)))
+    .for('update', { of: orders });
+  return row;
+};
+
+const ListLines = async (q: Queryable, orderIds: string[]): Promise<OrderLineRow[]> => {
+  if (!orderIds.length) return [];
+  return q
+    .select({
+      order_id: orderLines.order_id,
+      item_id: orderLines.item_id,
+      qty: orderLines.qty,
+      done: orderLines.done,
+      unit_price: orderLines.unit_price,
+      sku: items.sku,
+      name: items.name,
+      kind: items.kind,
+      unit: items.unit,
+      location: items.location,
+    })
+    .from(orderLines)
+    .innerJoin(items, eq(items.id, orderLines.item_id))
+    .where(inArray(orderLines.order_id, orderIds))
+    .orderBy(asc(orderLines.position));
+};
+
+const Next = (q: Queryable, businessId: string, prefix: string) => NextNumber(q, orders, businessId, prefix, 1001);
+
 const toOrderRecord = (input: OrderInsertType) => ({
-  id: input.id,
   business_id: input.businessId,
   number: input.number,
   customer_id: input.customerId,
@@ -90,67 +104,74 @@ const toOrderRecord = (input: OrderInsertType) => ({
   status: input.status,
   reserves: input.reserves,
   closed: input.closed,
-  due_at: input.dueAt,
+  due_at: toDate(input.dueAt),
   assignee_id: input.assigneeId,
   notes: input.notes ?? '',
-  created_at: input.createdAt,
-  closed_at: input.closedAt ?? null,
+  created_at: input.createdAt === undefined ? undefined : new Date(input.createdAt),
+  closed_at: toDate(input.closedAt) ?? null,
 });
 
 const Insert = async (q: Queryable, input: OrderInsertType): Promise<string> => {
-  const { identifiers } = await orders(q).insert(toOrderRecord(input));
-  return identifiers[0].id;
+  const [row] = await q.insert(orders).values(toOrderRecord(input)).returning({ id: orders.id });
+  return row.id;
 };
 
-/** Many orders in one statement; each must carry its `id`. */
-const InsertMany = async (q: Queryable, rows: (OrderInsertType & { id: string })[]): Promise<void> => {
-  if (rows.length) await orders(q).insert(rows.map(toOrderRecord));
+/** Many orders in one statement. Returns each new id with its number (unique within a business). */
+const InsertMany = async (q: Queryable, rows: OrderInsertType[]): Promise<{ id: string; number: string }[]> => {
+  if (!rows.length) return [];
+  return q.insert(orders).values(rows.map(toOrderRecord)).returning({ id: orders.id, number: orders.number });
 };
 
 /** Every line in one statement. */
 const InsertLines = async (q: Queryable, rows: OrderLineInsertType[]): Promise<void> => {
   if (!rows.length) return;
-  await lines(q).insert(
-    rows.map((r) => ({ order_id: r.orderId, item_id: r.itemId, position: r.position, qty: r.qty, done: r.done ?? 0, unit_price: r.unitPrice })),
-  );
+  await q
+    .insert(orderLines)
+    .values(rows.map((r) => ({ order_id: r.orderId, item_id: r.itemId, position: r.position, qty: r.qty, done: r.done ?? 0, unit_price: String(r.unitPrice) })));
 };
 
 const DeleteLines = async (q: Queryable, orderId: string): Promise<void> => {
-  await lines(q).delete({ order_id: orderId });
+  await q.delete(orderLines).where(eq(orderLines.order_id, orderId));
 };
 
 const SetStage = async (
   q: Queryable,
   id: string,
   stage: { status: string; reserves: boolean; closed: boolean; cancelled?: boolean },): Promise<void> => {
-  await orders(q).update(
-    { id },
-    {
+  await q
+    .update(orders)
+    .set({
       status: stage.status,
       reserves: stage.reserves,
       closed: stage.closed,
       cancelled: stage.cancelled ?? false,
-      closed_at: stage.closed ? () => 'now()' : null,
-    },
-  );
+      closed_at: stage.closed ? new Date() : null,
+    })
+    .where(eq(orders.id, id));
 };
 
 const Update = async (
   q: Queryable,
   id: string,
   input: { customerId: string | null; customerName: string; dueAt: DbDate | null; assigneeId: string | null; notes: string },): Promise<void> => {
-  await orders(q).update(
-    { id },
-    { customer_id: input.customerId, customer_name: input.customerName, due_at: input.dueAt, assignee_id: input.assigneeId, notes: input.notes },
-  );
+  await q
+    .update(orders)
+    .set({
+      customer_id: input.customerId,
+      customer_name: input.customerName,
+      due_at: toDate(input.dueAt),
+      assignee_id: input.assigneeId,
+      notes: input.notes,
+    })
+    .where(eq(orders.id, id));
 };
 
 const SetLineDone = async (q: Queryable, orderId: string, itemId: string, done: number): Promise<void> => {
-  await lines(q).update({ order_id: orderId, item_id: itemId }, { done });
+  await q.update(orderLines).set({ done }).where(and(eq(orderLines.order_id, orderId), eq(orderLines.item_id, itemId)));
 };
 
 const ClearAssignee = async (q: Queryable, businessId: string, accountId: string): Promise<void> => {
-  await orders(q).update({ business_id: businessId, assignee_id: accountId }, { assignee_id: null });
+  await q.update(orders).set({ assignee_id: null }).where(and(eq(orders.business_id, businessId), eq(orders.assignee_id, accountId)));
 };
 
 /** Open orders that include an item, for the item detail panel. */
@@ -158,13 +179,11 @@ const ListOpenForItem = (
   q: Queryable,
   itemId: string,): Promise<{ number: string; customer_name: string; status: string; qty: number; done: number }[]> => {
   return q
-    .createQueryBuilder(OrderLineEntity, 'ol')
-    .select(['o.number AS number', 'o.customer_name AS customer_name', 'o.status AS status', 'ol.qty AS qty', 'ol.done AS done'])
-    .innerJoin(NameOf(OrderEntity), 'o', 'o.id = ol.order_id')
-    .where('ol.item_id = :itemId AND NOT o.closed', { itemId })
-    .orderBy('o.due_at', 'ASC', 'NULLS LAST')
-    .addOrderBy('o.created_at')
-    .getRawMany();
+    .select({ number: orders.number, customer_name: orders.customer_name, status: orders.status, qty: orderLines.qty, done: orderLines.done })
+    .from(orderLines)
+    .innerJoin(orders, eq(orders.id, orderLines.order_id))
+    .where(and(eq(orderLines.item_id, itemId), not(orders.closed)))
+    .orderBy(sql`${orders.due_at} asc nulls last`, asc(orders.created_at));
 };
 
 export const ordersRepository = {

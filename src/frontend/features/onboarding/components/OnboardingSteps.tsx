@@ -1,7 +1,7 @@
 import { Check } from 'lucide-react';
 import { Cn } from '@/frontend/lib/utils';
 
-export const STEPS = ['Business type', 'Details', 'Get started'];
+export const STEPS = ['Business type', 'Details'];
 
 /** Where you are in the setup. Finished steps are buttons, so you can go straight back to one. */
 export const OnboardingSteps = ({ step, onJump }: { step: number; onJump: (step: number) => void }) => (

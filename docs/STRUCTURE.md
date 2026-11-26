@@ -8,15 +8,14 @@ How StockMotion is organised and the rules new features follow. Most are enforce
 src/
 ├── backend/               # Express API + Postgres (Node only, never imported by the browser)
 │   ├── app.ts              # express app wiring: public routes, then /businesses/:businessId/* behind RequireAuth + RequireBusinessRole
-│   ├── server.ts           # entry point: db, migrations, dev seed, socket.io, Vite (dev) or dist/ (prod); on Vercel, the function
+│   ├── server.ts           # entry point: db, migrations, socket.io, Vite (dev) or dist/ (prod); on Vercel, the function
 │   ├── common/             # errors/, services/audit.ts (activity + stock ledger), types/, utils/ (jwt, crypto, csv, cookies …)
 │   ├── config/             # env.ts (zod-validated), logger.ts
-│   ├── db/                 # client.ts (TypeORM DataSource, `db`), entities/ (one EntitySchema per table), schema/ (row types),
-│   │                       # migrations/ (TypeORM migrations + sql/), pglite-pool.ts, migrate.ts, seed.ts, next-number.ts,
-│   │                       # cli/ (the `db:migrate` and `db:seed` entry points)
+│   ├── db/                 # client.ts (Drizzle `db`: PostgreSQL or PGlite), schema/ (the tables; ids.ts holds the id prefixes),
+│   │                       # migrations/ (drizzle-kit SQL + meta/), migrate.ts, next-number.ts, cli/ (`db:migrate`)
 │   ├── middleware/         # auth, rate-limit, error, not-found — each `<name>.middleware.ts`
 │   ├── modules/<domain>/   # auth, businesses, invites, templates, items, categories, locations, suppliers, customers,
-│   │                       # orders, deliveries, imports, activity, dashboard, system, rate-limits
+│   │                       # orders, deliveries, imports, activity, dashboard, system, rate-limits, demo
 │   ├── realtime/           # socket.io server: token-authenticated, one room per business
 │   ├── tests/              # vitest integration tests (in-memory Postgres)
 │   └── types/              # backend domain types, one file per domain
@@ -42,7 +41,7 @@ A business type (retail, café, trades) is a **template**: plain config in `src/
 - the **order flow**: stages with the flags `reserves`, `consumeLines`, `consumeOnEnter`, `requiresAllDone` and `closed`;
 - the staff roles, the default categories and units;
 - the storage zones (levels × bins), from which locations are generated;
-- sample data.
+- sample data, loaded only into the shared demo account (`modules/demo`).
 
 Services read those flags; they never hard-code a status such as `'PICKING'`. The API returns the template with the business (`GET /api/businesses/:id`), and the frontend words every screen from it. **Add a business type** by adding a definition file, its world layout in `features/world/lib/`, and its enum value in both type copies.
 
@@ -139,7 +138,7 @@ Frontend and backend keep **separate, duplicated** domain types (`src/backend/ty
 
 ```
 modules/<domain>/
-├── <domain>.repository.ts    # ALL database access for the domain (TypeORM): functions taking a Queryable (`db` or a transaction) first
+├── <domain>.repository.ts    # ALL database access for the domain (Drizzle): functions taking a Queryable (`db` or a transaction) first
 ├── <domain>.service.ts       # business rules only — no SQL — exported as one `<domain>Service` object
 ├── <domain>.validators.ts    # zod schemas
 ├── <domain>.mapper.ts        # row → response, only when shared (items, deliveries, activity)
@@ -147,7 +146,7 @@ modules/<domain>/
 ```
 
 - **No queries in services** (review-only). A service calls repositories, its own and other modules' (e.g. orders uses `itemsRepository.LockItemsByIds`), so a query is written once. Shared services (`common/services/audit.ts`, `realtime/socket.ts`) go through repositories too.
-- **Repositories use TypeORM**: the entity's repository for plain reads and writes (`findOneBy`, `insert`, `update`, `delete`), the query builder for joins, filters and locks (`setLock('pessimistic_write')`), and parameterised SQL (`q.query`) only for reporting aggregates (dashboard, customer stats) and the advisory-lock numbering. A function returns `undefined`, never `null`, for "not found".
+- **Repositories use Drizzle's query builder** for every read and write: `select … from … where`, joins, `.for('update')` locks, `$count` subqueries, `onConflictDoUpdate`. Nothing runs a hand-written SQL string; the `sql` helper appears only as an expression inside a builder query, for what the builder has no function for (`count(*) filter (…)`, `case`, `nulls last`). A function returns `undefined`, never `null`, for "not found".
 - **Writes** run in a transaction, `db.transaction(async (tx) => …)`, passing `tx` to every repository call (never `db` inside a transaction — on embedded PGlite that waits for itself):
   - lock the rows they change (`FOR UPDATE`, stock rows in id order);
   - record an `activity` row (and `movements` rows for stock changes) through `common/services/audit.ts`;
@@ -166,9 +165,9 @@ npm run test:e2e                                # builds, then drives the app in
 ## Known deviations
 
 - **No Formik.** Forms validate with the feature's zod schema (`safeParse`) directly; the server validates again.
-- **TypeORM without decorators.** Entities are `EntitySchema` objects (`db/entities/`), not decorated classes: tsx/esbuild don't emit decorator metadata, and the codebase is arrow functions. Their property names are the snake_case column names, so entities, query-builder raw rows and `db/schema/` row types share one shape and the services never map between them.
-- **Migrations own the schema.** `synchronize` is off; changes go in a migration (`npm run db:migration:create -- Name`, then list it in `migrations/index.ts`) and the entity is updated to match. The first migration runs `migrations/sql/initial-schema.sql`, and adopts databases made by the old SQL-file runner (`schema_migrations`) instead of re-running it. The second makes `activity` and `movements` append-only.
-- **Database driver.** `DATABASE_URL` → PostgreSQL through TypeORM's pool. Otherwise embedded PostgreSQL (PGlite) through `db/pglite-pool.ts`, which lends PGlite's single session to one transaction at a time so requests keep their isolation.
+- **Drizzle tables keep snake_case property names** (`db/schema/`), exactly the column names, so table rows and joined query rows share one shape and the services never map between them. Constraint names are the ones PostgreSQL gave them, so `drizzle-kit generate` diffs against the real databases.
+- **Migrations own the schema.** Change a table in `db/schema/`, then `npm run db:generate -- --name <change>` writes the SQL (hand-edit it for data changes; `--custom` for SQL only). They run on start-up, all pending ones in one transaction. 0000–0002 are the schema the TypeORM migrations built, written so they also pass over those databases; 0001 makes `activity` and `movements` append-only; 0003 removed sample data from ordinary accounts; 0004 renamed every id to its prefixed form, references included. The `item_views` view and the append-only triggers live only in the SQL (`pgView(…).existing()`).
+- **Database driver.** `DATABASE_URL` → PostgreSQL through Drizzle's node-postgres driver and a `pg` pool. Otherwise embedded PostgreSQL (PGlite) through Drizzle's PGlite driver; PGlite runs one transaction at a time, so requests keep their isolation. `db/ensure-database.ts` creating a missing database is the one statement that isn't Drizzle: it runs before there is a database to connect to.
 - **One entry point, two ways to run.** `server.ts` is a long-running process in dev, Docker and `npm start`. On Vercel (`VERCEL` is set) it only connects to PostgreSQL and default-exports its server: `scripts/vercel-build.ts` has bundled it with esbuild into one function for `/api/*` (bundling resolves the `@/` imports, which Vercel's own build would leave unresolved), run the migrations, and put the frontend on the CDN with routes that send every other path to `index.html`. Everywhere else production runs the same code compiled by `npm run build:server` to `build/server/server.mjs` (plain `node`, no TypeScript at runtime; `scripts/lib/bundle-server.ts` is shared by both builds). The command-line scripts live in `db/cli/`, so no module in a bundle runs anything just by being imported. The realtime socket lives at `/api/socket.io` so one route covers the whole backend.
 - **Tests run one file at a time** (`fileParallelism: false`). Each file starts its own in-memory Postgres, and running them all at once exhausts memory on Windows. `TEST_DATABASE_URL` runs them against a real PostgreSQL database instead (its name must contain `test`). The end-to-end tests start the compiled server with `ENV_FILE=none` and `PGLITE_DIR=:memory:`, so they never read `.env` or touch its database.
 - **Templates are served, not duplicated.** Unlike domain types, the template config lives only on the backend; the frontend reads it from the API. Only its TypeScript shape is duplicated (`features/businesses/types`).

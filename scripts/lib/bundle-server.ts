@@ -34,6 +34,6 @@ export const BundleServer = async (opts: {
       ].join('\n'),
     },
   });
-  // The first migration reads its SQL from `./sql/` next to the module that runs it, which is now the bundle.
-  cpSync('src/backend/db/migrations/sql', `${dirname(opts.outfile)}/sql`, { recursive: true });
+  // The migrator reads `./migrations/` (SQL files and drizzle-kit's journal) next to the module that runs it: the bundle.
+  cpSync('src/backend/db/migrations', `${dirname(opts.outfile)}/migrations`, { recursive: true });
 };

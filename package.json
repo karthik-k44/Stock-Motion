@@ -9,8 +9,7 @@
     "build:server": "tsx scripts/build-server.ts",
     "start": "cross-env NODE_ENV=production node --enable-source-maps build/server/server.mjs",
     "db:migrate": "tsx --tsconfig tsconfig.node.json src/backend/db/cli/migrate.ts",
-    "db:seed": "tsx --tsconfig tsconfig.node.json src/backend/db/cli/seed.ts",
-    "db:migration:create": "tsx scripts/new-migration.ts",
+    "db:generate": "drizzle-kit generate",
     "lint": "eslint .",
     "test": "vitest run",
     "test:e2e": "npm run build && npm run build:server && playwright test",
@@ -30,6 +29,7 @@
     "compression": "^1.8.2",
     "cookie-parser": "1.4.7",
     "cross-env": "^10.1.0",
+    "drizzle-orm": "^0.45.4",
     "express": "^5.3.0",
     "gsap": "^3.15.0",
     "helmet": "^8.3.0",
@@ -44,7 +44,6 @@
     "socket.io": "^4.8.4",
     "socket.io-client": "^4.8.4",
     "tailwind-merge": "^3.7.0",
-    "typeorm": "^1.1.2",
     "zod": "^3.25.76"
   },
   "devDependencies": {
@@ -61,6 +60,7 @@
     "@types/react-dom": "^19.3.0",
     "@types/supertest": "^7.2.1",
     "@vitejs/plugin-react": "^4.7.0",
+    "drizzle-kit": "^0.31.11",
     "esbuild": "^0.28.2",
     "eslint": "^9.39.5",
     "eslint-import-resolver-typescript": "^4.4.5",

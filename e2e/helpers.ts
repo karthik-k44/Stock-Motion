@@ -16,13 +16,11 @@ export const SignUp = async (page: Page, email = UniqueEmail()): Promise<string>
   return email;
 };
 
-/** Walk the onboarding wizard: kind of business → name → how to start → create. Ends inside the app. */
-export const CreateBusiness = async (page: Page, opts: { type: RegExp; name: string; sampleData: boolean }): Promise<void> => {
+/** Walk the onboarding wizard: kind of business → name → create. Ends inside the app. */
+export const CreateBusiness = async (page: Page, opts: { type: RegExp; name: string }): Promise<void> => {
   await page.getByRole('radio', { name: opts.type }).click();
   await page.getByRole('button', { name: 'Continue' }).click();
   await page.getByLabel('Business name').fill(opts.name);
-  await page.getByRole('button', { name: 'Continue' }).click();
-  await page.getByRole('radio', { name: opts.sampleData ? /Explore with sample data/ : /Start empty/ }).click();
   await page.getByRole('button', { name: `Create ${opts.name}` }).click();
   await expect(page).toHaveURL(/\/world$/);
 };

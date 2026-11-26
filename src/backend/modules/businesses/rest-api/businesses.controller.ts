@@ -4,7 +4,6 @@ import { businessesService } from '../businesses.service';
 import {
   AccountIdParamSchema,
   CreateBusinessSchema,
-  ResetDataSchema,
   UpdateBusinessSchema,
   UpdateMemberSchema,
 } from '../businesses.validators';
@@ -24,7 +23,7 @@ export const businessesController = {
     res.json(await businessesService.Update(ScopeOf(req), UpdateBusinessSchema.parse(req.body)));
   },
   Reset: async (req: Request, res: Response) => {
-    res.json(await businessesService.Reset(ScopeOf(req), ResetDataSchema.parse(req.body)));
+    res.json(await businessesService.Reset(ScopeOf(req)));
   },
   ListMembers: async (req: Request, res: Response) => {
     res.json(await businessesService.ListMembers(ScopeOf(req)));

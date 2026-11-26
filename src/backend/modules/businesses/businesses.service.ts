@@ -2,6 +2,7 @@ import { BadRequest, Conflict, Forbidden, NotFound } from '@/backend/common/erro
 import { RecordActivity } from '@/backend/common/services/audit';
 import { ToIso } from '@/backend/common/utils/dates';
 import { db, type Queryable } from '@/backend/db/client';
+import type { BusinessRow } from '@/backend/db/schema';
 import { ordersRepository } from '@/backend/modules/orders/orders.repository';
 import { templatesService } from '@/backend/modules/templates/templates.service';
 import { BroadcastChange, RevokeRealtimeAccess } from '@/backend/realtime/socket';
@@ -18,7 +19,7 @@ import { ResourceTypeEnum } from '@/backend/types/dashboard';
 import type { BusinessTypeEnum } from '@/backend/types/template';
 import { SetupBusiness } from './business-setup.service';
 import { businessesRepository, type BusinessWithRoleRow } from './businesses.repository';
-import type { CreateBusinessInput, ResetDataInput, UpdateBusinessInput, UpdateMemberInput } from './businesses.validators';
+import type { CreateBusinessInput, UpdateBusinessInput, UpdateMemberInput } from './businesses.validators';
 
 /** Avatar / character colours handed out to members in join order. */
 const MEMBER_COLORS = ['#2b4c7e', '#e86b2c', '#2f9e6d', '#d9b21c', '#3a7bd5', '#b5487a', '#6b5bd2', '#1f8a8a'];
@@ -60,15 +61,16 @@ const AddMember = async (q: Queryable, businessId: string, accountId: string, ro
   await businessesRepository.InsertMembership(q, { businessId, accountId, role, color: MEMBER_COLORS[count % MEMBER_COLORS.length] });
 };
 
+/** Create a business owned by `accountId`, inside the caller's transaction. */
+const CreateIn = async (tx: Queryable, accountId: string, input: CreateBusinessInput): Promise<BusinessRow> => {
+  const business = await businessesRepository.Insert(tx, { name: input.name, type: input.type, currency: input.currency, createdBy: accountId });
+  await AddMember(tx, business.id, accountId, BaseRoleTypeEnum.OWNER);
+  await SetupBusiness(tx, business, accountId);
+  return business;
+};
+
 const Create = (account: AccountResponseType, input: CreateBusinessInput): Promise<BusinessDetailResponseType> => {
-  return db.transaction(async (tx) => {
-    const business = await businessesRepository.Insert(tx, {
-      name: input.name, type: input.type, currency: input.currency, createdBy: account.id,
-    });
-    await AddMember(tx, business.id, account.id, BaseRoleTypeEnum.OWNER);
-    await SetupBusiness(tx, business, account.id, input.sampleData);
-    return detail(tx, business.id, account.id);
-  });
+  return db.transaction(async (tx) => detail(tx, (await CreateIn(tx, account.id, input)).id, account.id));
 };
 
 const Get = (scope: ScopeType) => detail(db, scope.businessId, scope.actor.id);
@@ -79,13 +81,13 @@ const Update = async (scope: ScopeType, input: UpdateBusinessInput): Promise<Bus
   return Get(scope);
 };
 
-/** Owner only: clear every product, order, delivery … and optionally reload the sample data. */
-const Reset = async (scope: ScopeType, input: ResetDataInput): Promise<{ ok: true }> => {
+/** Owner only: clear every product, order, delivery … The team, invites and settings stay. */
+const Reset = async (scope: ScopeType): Promise<{ ok: true }> => {
   await db.transaction(async (tx) => {
     const business = await businessesRepository.Lock(tx, scope.businessId);
     if (!business) throw NotFound('Business', scope.businessId);
     await businessesRepository.DeleteOperationalData(tx, scope.businessId);
-    await SetupBusiness(tx, business, scope.actor.id, input.sampleData);
+    await SetupBusiness(tx, business, scope.actor.id);
   });
   BroadcastChange(scope.businessId, Object.values(ResourceTypeEnum));
   return { ok: true };
@@ -152,6 +154,7 @@ const RemoveMember = async (scope: ScopeType, accountId: string): Promise<Member
 };
 
 export const businessesService = {
+  CreateIn,
   ListMine,
   FindMembership,
   AddMember,

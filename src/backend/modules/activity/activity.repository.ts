@@ -1,6 +1,6 @@
+import { and, desc, eq, ilike, or } from 'drizzle-orm';
 import type { Queryable } from '@/backend/db/client';
-import { AccountEntity, ActivityEntity, NameOf } from '@/backend/db/entities';
-import type { ActivityRow, DbDate } from '@/backend/db/schema';
+import { accounts, activity, NewestIdFirst, type ActivityRow, type DbDate } from '@/backend/db/schema';
 
 export type InsertActivityType = {
   businessId: string;
@@ -14,11 +14,9 @@ export type InsertActivityType = {
   at?: DbDate;
 };
 
-const COLUMNS = ['id', 'at', 'kind', 'account_id', 'message', 'ref_type', 'ref_id', 'meta'];
-
 const toRecord = (input: InsertActivityType) => ({
   business_id: input.businessId,
-  at: input.at,
+  at: input.at === undefined ? undefined : new Date(input.at),
   kind: input.kind,
   account_id: input.accountId,
   message: input.message,
@@ -27,33 +25,49 @@ const toRecord = (input: InsertActivityType) => ({
   meta: input.meta ?? {},
 });
 
-/** Append-only: there is no update or delete here, and the database refuses updates (migrations/…-append-only-ledgers). */
+const COLUMNS = {
+  id: activity.id,
+  at: activity.at,
+  kind: activity.kind,
+  account_id: activity.account_id,
+  message: activity.message,
+  ref_type: activity.ref_type,
+  ref_id: activity.ref_id,
+  meta: activity.meta,
+};
+
+/** Append-only: there is no update or delete here, and the database refuses updates (migration 0001). */
 const Insert = async (q: Queryable, input: InsertActivityType): Promise<ActivityRow> => {
-  const { raw } = await q.getRepository(ActivityEntity).createQueryBuilder().insert().values(toRecord(input)).returning(COLUMNS).execute();
-  return { ...raw[0], actor_name: null };
+  const [row] = await q.insert(activity).values(toRecord(input)).returning(COLUMNS);
+  return { ...row, actor_name: null };
 };
 
 /** Many entries in one statement, kept in the given order (ids follow it). */
 const InsertMany = async (q: Queryable, rows: InsertActivityType[]): Promise<void> => {
-  if (rows.length) await q.getRepository(ActivityEntity).createQueryBuilder().insert().values(rows.map(toRecord)).execute();
+  if (rows.length) await q.insert(activity).values(rows.map(toRecord));
 };
 
 const List = (
   q: Queryable,
   businessId: string,
   filters: { kind?: string; accountId?: string; search?: string; refType?: string; refId?: string; limit: number },): Promise<ActivityRow[]> => {
-  const query = q
-    .createQueryBuilder(ActivityEntity, 'a')
-    .select(COLUMNS.map((c) => `a.${c} AS ${c}`))
-    .addSelect('acc.name', 'actor_name')
-    .leftJoin(NameOf(AccountEntity), 'acc', 'acc.id = a.account_id')
-    .where('a.business_id = :businessId', { businessId });
-  if (filters.kind) query.andWhere('a.kind = :kind', { kind: filters.kind });
-  if (filters.accountId) query.andWhere('a.account_id = :accountId', { accountId: filters.accountId });
-  if (filters.refType) query.andWhere('a.ref_type = :refType', { refType: filters.refType });
-  if (filters.refId) query.andWhere('a.ref_id = :refId', { refId: filters.refId });
-  if (filters.search) query.andWhere('(a.message ILIKE :search OR a.ref_id ILIKE :search)', { search: `%${filters.search}%` });
-  return query.orderBy('a.at', 'DESC').addOrderBy('a.id', 'DESC').limit(filters.limit).getRawMany<ActivityRow>();
+  const search = filters.search ? `%${filters.search}%` : undefined;
+  return q
+    .select({ ...COLUMNS, actor_name: accounts.name })
+    .from(activity)
+    .leftJoin(accounts, eq(accounts.id, activity.account_id))
+    .where(
+      and(
+        eq(activity.business_id, businessId),
+        filters.kind ? eq(activity.kind, filters.kind) : undefined,
+        filters.accountId ? eq(activity.account_id, filters.accountId) : undefined,
+        filters.refType ? eq(activity.ref_type, filters.refType) : undefined,
+        filters.refId ? eq(activity.ref_id, filters.refId) : undefined,
+        search ? or(ilike(activity.message, search), ilike(activity.ref_id, search)) : undefined,
+      ),
+    )
+    .orderBy(desc(activity.at), ...NewestIdFirst(activity.id))
+    .limit(filters.limit);
 };
 
 export const activityRepository = { Insert, InsertMany, List };

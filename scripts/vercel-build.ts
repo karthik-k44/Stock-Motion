@@ -50,34 +50,9 @@ cpSync('dist', `${OUT}/static`, { recursive: true });
 
 await BundleServer({
   outfile: `${FUNCTION}/index.mjs`,
-  // Optional drivers and native add-ons that libraries try to load but this app never uses on Vercel (TypeORM's
-  // other databases, ws's speed-ups, pg's native bindings, the embedded database, the dev server's Vite).
-  external: [
-    '@electric-sql/pglite',
-    'vite',
-    'pg-native',
-    'pg-query-stream',
-    'bufferutil',
-    'utf-8-validate',
-    'mysql',
-    'mysql2',
-    'oracledb',
-    'mssql',
-    'mongodb',
-    'redis',
-    'ioredis',
-    'sql.js',
-    'sqlite3',
-    'better-sqlite3',
-    '@sap/hana-client',
-    'hdb-pool',
-    '@google-cloud/spanner',
-    'typeorm-aurora-data-api-driver',
-    'react-native-sqlite-storage',
-    '@capacitor-community/sqlite',
-    'expo-sqlite',
-    'ts-node',
-  ],
+  // Native add-ons and optional modules this app never uses on Vercel: ws's speed-ups, pg's native bindings, the
+  // embedded database (Vercel always has DATABASE_URL) and the dev server's Vite.
+  external: ['@electric-sql/pglite', 'vite', 'pg-native', 'bufferutil', 'utf-8-validate'],
 });
 
 const json = (path: string, value: unknown) => writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`);

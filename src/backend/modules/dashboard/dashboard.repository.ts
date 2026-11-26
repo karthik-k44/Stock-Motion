@@ -1,6 +1,7 @@
+import { and, count, desc, eq, gte, isNull, not, or, sql, type SQL } from 'drizzle-orm';
+import { StartOfUtcDay, StartOfUtcMonth, UtcDayKey } from '@/backend/common/utils/dates';
 import type { Queryable } from '@/backend/db/client';
-
-// Reporting aggregates (FILTER, date_trunc) read clearest as SQL, so these stay parameterised raw queries.
+import { customers, items, memberships, movements, orderLines, orders } from '@/backend/db/schema';
 
 export type SalesSummaryRow = {
   orders_today: number;
@@ -10,98 +11,114 @@ export type SalesSummaryRow = {
   closed_month: number;
 };
 
+export type DailyValueRow = { day: string; value: number };
+
+const lineTotal = sql`${orderLines.qty} * ${orderLines.unit_price}`;
+/** count(*) / sum(…) of the rows matching `where`, as a number (FILTER keeps it to one pass over the rows). */
+const countWhere = (where: SQL) => sql<number>`count(*) filter (where ${where})`.mapWith(Number);
+const sumWhere = (value: SQL | unknown, where: SQL) => sql<number>`coalesce(sum(${value}) filter (where ${where}), 0)`.mapWith(Number);
+
 /** Order counts and revenue. Revenue counts closed, non-cancelled orders by the day they closed. */
 const SalesSummary = async (q: Queryable, businessId: string): Promise<SalesSummaryRow> => {
-  const rows: SalesSummaryRow[] = await q.query(
-    `WITH totals AS (
-       SELECT o.id, o.created_at, o.closed_at, o.closed, o.cancelled, COALESCE(SUM(ol.qty * ol.unit_price), 0) AS total
-       FROM orders o LEFT JOIN order_lines ol ON ol.order_id = o.id
-       WHERE o.business_id = $1 AND (o.created_at >= date_trunc('month', now()) OR o.closed_at >= date_trunc('month', now()))
-       GROUP BY o.id
-     )
-     SELECT
-       COUNT(*) FILTER (WHERE created_at >= date_trunc('day', now()) AND NOT cancelled)::int AS orders_today,
-       COUNT(*) FILTER (WHERE closed AND NOT cancelled AND closed_at >= date_trunc('day', now()))::int AS closed_today,
-       COALESCE(SUM(total) FILTER (WHERE closed AND NOT cancelled AND closed_at >= date_trunc('day', now())), 0)::float8 AS revenue_today,
-       COALESCE(SUM(total) FILTER (WHERE closed AND NOT cancelled AND closed_at >= date_trunc('month', now())), 0)::float8 AS revenue_month,
-       COUNT(*) FILTER (WHERE closed AND NOT cancelled AND closed_at >= date_trunc('month', now()))::int AS closed_month
-     FROM totals`,
-    [businessId],
-  );
-  return rows[0];
+  const today = StartOfUtcDay();
+  const month = StartOfUtcMonth();
+  const totals = q
+    .select({
+      created_at: orders.created_at,
+      closed_at: orders.closed_at,
+      closed: orders.closed,
+      cancelled: orders.cancelled,
+      total: sql<string>`coalesce(sum(${lineTotal}), 0)`.as('total'),
+    })
+    .from(orders)
+    .leftJoin(orderLines, eq(orderLines.order_id, orders.id))
+    .where(and(eq(orders.business_id, businessId), or(gte(orders.created_at, month), gte(orders.closed_at, month))))
+    .groupBy(orders.id)
+    .as('totals');
+  const sold = sql`${totals.closed} and not ${totals.cancelled}`;
+  const [row] = await q
+    .select({
+      orders_today: countWhere(sql`${totals.created_at} >= ${today} and not ${totals.cancelled}`),
+      closed_today: countWhere(sql`${sold} and ${totals.closed_at} >= ${today}`),
+      revenue_today: sumWhere(totals.total, sql`${sold} and ${totals.closed_at} >= ${today}`),
+      revenue_month: sumWhere(totals.total, sql`${sold} and ${totals.closed_at} >= ${month}`),
+      closed_month: countWhere(sql`${sold} and ${totals.closed_at} >= ${month}`),
+    })
+    .from(totals);
+  return row;
 };
 
 /** Open orders per status. */
-const OpenByStatus = async (q: Queryable, businessId: string): Promise<{ status: string; n: number }[]> => {
-  const rows: { status: string; n: number }[] = await q.query(
-    'SELECT status, COUNT(*)::int AS n FROM orders WHERE business_id = $1 AND NOT closed GROUP BY status',
-    [businessId],
-  );
-  return rows;
+const OpenByStatus = (q: Queryable, businessId: string): Promise<{ status: string; n: number }[]> => {
+  return q
+    .select({ status: orders.status, n: count() })
+    .from(orders)
+    .where(and(eq(orders.business_id, businessId), not(orders.closed)))
+    .groupBy(orders.status);
 };
 
 /** Best sellers this month by quantity, from closed orders. */
-const TopSellers = async (q: Queryable, businessId: string, limit: number): Promise<{ sku: string; name: string; qty: number; revenue: number }[]> => {
-  const rows: { sku: string; name: string; qty: number; revenue: number }[] = await q.query(
-    `SELECT i.sku, i.name, SUM(ol.qty)::int AS qty, SUM(ol.qty * ol.unit_price)::float8 AS revenue
-     FROM order_lines ol JOIN orders o ON o.id = ol.order_id JOIN items i ON i.id = ol.item_id
-     WHERE o.business_id = $1 AND o.closed AND NOT o.cancelled AND o.closed_at >= date_trunc('month', now())
-     GROUP BY i.sku, i.name ORDER BY qty DESC, revenue DESC LIMIT $2`,
-    [businessId, limit],
-  );
-  return rows;
+const TopSellers = (q: Queryable, businessId: string, limit: number): Promise<{ sku: string; name: string; qty: number; revenue: number }[]> => {
+  const qty = sql<number>`sum(${orderLines.qty})`.mapWith(Number);
+  const revenue = sql<number>`sum(${lineTotal})`.mapWith(Number);
+  return q
+    .select({ sku: items.sku, name: items.name, qty, revenue })
+    .from(orderLines)
+    .innerJoin(orders, eq(orders.id, orderLines.order_id))
+    .innerJoin(items, eq(items.id, orderLines.item_id))
+    .where(and(eq(orders.business_id, businessId), eq(orders.closed, true), not(orders.cancelled), gte(orders.closed_at, StartOfUtcMonth())))
+    .groupBy(items.sku, items.name)
+    .orderBy(desc(qty), desc(revenue))
+    .limit(limit);
 };
 
-export type DailyValueRow = { day: string; value: number };
+/** The UTC day of a timestamp, as YYYY-MM-DD. */
+const dayOf = (column: unknown) => sql<string>`to_char(${column} at time zone 'UTC', 'YYYY-MM-DD')`;
 
-/** One row per day, oldest first. `daily` selects (day, total); days it has nothing for come back as 0. */
-const dailySeries = async (q: Queryable, daily: string, businessId: string, days: number): Promise<DailyValueRow[]> => {
-  const rows: DailyValueRow[] = await q.query(
-    `WITH daily AS (${daily})
-     SELECT to_char(d.day, 'YYYY-MM-DD') AS day, COALESCE(daily.total, 0)::float8 AS value
-     FROM generate_series(date_trunc('day', now()) - ($2::int - 1) * interval '1 day', date_trunc('day', now()), interval '1 day') AS d(day)
-     LEFT JOIN daily ON daily.day = d.day
-     ORDER BY d.day`,
-    [businessId, days],
-  );
-  return rows;
+/** One row per day for the last `days` days, oldest first; days with no rows are 0. */
+const fillDays = (totals: { day: string; total: number }[], days: number): DailyValueRow[] => {
+  const byDay = new Map(totals.map((t) => [t.day, t.total]));
+  return Array.from({ length: days }, (_, i) => {
+    const day = UtcDayKey(StartOfUtcDay(i - days + 1));
+    return { day, value: byDay.get(day) ?? 0 };
+  });
 };
 
 /** How much stock value each day added or removed, for the items stocked today at today's cost. */
-const DailyStockChange = (q: Queryable, businessId: string, days: number): Promise<DailyValueRow[]> =>
-  dailySeries(
-    q,
-    `SELECT date_trunc('day', m.at) AS day, SUM(m.delta * i.cost) AS total
-     FROM items i JOIN movements m ON m.item_id = i.id
-     WHERE i.business_id = $1 AND i.kind = 'STOCK' AND i.archived_at IS NULL
-       AND m.at >= date_trunc('day', now()) - ($2::int - 1) * interval '1 day'
-     GROUP BY 1`,
-    businessId,
-    days,
-  );
+const DailyStockChange = async (q: Queryable, businessId: string, days: number): Promise<DailyValueRow[]> => {
+  const day = dayOf(movements.at);
+  const totals = await q
+    .select({ day, total: sql<number>`sum(${movements.delta} * ${items.cost})`.mapWith(Number) })
+    .from(items)
+    .innerJoin(movements, eq(movements.item_id, items.id))
+    .where(
+      and(eq(items.business_id, businessId), eq(items.kind, 'STOCK'), isNull(items.archived_at), gte(movements.at, StartOfUtcDay(1 - days))),
+    )
+    .groupBy(day);
+  return fillDays(totals, days);
+};
 
 /** Revenue per day, counted the same way as SalesSummary: closed, non-cancelled orders by the day they closed. */
-const DailyRevenue = (q: Queryable, businessId: string, days: number): Promise<DailyValueRow[]> =>
-  dailySeries(
-    q,
-    `SELECT date_trunc('day', o.closed_at) AS day, SUM(ol.qty * ol.unit_price) AS total
-     FROM orders o JOIN order_lines ol ON ol.order_id = o.id
-     WHERE o.business_id = $1 AND o.closed AND NOT o.cancelled
-       AND o.closed_at >= date_trunc('day', now()) - ($2::int - 1) * interval '1 day'
-     GROUP BY 1`,
-    businessId,
-    days,
-  );
+const DailyRevenue = async (q: Queryable, businessId: string, days: number): Promise<DailyValueRow[]> => {
+  const day = dayOf(orders.closed_at);
+  const totals = await q
+    .select({ day, total: sql<number>`sum(${lineTotal})`.mapWith(Number) })
+    .from(orders)
+    .innerJoin(orderLines, eq(orderLines.order_id, orders.id))
+    .where(
+      and(eq(orders.business_id, businessId), eq(orders.closed, true), not(orders.cancelled), gte(orders.closed_at, StartOfUtcDay(1 - days))),
+    )
+    .groupBy(day);
+  return fillDays(totals, days);
+};
 
 const Counts = async (q: Queryable, businessId: string): Promise<{ customers: number; new_customers_month: number; team: number }> => {
-  const rows: { customers: number; new_customers_month: number; team: number }[] = await q.query(
-    `SELECT
-       (SELECT COUNT(*)::int FROM customers WHERE business_id = $1) AS customers,
-       (SELECT COUNT(*)::int FROM customers WHERE business_id = $1 AND created_at >= date_trunc('month', now())) AS new_customers_month,
-       (SELECT COUNT(*)::int FROM memberships WHERE business_id = $1) AS team`,
-    [businessId],
-  );
-  return rows[0];
+  const [all, newThisMonth, team] = await Promise.all([
+    q.$count(customers, eq(customers.business_id, businessId)),
+    q.$count(customers, and(eq(customers.business_id, businessId), gte(customers.created_at, StartOfUtcMonth()))),
+    q.$count(memberships, eq(memberships.business_id, businessId)),
+  ]);
+  return { customers: all, new_customers_month: newThisMonth, team };
 };
 
 export const dashboardRepository = { SalesSummary, OpenByStatus, TopSellers, DailyStockChange, DailyRevenue, Counts };

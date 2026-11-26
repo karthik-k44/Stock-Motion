@@ -46,7 +46,7 @@ export type ItemResponseType = {
 };
 
 export type MovementResponseType = {
-  id: number;
+  id: string;
   at: string;
   sku: string;
   type: MovementTypeEnum;
