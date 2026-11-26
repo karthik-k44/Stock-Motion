@@ -18,7 +18,12 @@ test.describe('signing in', () => {
     await CreateBusiness(page, { type: /Retail/, name: 'Sign In Test' });
 
     await page.getByRole('button', { name: 'Log out' }).click();
+    await expect(page).toHaveURL(/\/login$/);
+    // Signed out for real: the site URL shows the public front page, and the app sends people back to sign in.
+    await page.goto('/');
     await expect(page).toHaveURL(/\/$/);
+    await page.goto('/dashboard');
+    await expect(page).toHaveURL(/\/login/);
 
     await page.goto('/login');
     await page.getByLabel('Email address').fill(email);
@@ -29,6 +34,15 @@ test.describe('signing in', () => {
     await page.getByRole('textbox', { name: 'Password' }).fill(PASSWORD);
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page).not.toHaveURL(/\/login/);
+    await expect(page.getByRole('button', { name: 'Log out' })).toBeVisible();
+  });
+
+  test('opens the app, not the front page, when someone signed in visits the site', async ({ page }) => {
+    await SignUp(page);
+    await CreateBusiness(page, { type: /Retail/, name: 'Portal Test' });
+
+    await page.goto('/');
+    await expect(page).toHaveURL(/\/world$/);
     await expect(page.getByRole('button', { name: 'Log out' })).toBeVisible();
   });
 

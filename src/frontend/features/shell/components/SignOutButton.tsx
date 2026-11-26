@@ -1,13 +1,13 @@
 import { Icon } from '@/frontend/components/icon';
+import { paths } from '@/frontend/config/paths';
 import { authService } from '@/frontend/features/auth/services';
 
 export const SignOutButton = () => {
   const logout = authService.useLogout();
 
+  // A full page load, so nothing of the session survives in memory; `replace`, so Back can't return into the app.
   const handleLogout = () => {
-    logout.mutateAsync().then(() => {
-      window.location.href = '/';
-    });
+    void logout.mutateAsync().finally(() => window.location.replace(paths.login));
   };
 
   return (
