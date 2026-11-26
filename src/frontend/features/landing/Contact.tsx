@@ -21,7 +21,7 @@ export const Contact = () => {
         <div data-reveal className="grid gap-4 lg:grid-rows-[minmax(0,1fr)_auto]">
           <img
             src="/landing/scenarios/receiving.jpg"
-            alt="Illustration: pallets counted in at the dock door from a delivery truck, with a delivery-received notice."
+            alt="Illustration: a delivery truck at the dock door while a pallet is brought in and checked with a scanner."
             width={1600}
             height={1000}
             decoding="async"

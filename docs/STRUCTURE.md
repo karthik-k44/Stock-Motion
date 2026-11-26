@@ -107,7 +107,7 @@ There is no `ApiResponse<T>` envelope; the API returns resources directly. Error
 `features/landing` holds the public pages — `Landing.tsx` (`/`), `Features.tsx` (`/features`), `Pricing.tsx` (`/pricing`), `Faq.tsx` (`/faq`) and `Contact.tsx` (`/contact`) — as children of one layout route, `MarketingLayout.tsx` (navbar, footer, scroll restoration). They follow `docs/design/style-reference.md` — the palette is scoped to `.landing` in `styles/landing.css`, so the app keeps its own.
 - **Copy and plans** live in `lib/landing-content.ts` and `lib/pricing-content.ts`; components only lay them out. Nothing there is invented: features are real, prices are the owner's, there are no fake customer logos or counts.
 - **Hero:** each page opens on a bento of tiles (`components/HeroTiles.tsx`), animated with GSAP and following the app's motion setting.
-- **Illustrations:** `scripts/illustrations/` draws each scenario with the live world's isometric kit and renders it to `public/landing/scenarios/` — `npm run illustrations`.
+- **Illustrations:** `public/landing/scenarios/` holds one picture per scenario (1600×1000 JPG): photoreal isometric cutaways of the business, in the live world's angle. Replace a file with one of the same name and size to change it.
 - **Navbar:** shadcn NavigationMenu with a full-width mega menu; Features, Pricing and FAQ are pages, and `/#…` links (How it works, the use cases) scroll to a section of the front page from any page.
 
 ## Live world
