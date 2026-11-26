@@ -20,6 +20,9 @@ export type DataChangedEvent = {
   }[];
 };
 
+/** Mirrors the backend `SESSION_EXPIRED_EVENT`: the server is closing this socket because its access token expired. */
+const SESSION_EXPIRED_EVENT = 'session:expired';
+
 let socket: Socket | null = null;
 const listeners = new Set<(e: DataChangedEvent) => void>();
 const statusListeners = new Set<(connected: boolean) => void>();
@@ -43,6 +46,11 @@ export const realtime = {
     });
     socket.on('connect', join);
     socket.on('disconnect', () => emitStatus(false));
+    // socket.io doesn't reconnect by itself after the server closes a socket: renew the token, then reconnect.
+    socket.on(SESSION_EXPIRED_EVENT, async () => {
+      await RefreshAccessToken().catch(() => undefined);
+      socket?.connect();
+    });
     socket.on('connect_error', async (err) => {
       emitStatus(false);
       // The access token expired between reconnects: renew it, then let socket.io retry.

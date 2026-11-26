@@ -1,6 +1,5 @@
 import type { DbDate, DbNumeric } from './_shared';
 
-/** The `orders` table. */
 export type OrderRecord = {
   id: string;
   business_id: string;
@@ -21,7 +20,6 @@ export type OrderRecord = {
 /** An order with its assignee's name. */
 export type OrderRow = OrderRecord & { assignee_name: string | null };
 
-/** The `order_lines` table. */
 export type OrderLineRecord = {
   order_id: string;
   item_id: string;

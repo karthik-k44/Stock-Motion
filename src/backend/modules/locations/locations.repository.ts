@@ -28,4 +28,10 @@ const Insert = async (q: Queryable, businessId: string, input: { code: string; z
     .execute();
 };
 
-export const locationsRepository = { List, Find, Insert };
+/** A whole set of locations, positions given, in one statement (a template's storage when a business is set up). */
+const InsertMany = async (q: Queryable, businessId: string, rows: { code: string; zone: string; name: string; position: number }[]): Promise<void> => {
+  if (!rows.length) return;
+  await locations(q).insert(rows.map((r) => ({ business_id: businessId, code: r.code, zone: r.zone, name: r.name, position: r.position })));
+};
+
+export const locationsRepository = { List, Find, Insert, InsertMany };

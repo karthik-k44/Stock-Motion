@@ -21,4 +21,4 @@ export const BUSINESS_TABLES = [
   'locations',
 ] as const;
 
-export const ALL_TABLES = [...BUSINESS_TABLES, 'invites', 'memberships', 'businesses', 'refresh_tokens', 'accounts'] as const;
+export const ALL_TABLES = [...BUSINESS_TABLES, 'invites', 'memberships', 'businesses', 'refresh_tokens', 'accounts', 'rate_limits'] as const;

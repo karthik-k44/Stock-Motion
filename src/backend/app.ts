@@ -35,7 +35,7 @@ export const CreateApp = (): Express => {
   app.use(cookieParser());
 
   const api = express.Router();
-  api.use(RateLimitWrites({ windowMs: 60_000, max: 300 }));
+  api.use(RateLimitWrites({ name: 'writes', windowMs: 60_000, max: 300 }));
   api.use('/system', systemRoutes);
   api.use('/auth', authRoutes);
   api.use('/templates', templatesRoutes);

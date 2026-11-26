@@ -73,11 +73,3 @@ export const FormatQty = (n: number, unit: string): string => {
   }
   return `${FormatNumber(n)} ${unit}`;
 };
-
-/** Value for an <input type="datetime-local"> from an ISO string. */
-export const ToLocalInput = (iso: string | null): string => {
-  if (!iso) return '';
-  const d = new Date(iso);
-  const pad = (v: number) => String(v).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-};

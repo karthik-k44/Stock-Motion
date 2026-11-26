@@ -46,6 +46,21 @@ export type ItemWriteType = {
   supplierId: string | null;
 };
 
+/** A new item. `id` is set by callers that link to it in the same batch (sample data); otherwise the database picks it. */
+export type ItemInsertType = ItemWriteType & { id?: string; sku: string; kind: string; onHand: number; location: string | null };
+
+/** A past ledger row (sample data only). */
+export type HistoryMovementType = {
+  businessId: string;
+  itemId: string;
+  at: Date;
+  type: string;
+  delta: number;
+  balance: number;
+  accountId: string;
+  note: string;
+};
+
 const items = (q: Queryable) => q.getRepository(ItemEntity);
 /** Reads go through the `item_views` view: reserved / available / incoming / status are derived there. */
 const views = (q: Queryable) => q.getRepository(ItemViewEntity);
@@ -97,24 +112,34 @@ const SkuTaken = (q: Queryable, businessId: string, sku: string): Promise<boolea
   return items(q).existsBy({ business_id: businessId, sku });
 };
 
-const Insert = async (
-  q: Queryable,
-  businessId: string,
-  input: ItemWriteType & { sku: string; kind: string; onHand: number; location: string | null },): Promise<string> => {
-  const { identifiers } = await items(q).insert({
-    business_id: businessId,
-    sku: input.sku,
-    name: input.name,
-    category: input.category,
-    unit: input.unit,
-    kind: input.kind,
-    on_hand: input.onHand,
-    reorder_level: input.reorderLevel,
-    cost: input.cost,
-    price: input.price,
-    location: input.location,
-    supplier_id: input.supplierId,
-  });
+const toItemRecord = (businessId: string, input: ItemInsertType) => ({
+  id: input.id,
+  business_id: businessId,
+  sku: input.sku,
+  name: input.name,
+  category: input.category,
+  unit: input.unit,
+  kind: input.kind,
+  on_hand: input.onHand,
+  reorder_level: input.reorderLevel,
+  cost: input.cost,
+  price: input.price,
+  location: input.location,
+  supplier_id: input.supplierId,
+});
+
+/** Many items in one statement; each carries its `id` so recipes, lines and history can link to it in the same batch. */
+const InsertMany = async (q: Queryable, businessId: string, rows: (ItemInsertType & { id: string })[]): Promise<void> => {
+  if (rows.length) await items(q).insert(rows.map((r) => toItemRecord(businessId, r)));
+};
+
+/** Recipe rows for several made items at once (they must have none yet). */
+const InsertComponents = async (q: Queryable, rows: { parentId: string; componentId: string; qty: number }[]): Promise<void> => {
+  if (rows.length) await q.getRepository(ItemComponentEntity).insert(rows.map((r) => ({ parent_id: r.parentId, component_id: r.componentId, qty: r.qty })));
+};
+
+const Insert = async (q: Queryable, businessId: string, input: ItemInsertType): Promise<string> => {
+  const { identifiers } = await items(q).insert(toItemRecord(businessId, input));
   return identifiers[0].id;
 };
 
@@ -210,7 +235,7 @@ const InsertMovement = async (
 /** Past ledger rows in one insert, for sample data only. Real movements take the time they happen. */
 const InsertSampleHistory = async (
   q: Queryable,
-  rows: { businessId: string; itemId: string; at: Date; type: string; delta: number; balance: number; accountId: string; note: string }[],): Promise<void> => {
+  rows: HistoryMovementType[],): Promise<void> => {
   if (!rows.length) return;
   await q.getRepository(MovementEntity).insert(
     rows.map((r) => ({ business_id: r.businessId, item_id: r.itemId, at: r.at, type: r.type, delta: r.delta, balance: r.balance, ref: null, account_id: r.accountId, note: r.note })),
@@ -262,6 +287,8 @@ export const itemsRepository = {
   LockItemsByIds,
   SkuTaken,
   Insert,
+  InsertMany,
+  InsertComponents,
   Update,
   Archive,
   SetOnHand,

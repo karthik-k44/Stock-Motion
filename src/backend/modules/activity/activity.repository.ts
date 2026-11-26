@@ -16,25 +16,26 @@ export type InsertActivityType = {
 
 const COLUMNS = ['id', 'at', 'kind', 'account_id', 'message', 'ref_type', 'ref_id', 'meta'];
 
+const toRecord = (input: InsertActivityType) => ({
+  business_id: input.businessId,
+  at: input.at,
+  kind: input.kind,
+  account_id: input.accountId,
+  message: input.message,
+  ref_type: input.refType ?? null,
+  ref_id: input.refId ?? null,
+  meta: input.meta ?? {},
+});
+
 /** Append-only: there is no update or delete here, and the database refuses updates (migrations/…-append-only-ledgers). */
 const Insert = async (q: Queryable, input: InsertActivityType): Promise<ActivityRow> => {
-  const { raw } = await q
-    .getRepository(ActivityEntity)
-    .createQueryBuilder()
-    .insert()
-    .values({
-      business_id: input.businessId,
-      at: input.at,
-      kind: input.kind,
-      account_id: input.accountId,
-      message: input.message,
-      ref_type: input.refType ?? null,
-      ref_id: input.refId ?? null,
-      meta: input.meta ?? {},
-    })
-    .returning(COLUMNS)
-    .execute();
+  const { raw } = await q.getRepository(ActivityEntity).createQueryBuilder().insert().values(toRecord(input)).returning(COLUMNS).execute();
   return { ...raw[0], actor_name: null };
+};
+
+/** Many entries in one statement, kept in the given order (ids follow it). */
+const InsertMany = async (q: Queryable, rows: InsertActivityType[]): Promise<void> => {
+  if (rows.length) await q.getRepository(ActivityEntity).createQueryBuilder().insert().values(rows.map(toRecord)).execute();
 };
 
 const List = (
@@ -55,4 +56,4 @@ const List = (
   return query.orderBy('a.at', 'DESC').addOrderBy('a.id', 'DESC').limit(filters.limit).getRawMany<ActivityRow>();
 };
 
-export const activityRepository = { Insert, List };
+export const activityRepository = { Insert, InsertMany, List };

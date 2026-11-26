@@ -5,3 +5,6 @@ dist
 .env
 .cache
 .vercel
+build
+test-results
+playwright-report

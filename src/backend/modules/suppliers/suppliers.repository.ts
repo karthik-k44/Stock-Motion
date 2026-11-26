@@ -35,16 +35,24 @@ const FindByName = async (q: Queryable, businessId: string, name: string): Promi
   return row ?? undefined;
 };
 
+const toRecord = (businessId: string, input: SupplierWriteType & { id?: string }) => ({
+  id: input.id,
+  business_id: businessId,
+  name: input.name,
+  contact: input.contact,
+  email: input.email,
+  phone: input.phone,
+  lead_days: input.leadDays,
+});
+
 const Insert = async (q: Queryable, businessId: string, input: SupplierWriteType): Promise<string> => {
-  const { identifiers } = await suppliers(q).insert({
-    business_id: businessId,
-    name: input.name,
-    contact: input.contact,
-    email: input.email,
-    phone: input.phone,
-    lead_days: input.leadDays,
-  });
+  const { identifiers } = await suppliers(q).insert(toRecord(businessId, input));
   return identifiers[0].id;
+};
+
+/** Many suppliers in one statement; each carries its `id` so callers can link to it in the same batch. */
+const InsertMany = async (q: Queryable, businessId: string, rows: (SupplierWriteType & { id: string })[]): Promise<void> => {
+  if (rows.length) await suppliers(q).insert(rows.map((r) => toRecord(businessId, r)));
 };
 
 const Update = async (q: Queryable, id: string, input: SupplierWriteType): Promise<void> => {
@@ -55,4 +63,4 @@ const Delete = async (q: Queryable, id: string): Promise<void> => {
   await suppliers(q).delete({ id });
 };
 
-export const suppliersRepository = { List, Find, FindByName, Insert, Update, Delete };
+export const suppliersRepository = { List, Find, FindByName, Insert, InsertMany, Update, Delete };

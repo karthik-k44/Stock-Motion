@@ -1,10 +1,12 @@
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
+import jwt from 'jsonwebtoken';
 import { io as connect, type Socket } from 'socket.io-client';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { env } from '@/backend/config/env';
 import { CloseDb } from '@/backend/db/client';
-import { AttachRealtime, CloseRealtime, SOCKET_PATH } from '@/backend/realtime/socket';
+import { AttachRealtime, CloseRealtime, SESSION_EXPIRED_EVENT, SOCKET_PATH } from '@/backend/realtime/socket';
 import { BusinessTypeEnum } from '@/backend/types/template';
 import { app, Client, CreateBusiness, OwnerWithBusiness, ResetDatabase, SetupDatabase, SignUp } from './helpers';
 
@@ -134,5 +136,16 @@ describe('realtime', () => {
     await a.api.post('/customers', { name: 'A sees this' });
     await new Promise((r) => setTimeout(r, 150));
     expect(events).toEqual([a.business.id]);
+  });
+
+  it('closes a socket when its access token expires, as REST calls would refuse it', async () => {
+    const owner = await SignUp();
+    const shortLived = jwt.sign({}, env.JWT_SECRET, { subject: owner.accountId, algorithm: 'HS256', expiresIn: 1 });
+    const socket = open(shortLived);
+    await new Promise<void>((resolve) => socket.on('connect', () => resolve()));
+    const told = new Promise((resolve) => socket.on(SESSION_EXPIRED_EVENT, resolve));
+    const closed = new Promise<string>((resolve) => socket.on('disconnect', resolve));
+    await told;
+    expect(await closed).toBe('io server disconnect');
   });
 });

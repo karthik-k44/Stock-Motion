@@ -47,17 +47,27 @@ const Find = async (q: Queryable, businessId: string, id: string): Promise<Custo
   return rows[0];
 };
 
-const Insert = async (q: Queryable, businessId: string, input: CustomerWriteType & { createdAt?: DbDate }): Promise<string> => {
-  const { identifiers } = await customers(q).insert({
-    business_id: businessId,
-    name: input.name,
-    email: input.email,
-    phone: input.phone,
-    address: input.address,
-    notes: input.notes,
-    created_at: input.createdAt,
-  });
+export type CustomerInsertType = CustomerWriteType & { id?: string; createdAt?: DbDate };
+
+const toRecord = (businessId: string, input: CustomerInsertType) => ({
+  id: input.id,
+  business_id: businessId,
+  name: input.name,
+  email: input.email,
+  phone: input.phone,
+  address: input.address,
+  notes: input.notes,
+  created_at: input.createdAt,
+});
+
+const Insert = async (q: Queryable, businessId: string, input: CustomerInsertType): Promise<string> => {
+  const { identifiers } = await customers(q).insert(toRecord(businessId, input));
   return identifiers[0].id;
+};
+
+/** Many customers in one statement; each carries its `id` so callers can link to it in the same batch. */
+const InsertMany = async (q: Queryable, businessId: string, rows: (CustomerInsertType & { id: string })[]): Promise<void> => {
+  if (rows.length) await customers(q).insert(rows.map((r) => toRecord(businessId, r)));
 };
 
 const Update = async (q: Queryable, id: string, input: CustomerWriteType): Promise<void> => {
@@ -69,4 +79,4 @@ const Delete = async (q: Queryable, id: string): Promise<void> => {
   await customers(q).delete({ id });
 };
 
-export const customersRepository = { List, Find, Insert, Update, Delete };
+export const customersRepository = { List, Find, Insert, InsertMany, Update, Delete };

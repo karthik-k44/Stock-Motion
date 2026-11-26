@@ -1,6 +1,5 @@
 import type { DbDate, DbNumeric } from './_shared';
 
-/** The `items` table. */
 export type ItemRecord = {
   id: string;
   business_id: string;

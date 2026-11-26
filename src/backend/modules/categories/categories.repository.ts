@@ -37,8 +37,14 @@ const Insert = async (q: Queryable, businessId: string, input: { code: string; n
     .execute();
 };
 
+/** A whole set of categories, positions given, in one statement (a template's categories when a business is set up). */
+const InsertMany = async (q: Queryable, businessId: string, rows: { code: string; name: string; position: number }[]): Promise<void> => {
+  if (!rows.length) return;
+  await categories(q).insert(rows.map((r) => ({ business_id: businessId, code: r.code, name: r.name, position: r.position })));
+};
+
 const Delete = async (q: Queryable, businessId: string, code: string): Promise<void> => {
   await categories(q).delete({ business_id: businessId, code });
 };
 
-export const categoriesRepository = { List, Find, Insert, Delete };
+export const categoriesRepository = { List, Find, Insert, InsertMany, Delete };

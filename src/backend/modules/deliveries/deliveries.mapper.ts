@@ -2,12 +2,11 @@ import { ToIso, ToIsoOrNull } from '@/backend/common/utils/dates';
 import type { DeliveryLineRow, DeliveryRow } from '@/backend/db/schema';
 import type { DeliveryResponseType, DeliveryStatusTypeEnum } from '@/backend/types/delivery';
 
+/** `lines` are this delivery's own lines (group them with GroupBy when mapping a list). */
 export const ToDeliveryResponse = (row: DeliveryRow, lines: DeliveryLineRow[]): DeliveryResponseType => {
-  const own = lines
-    .filter((l) => l.delivery_id === row.id)
-    .map((l) => ({
-      sku: l.sku, name: l.name, unit: l.unit, location: l.location, expected: l.expected, received: l.received, unitCost: Number(l.unit_cost),
-    }));
+  const own = lines.map((l) => ({
+    sku: l.sku, name: l.name, unit: l.unit, location: l.location, expected: l.expected, received: l.received, unitCost: Number(l.unit_cost),
+  }));
   return {
     number: row.number,
     supplierId: row.supplier_id,

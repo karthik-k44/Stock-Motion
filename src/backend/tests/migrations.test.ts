@@ -21,7 +21,7 @@ afterEach(async () => {
 describe('migrations', () => {
   it('builds an empty database from scratch, then has nothing left to run', async () => {
     await ConnectDb({ dataDir: freshDir() });
-    expect(await RunMigrations()).toEqual(['InitialSchema1792368000000', 'AppendOnlyLedgers1793404800000']);
+    expect(await RunMigrations()).toEqual(['InitialSchema1792368000000', 'AppendOnlyLedgers1793404800000', 'RateLimits1795651200000']);
     expect(await RunMigrations()).toEqual([]);
   });
 
@@ -37,7 +37,7 @@ describe('migrations', () => {
     await legacy.close();
 
     await ConnectDb({ dataDir: dir });
-    expect(await RunMigrations()).toEqual(['InitialSchema1792368000000', 'AppendOnlyLedgers1793404800000']);
+    expect(await RunMigrations()).toEqual(['InitialSchema1792368000000', 'AppendOnlyLedgers1793404800000', 'RateLimits1795651200000']);
     expect(await db.query('SELECT email FROM accounts')).toEqual([{ email: 'kept@example.com' }]);
   });
 });

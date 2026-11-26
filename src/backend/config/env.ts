@@ -3,10 +3,9 @@ import { existsSync } from 'node:fs';
 import { z } from 'zod';
 
 // Local settings live in `.env` (git-ignored; options listed in README.md). Real environment variables win.
-// Tests never read it so they always use the in-memory database.
-if (process.env.NODE_ENV !== 'test' && !process.env.VITEST && existsSync('.env')) {
-  process.loadEnvFile('.env');
-}
+// Tests and servers started with ENV_FILE=none (the end-to-end tests) skip it, so they never reach its database.
+const readEnvFile = process.env.NODE_ENV !== 'test' && !process.env.VITEST && process.env.ENV_FILE !== 'none';
+if (readEnvFile && existsSync('.env')) process.loadEnvFile('.env');
 
 const emptyToUndefined = (v: unknown) => (v === '' ? undefined : v);
 
@@ -16,7 +15,11 @@ const EnvSchema = z
     PORT: z.coerce.number().int().positive().default(3000),
     /** When set, connect to this Postgres server. Otherwise an embedded Postgres (PGlite) is used. */
     DATABASE_URL: z.preprocess(emptyToUndefined, z.string().url().optional()),
-    PGLITE_DIR: z.string().default('.data/pglite'),
+    /** The embedded database's folder, or `:memory:` for one that starts empty and is gone when the server stops. */
+    PGLITE_DIR: z
+      .string()
+      .default('.data/pglite')
+      .transform((v) => (v === ':memory:' ? undefined : v)),
     /** PostgreSQL connections per server instance. Keep it small on serverless hosts, where many instances run at once. */
     DB_POOL_SIZE: z.coerce.number().int().positive().default(10),
     LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),

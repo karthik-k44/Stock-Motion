@@ -6,6 +6,7 @@ import { DeliveryEntity, DeliveryLineEntity } from './delivery.entity';
 import { ItemComponentEntity, ItemEntity, ItemViewEntity } from './item.entity';
 import { ActivityEntity, MovementEntity } from './ledger.entity';
 import { OrderEntity, OrderLineEntity } from './order.entity';
+import { RateLimitEntity } from './rate-limit.entity';
 
 export * from './account.entity';
 export * from './business.entity';
@@ -14,6 +15,7 @@ export * from './delivery.entity';
 export * from './item.entity';
 export * from './ledger.entity';
 export * from './order.entity';
+export * from './rate-limit.entity';
 
 /** Every entity, registered with the DataSource in `db/client.ts`. */
 export const ENTITIES = [
@@ -35,6 +37,7 @@ export const ENTITIES = [
   DeliveryLineEntity,
   MovementEntity,
   ActivityEntity,
+  RateLimitEntity,
 ];
 
 /** The query builder joins an entity by class or by name; these entities are schemas, so they join by name. */

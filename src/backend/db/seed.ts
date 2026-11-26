@@ -1,4 +1,3 @@
-import { pathToFileURL } from 'node:url';
 import { logger } from '@/backend/config/logger';
 import { authService } from '@/backend/modules/auth/auth.service';
 import { businessesService } from '@/backend/modules/businesses/businesses.service';
@@ -29,18 +28,3 @@ export const SeedDatabase = async (opts: { reset?: boolean } = {}): Promise<bool
   logger.info(`Seeded demo data — sign in as ${DEMO_ACCOUNT.email} / ${DEMO_ACCOUNT.password}`);
   return true;
 };
-
-const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
-if (isMain) {
-  const { env } = await import('@/backend/config/env');
-  if (env.NODE_ENV === 'production') {
-    logger.error('Refusing to seed a production database with a known demo password');
-    process.exit(1);
-  }
-  const { CloseDb, ConnectDb } = await import('./client');
-  const { RunMigrations } = await import('./migrate');
-  await ConnectDb({ url: env.DATABASE_URL, dataDir: env.PGLITE_DIR });
-  await RunMigrations();
-  await SeedDatabase({ reset: true });
-  await CloseDb();
-}

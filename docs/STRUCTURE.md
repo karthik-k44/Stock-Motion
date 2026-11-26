@@ -12,13 +12,14 @@ src/
 │   ├── common/             # errors/, services/audit.ts (activity + stock ledger), types/, utils/ (jwt, crypto, csv, cookies …)
 │   ├── config/             # env.ts (zod-validated), logger.ts
 │   ├── db/                 # client.ts (TypeORM DataSource, `db`), entities/ (one EntitySchema per table), schema/ (row types),
-│   │                       # migrations/ (TypeORM migrations + sql/), pglite-pool.ts, migrate.ts, seed.ts, next-number.ts
+│   │                       # migrations/ (TypeORM migrations + sql/), pglite-pool.ts, migrate.ts, seed.ts, next-number.ts,
+│   │                       # cli/ (the `db:migrate` and `db:seed` entry points)
 │   ├── middleware/         # auth, rate-limit, error, not-found — each `<name>.middleware.ts`
 │   ├── modules/<domain>/   # auth, businesses, invites, templates, items, categories, locations, suppliers, customers,
-│   │                       # orders, deliveries, imports, activity, dashboard, system
+│   │                       # orders, deliveries, imports, activity, dashboard, system, rate-limits
 │   ├── realtime/           # socket.io server: token-authenticated, one room per business
 │   ├── tests/              # vitest integration tests (in-memory Postgres)
-│   └── types/              # backend domain types, one file per domain + index.ts barrel
+│   └── types/              # backend domain types, one file per domain
 └── frontend/               # React 19 + Vite + React Query + Tailwind CSS v4 + shadcn/ui
     ├── App.tsx              # every route: the lazy pages, then the <Route> tree
     ├── components/          # shared UI (button/, card/, form/, modal/, drawer/, toast/, layout/, …)
@@ -106,7 +107,7 @@ There is no `ApiResponse<T>` envelope; the API returns resources directly. Error
 
 `features/landing` holds the public pages — `Landing.tsx` (`/`), `Features.tsx` (`/features`), `Pricing.tsx` (`/pricing`), `Faq.tsx` (`/faq`) and `Contact.tsx` (`/contact`) — as children of one layout route, `MarketingLayout.tsx` (navbar, footer, scroll restoration). They follow `docs/design/style-reference.md` — the palette is scoped to `.landing` in `styles/landing.css`, so the app keeps its own.
 - **Copy and plans** live in `lib/landing-content.ts` and `lib/pricing-content.ts`; components only lay them out. Nothing there is invented: features are real, prices are the owner's, there are no fake customer logos or counts.
-- **Hero:** the pitch on the left, the scenario illustrations on the right in `components/ui/depth-carousel` (cards in 3D depth — `sides="both"`: previous images to the left, next to the right — eased by GSAP; drag, horizontal wheel, arrow keys, arrows and dots; follows the app's motion setting). Styles in `styles/depth-carousel.css`.
+- **Hero:** each page opens on a bento of tiles (`components/HeroTiles.tsx`), animated with GSAP and following the app's motion setting.
 - **Illustrations:** `scripts/illustrations/` draws each scenario with the live world's isometric kit and renders it to `public/landing/scenarios/` — `npm run illustrations`.
 - **Navbar:** shadcn NavigationMenu with a full-width mega menu; Features, Pricing and FAQ are pages, and `/#…` links (How it works, the use cases) scroll to a section of the front page from any page.
 
@@ -153,10 +154,13 @@ modules/<domain>/
   - after commit, call `BroadcastChange(scope.businessId, resources, activity)`.
 - **Human numbers** (`SO-10239`, `TKT-1045`) come from `db/next-number.ts`, which serialises on an advisory lock.
 
-## Before pushing
+## Checks
+
+Git hooks (husky, installed by `npm install`) run them for you: **pre-commit** lints the staged files (`lint-staged`) and typechecks; **pre-push** runs the backend tests. CI (`.github/workflows/ci.yml`) runs everything on every pull request, plus the end-to-end tests and a Docker build.
 
 ```
-npx tsc -b --noEmit && npx eslint src && npx vitest run && npm run build
+npm run typecheck && npm run lint && npm test   # what the hooks run
+npm run test:e2e                                # builds, then drives the app in a real browser (Playwright, e2e/)
 ```
 
 ## Known deviations
@@ -165,6 +169,6 @@ npx tsc -b --noEmit && npx eslint src && npx vitest run && npm run build
 - **TypeORM without decorators.** Entities are `EntitySchema` objects (`db/entities/`), not decorated classes: tsx/esbuild don't emit decorator metadata, and the codebase is arrow functions. Their property names are the snake_case column names, so entities, query-builder raw rows and `db/schema/` row types share one shape and the services never map between them.
 - **Migrations own the schema.** `synchronize` is off; changes go in a migration (`npm run db:migration:create -- Name`, then list it in `migrations/index.ts`) and the entity is updated to match. The first migration runs `migrations/sql/initial-schema.sql`, and adopts databases made by the old SQL-file runner (`schema_migrations`) instead of re-running it. The second makes `activity` and `movements` append-only.
 - **Database driver.** `DATABASE_URL` → PostgreSQL through TypeORM's pool. Otherwise embedded PostgreSQL (PGlite) through `db/pglite-pool.ts`, which lends PGlite's single session to one transaction at a time so requests keep their isolation.
-- **One entry point, two ways to run.** `server.ts` is a long-running process in dev, Docker and `npm start`. On Vercel (`VERCEL` is set) it only connects to PostgreSQL and default-exports its server: `scripts/vercel-build.ts` has bundled it with esbuild into one function for `/api/*` (bundling resolves the `@/` imports, which Vercel's own build would leave unresolved), run the migrations, and put the frontend on the CDN with routes that send every other path to `index.html`. Migrations and the demo seed are imported lazily so the bundle never runs them. The realtime socket lives at `/api/socket.io` so one route covers the whole backend.
-- **Tests run one file at a time** (`fileParallelism: false`). Each file starts its own in-memory Postgres, and running them all at once exhausts memory on Windows. `TEST_DATABASE_URL` runs them against a real PostgreSQL database instead (its name must contain `test`).
+- **One entry point, two ways to run.** `server.ts` is a long-running process in dev, Docker and `npm start`. On Vercel (`VERCEL` is set) it only connects to PostgreSQL and default-exports its server: `scripts/vercel-build.ts` has bundled it with esbuild into one function for `/api/*` (bundling resolves the `@/` imports, which Vercel's own build would leave unresolved), run the migrations, and put the frontend on the CDN with routes that send every other path to `index.html`. Everywhere else production runs the same code compiled by `npm run build:server` to `build/server/server.mjs` (plain `node`, no TypeScript at runtime; `scripts/lib/bundle-server.ts` is shared by both builds). The command-line scripts live in `db/cli/`, so no module in a bundle runs anything just by being imported. The realtime socket lives at `/api/socket.io` so one route covers the whole backend.
+- **Tests run one file at a time** (`fileParallelism: false`). Each file starts its own in-memory Postgres, and running them all at once exhausts memory on Windows. `TEST_DATABASE_URL` runs them against a real PostgreSQL database instead (its name must contain `test`). The end-to-end tests start the compiled server with `ENV_FILE=none` and `PGLITE_DIR=:memory:`, so they never read `.env` or touch its database.
 - **Templates are served, not duplicated.** Unlike domain types, the template config lives only on the backend; the frontend reads it from the API. Only its TypeScript shape is duplicated (`features/businesses/types`).

@@ -12,3 +12,7 @@ dist
 coverage
 Dockerfile
 .dockerignore
+build
+.vercel
+test-results
+playwright-report

@@ -1,9 +1,12 @@
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { io as connect, type Socket } from 'socket.io-client';
+import express from 'express';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { CloseDb, db } from '@/backend/db/client';
+import { ErrorHandler } from '@/backend/middleware/error.middleware';
+import { RateLimitWrites } from '@/backend/middleware/rate-limit.middleware';
 import { AttachRealtime, CloseRealtime, SOCKET_PATH } from '@/backend/realtime/socket';
 import { BusinessTypeEnum } from '@/backend/types/template';
 import { app, Client, OwnerWithBusiness, ResetDatabase, SetupDatabase } from './helpers';
@@ -194,5 +197,39 @@ describe('realtime access', () => {
     await settle();
     expect(events).toBe(1);
     expect(await joinBusiness()).toBe(false);
+  });
+});
+
+describe('rate limits', () => {
+  /** One server instance: its own Express app and its own limiter, as on a serverless host. */
+  const instance = (shared: boolean) => {
+    const app = express();
+    app.post('/login', RateLimitWrites({ name: 'test-login', windowMs: 60_000, max: 3, shared }), (_req, res) => {
+      res.json({ ok: true });
+    });
+    app.use(ErrorHandler);
+    return app;
+  };
+
+  it('counts sign-in attempts across every server instance when shared', async () => {
+    const instances = [instance(true), instance(true), instance(true)];
+    const statuses: number[] = [];
+    for (let i = 0; i < 4; i++) statuses.push((await request(instances[i % 3]).post('/login')).status);
+    expect(statuses).toEqual([200, 200, 200, 429]);
+  });
+
+  it('starts a fresh window once the old one has passed', async () => {
+    const app = instance(true);
+    for (let i = 0; i < 3; i++) await request(app).post('/login');
+    expect((await request(app).post('/login')).status).toBe(429);
+    await db.query(`UPDATE rate_limits SET reset_at = now() - interval '1 second'`);
+    expect((await request(app).post('/login')).status).toBe(200);
+  });
+
+  it('only counts within one instance when kept in memory', async () => {
+    const [a, b] = [instance(false), instance(false)];
+    for (let i = 0; i < 3; i++) expect((await request(a).post('/login')).status).toBe(200);
+    expect((await request(a).post('/login')).status).toBe(429);
+    expect((await request(b).post('/login')).status).toBe(200);
   });
 });

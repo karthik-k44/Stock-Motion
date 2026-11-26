@@ -1,6 +1,6 @@
 import type { Server as HttpServer } from 'node:http';
 import { Server } from 'socket.io';
-import { VerifyAccessToken } from '@/backend/common/utils/jwt';
+import { VerifyAccessTokenClaims } from '@/backend/common/utils/jwt';
 import { logger } from '@/backend/config/logger';
 import { db } from '@/backend/db/client';
 import { businessesRepository } from '@/backend/modules/businesses/businesses.repository';
@@ -12,9 +12,15 @@ let io: Server | null = null;
 /** Under /api with the rest of the backend, so a single route sends all backend traffic to it (one rule on Vercel). */
 export const SOCKET_PATH = '/api/socket.io';
 
+/** Sent just before the server closes a socket whose access token has expired. */
+export const SESSION_EXPIRED_EVENT = 'session:expired';
+
 const room = (businessId: string) => `business:${businessId}`;
 /** Every socket of one account, so access can be taken away from all of its tabs at once. */
 const accountRoom = (accountId: string) => `account:${accountId}`;
+
+/** setTimeout's longest delay (~24.8 days); a longer one would fire at once. */
+const MAX_TIMER_MS = 2 ** 31 - 1;
 
 /** `business:join` requests one socket may make per window — each one is a membership lookup. */
 const JOIN_LIMIT = { max: 20, windowMs: 60_000 };
@@ -27,7 +33,9 @@ export const AttachRealtime = (server: HttpServer): Server => {
   io.use((socket, next) => {
     try {
       const token = typeof socket.handshake.auth?.token === 'string' ? socket.handshake.auth.token : '';
-      socket.data.accountId = VerifyAccessToken(token);
+      const claims = VerifyAccessTokenClaims(token);
+      socket.data.accountId = claims.accountId;
+      socket.data.expiresAt = claims.expiresAt;
       next();
     } catch {
       next(new Error('UNAUTHORIZED'));
@@ -37,6 +45,12 @@ export const AttachRealtime = (server: HttpServer): Server => {
   io.on('connection', (socket) => {
     logger.debug(`Realtime client connected ${socket.id}`);
     void socket.join(accountRoom(socket.data.accountId));
+    // A socket lives no longer than its token; the client renews it and reconnects.
+    const expiry = setTimeout(() => {
+      socket.emit(SESSION_EXPIRED_EVENT);
+      socket.disconnect(true);
+    }, Math.min(Math.max(0, socket.data.expiresAt - Date.now()), MAX_TIMER_MS));
+    socket.on('disconnect', () => clearTimeout(expiry));
     let joins = { count: 0, resetAt: Date.now() + JOIN_LIMIT.windowMs };
     // A client watches one business at a time, and only one it is a member of.
     socket.on('business:join', async (businessId: unknown, ack?: (ok: boolean) => void) => {

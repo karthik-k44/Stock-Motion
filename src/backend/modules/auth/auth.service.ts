@@ -19,21 +19,26 @@ const Issue = async (q: Queryable, account: AccountResponseType): Promise<Issued
   return { account, accessToken: SignAccessToken(account.id), refreshToken };
 };
 
+export type NewAccountType = { email: string; name: string; passwordHash: string };
+
+/** Hash a new account's password before the caller's transaction, so the slow hash never holds a connection. */
+const PrepareAccount = async (input: RegisterInput): Promise<NewAccountType> => ({
+  email: input.email,
+  name: input.name,
+  passwordHash: await HashPassword(input.password),
+});
+
 /** Create an account. Used by sign-up and by accepting an invite as a new person. */
-const CreateAccount = async (q: Queryable, input: RegisterInput): Promise<AccountResponseType> => {
-  if (await authRepository.FindAccountByEmail(q, input.email)) {
+const CreateAccount = async (q: Queryable, account: NewAccountType): Promise<AccountResponseType> => {
+  if (await authRepository.FindAccountByEmail(q, account.email)) {
     throw Conflict('An account with this email already exists — sign in instead');
   }
-  const row = await authRepository.InsertAccount(q, {
-    email: input.email,
-    name: input.name,
-    passwordHash: await HashPassword(input.password),
-  });
-  return toAccount(row);
+  return toAccount(await authRepository.InsertAccount(q, account));
 };
 
-const Register = (input: RegisterInput): Promise<IssuedSessionType> => {
-  return db.transaction(async (tx) => Issue(tx, await CreateAccount(tx, input)));
+const Register = async (input: RegisterInput): Promise<IssuedSessionType> => {
+  const account = await PrepareAccount(input);
+  return db.transaction(async (tx) => Issue(tx, await CreateAccount(tx, account)));
 };
 
 const Login = async (input: LoginInput): Promise<IssuedSessionType> => {
@@ -76,4 +81,4 @@ const UpdateProfile = async (id: string, input: UpdateProfileInput): Promise<Acc
   return toAccount(await authRepository.UpdateAccountName(db, id, input.name));
 };
 
-export const authService = { CreateAccount, Register, Login, Refresh, Logout, FindAccount, UpdateProfile, Issue };
+export const authService = { PrepareAccount, CreateAccount, Register, Login, Refresh, Logout, FindAccount, UpdateProfile, Issue };

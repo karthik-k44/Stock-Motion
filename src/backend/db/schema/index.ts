@@ -7,3 +7,4 @@ export * from './orders';
 export * from './deliveries';
 export * from './movements';
 export * from './activity';
+export * from './rate-limits';

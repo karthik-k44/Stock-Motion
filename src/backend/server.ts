@@ -1,6 +1,5 @@
 import { createServer, type Server } from 'node:http';
 import { existsSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import express from 'express';
 import { CreateApp } from './app';
 import { env } from './config/env';
@@ -8,7 +7,8 @@ import { logger } from './config/logger';
 import { CloseDb, ConnectDb } from './db/client';
 import { AttachRealtime, CloseRealtime } from './realtime/socket';
 
-const ROOT = fileURLToPath(new URL('../../', import.meta.url));
+/** The project root is where the server is started from; this file's own path changes once compiled to build/server/. */
+const ROOT = `${process.cwd()}/`;
 
 /**
  * Vercel sets `VERCEL` in every deployment. There, `npm run vercel-build` has bundled this file into one function:

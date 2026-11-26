@@ -12,7 +12,13 @@ export const useRealtime = () => {
 
   useEffect(() => {
     realtime.Connect();
-    const offStatus = realtime.OnStatus(setConnected);
+    let dropped = false;
+    const offStatus = realtime.OnStatus((on) => {
+      setConnected(on);
+      // Changes made while disconnected were never broadcast here: refetch.
+      if (on && dropped) qc.invalidateQueries();
+      dropped = !on;
+    });
     const offData = realtime.OnDataChanged((e) => {
       e.resources.forEach((resource) => qc.invalidateQueries({ queryKey: [resource] }));
       if (e.resources.includes('business')) qc.invalidateQueries({ queryKey: ['businesses'] });

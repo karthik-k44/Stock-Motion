@@ -47,7 +47,7 @@ Settings are read from `.env` in the project root (git-ignored). Real environmen
 ```
 # Leave empty to use the embedded Postgres (PGlite) in .data/pglite instead
 DATABASE_URL=postgres://postgres:YOUR_PASSWORD@localhost:5432/stockmotion
-PGLITE_DIR=.data/pglite
+PGLITE_DIR=.data/pglite     # or :memory: for a database that starts empty and is gone on exit
 DB_POOL_SIZE=10            # PostgreSQL connections per server instance (keep it small on Vercel)
 PORT=3000
 LOG_LEVEL=info              # debug | info | warn | error
@@ -66,9 +66,11 @@ Sessions use a short-lived access token held in memory, plus a rotating, httpOnl
 | Script | What it does |
 | --- | --- |
 | `npm run dev` | API + Vite dev server with HMR on `PORT` (default 3000) |
-| `npm run build` | Typecheck both projects and build the frontend to `dist/` |
-| `npm start` | Production server: serves `dist/` and the API (needs `JWT_SECRET`) |
+| `npm run build` | Typecheck every project and build the frontend to `dist/` |
+| `npm run build:server` | Compile the backend to `build/server/server.mjs` |
+| `npm start` | Production server (after both builds): serves `dist/` and the API with plain `node` (needs `JWT_SECRET`) |
 | `npm test` | Backend integration tests (in-memory Postgres, one file at a time). Set `TEST_DATABASE_URL` to run them against a real PostgreSQL database whose name contains `test` — it is emptied |
+| `npm run test:e2e` | Build, then drive the real app in Chrome with Playwright (`e2e/`). Uses a fresh in-memory database, never the one in `.env` |
 | `npm run lint` | ESLint: import cycles, frontend/backend boundary, hook rules |
 | `npm run typecheck` | `tsc -b --noEmit` |
 | `npm run vercel-build` | Vercel's build: frontend, migrations, and the backend bundled as one function in `.vercel/output` (needs `DATABASE_URL`) |
@@ -90,7 +92,7 @@ docker run -p 3000:3000   -e JWT_SECRET="$(openssl rand -hex 48)"   -e DATABASE_
 
 Leave `DATABASE_URL` empty to use the embedded Postgres instead, and mount a volume at `/app/.data` to keep it. The image has a health check on `/api/system/health` and stops gracefully on SIGTERM.
 
-**Without Docker:** `npm ci && npm run build && npm start` with the same environment variables (`.env.example` lists them all).
+**Without Docker:** `npm ci && npm run build && npm run build:server && npm start` with the same environment variables (`.env.example` lists them all).
 
 **On Render** (recommended)
 
@@ -139,7 +141,7 @@ All of these are derived in one place, the `item_views` SQL view (`src/backend/d
 - **Stock under concurrency.** Order, item and delivery rows are locked (`SELECT … FOR UPDATE`, in id order) for every change, so two people can’t reserve the same last unit, close an order twice or receive a delivery twice. `CHECK` constraints keep on-hand and line quantities from going negative.
 - **Stale writes.** A stock count is refused if the count changed since the person started it. Receiving more than a delivery expected takes a manager.
 - **History.** The activity log and stock ledger are append-only: the API has no way to edit them and a database trigger refuses updates.
-- **Sessions.** Short-lived access tokens; rotating, single-use refresh tokens — replaying one ends every session of the account. Credential and invite endpoints are rate-limited.
+- **Sessions.** Short-lived access tokens; rotating, single-use refresh tokens — replaying one ends every session of the account. Credential and invite endpoints are rate-limited, counted in the database so the limit holds across every server instance. A realtime socket is closed when its access token expires, and the client renews it and reconnects.
 
 `src/backend/tests/security.test.ts` checks each of these.
 

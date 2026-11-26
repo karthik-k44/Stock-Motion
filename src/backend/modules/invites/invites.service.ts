@@ -100,9 +100,10 @@ const Accept = async (account: AccountResponseType, token: string): Promise<Busi
 
 /** A new person signs up straight from the invite link. */
 const Register = async (token: string, input: RegisterInput): Promise<IssuedSessionType & { businessId: string }> => {
+  const newAccount = await authService.PrepareAccount(input);
   const result = await db.transaction(async (tx) => {
     await usable(tx, token, true);
-    const account = await authService.CreateAccount(tx, input);
+    const account = await authService.CreateAccount(tx, newAccount);
     const joined = await join(tx, token, account);
     return { ...joined, session: await authService.Issue(tx, account) };
   });

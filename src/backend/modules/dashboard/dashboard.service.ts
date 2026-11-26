@@ -1,3 +1,4 @@
+import { GroupBy } from '@/backend/common/utils/group-by';
 import { db } from '@/backend/db/client';
 import { ToActivityResponse } from '@/backend/modules/activity/activity.mapper';
 import { activityRepository } from '@/backend/modules/activity/activity.repository';
@@ -44,8 +45,8 @@ const Get = async (scope: ScopeType): Promise<DashboardResponseType> => {
   ]);
   const items = itemRows.map(ToItemResponse);
   const stock = items.filter((i) => i.kind === ItemKindTypeEnum.STOCK);
-  const deliveryLines = await deliveriesRepository.ListLines(db, deliveryRows.map((d) => d.id));
-  const upcoming = deliveryRows.map((d) => ToDeliveryResponse(d, deliveryLines));
+  const deliveryLines = GroupBy(await deliveriesRepository.ListLines(db, deliveryRows.map((d) => d.id)), (l) => l.delivery_id);
+  const upcoming = deliveryRows.map((d) => ToDeliveryResponse(d, deliveryLines.get(d.id) ?? []));
 
   const count = (list: ItemResponseType[], s: StockStatusTypeEnum) => list.filter((i) => i.status === s).length;
   const ordersByStatus: Record<string, number> = Object.fromEntries(

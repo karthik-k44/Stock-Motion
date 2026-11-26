@@ -24,7 +24,6 @@
 @import './app.css' layer(components);
 @import './world.css' layer(components);
 @import './landing.css' layer(components);
-@import './depth-carousel.css' layer(components);
 
 /*
  * Orange and white on a cool canvas. Brand orange is #ff7900; it and the hero gradient carry near-black text (6.5:1), never white (2.6:1).

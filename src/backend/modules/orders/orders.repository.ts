@@ -62,50 +62,57 @@ const ListLines = async (q: Queryable, orderIds: string[]): Promise<OrderLineRow
 
 const Next = (q: Queryable, businessId: string, prefix: string) => NextNumber(q, 'orders', businessId, prefix, 1001);
 
-const Insert = async (
-  q: Queryable,
-  input: {
-    businessId: string;
-    number: string;
-    customerId: string | null;
-    customerName: string;
-    status: string;
-    reserves: boolean;
-    closed: boolean;
-    dueAt: DbDate | null;
-    assigneeId: string | null;
-    notes?: string;
-    createdAt?: DbDate;
-    closedAt?: DbDate | null;
-  },): Promise<string> => {
-  const { identifiers } = await orders(q).insert({
-    business_id: input.businessId,
-    number: input.number,
-    customer_id: input.customerId,
-    customer_name: input.customerName,
-    status: input.status,
-    reserves: input.reserves,
-    closed: input.closed,
-    due_at: input.dueAt,
-    assignee_id: input.assigneeId,
-    notes: input.notes ?? '',
-    created_at: input.createdAt,
-    closed_at: input.closedAt ?? null,
-  });
+export type OrderInsertType = {
+  /** Set by callers that need the id before the row exists (sample data links lines to it in the same batch) */
+  id?: string;
+  businessId: string;
+  number: string;
+  customerId: string | null;
+  customerName: string;
+  status: string;
+  reserves: boolean;
+  closed: boolean;
+  dueAt: DbDate | null;
+  assigneeId: string | null;
+  notes?: string;
+  createdAt?: DbDate;
+  closedAt?: DbDate | null;
+};
+
+export type OrderLineInsertType = { orderId: string; itemId: string; position: number; qty: number; done?: number; unitPrice: number };
+
+const toOrderRecord = (input: OrderInsertType) => ({
+  id: input.id,
+  business_id: input.businessId,
+  number: input.number,
+  customer_id: input.customerId,
+  customer_name: input.customerName,
+  status: input.status,
+  reserves: input.reserves,
+  closed: input.closed,
+  due_at: input.dueAt,
+  assignee_id: input.assigneeId,
+  notes: input.notes ?? '',
+  created_at: input.createdAt,
+  closed_at: input.closedAt ?? null,
+});
+
+const Insert = async (q: Queryable, input: OrderInsertType): Promise<string> => {
+  const { identifiers } = await orders(q).insert(toOrderRecord(input));
   return identifiers[0].id;
 };
 
-const InsertLine = async (
-  q: Queryable,
-  input: { orderId: string; itemId: string; position: number; qty: number; done?: number; unitPrice: number },): Promise<void> => {
-  await lines(q).insert({
-    order_id: input.orderId,
-    item_id: input.itemId,
-    position: input.position,
-    qty: input.qty,
-    done: input.done ?? 0,
-    unit_price: input.unitPrice,
-  });
+/** Many orders in one statement; each must carry its `id`. */
+const InsertMany = async (q: Queryable, rows: (OrderInsertType & { id: string })[]): Promise<void> => {
+  if (rows.length) await orders(q).insert(rows.map(toOrderRecord));
+};
+
+/** Every line in one statement. */
+const InsertLines = async (q: Queryable, rows: OrderLineInsertType[]): Promise<void> => {
+  if (!rows.length) return;
+  await lines(q).insert(
+    rows.map((r) => ({ order_id: r.orderId, item_id: r.itemId, position: r.position, qty: r.qty, done: r.done ?? 0, unit_price: r.unitPrice })),
+  );
 };
 
 const DeleteLines = async (q: Queryable, orderId: string): Promise<void> => {
@@ -167,7 +174,8 @@ export const ordersRepository = {
   ListLines,
   Next,
   Insert,
-  InsertLine,
+  InsertMany,
+  InsertLines,
   DeleteLines,
   SetStage,
   Update,

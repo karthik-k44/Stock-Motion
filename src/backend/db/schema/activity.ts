@@ -1,6 +1,5 @@
 import type { DbDate } from './_shared';
 
-/** The `activity` table. */
 export type ActivityRecord = {
   id: number;
   business_id: string;

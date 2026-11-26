@@ -1,6 +1,5 @@
 import type { DbDate, DbNumeric } from './_shared';
 
-/** The `deliveries` table. */
 export type DeliveryRow = {
   id: string;
   business_id: string;
@@ -15,7 +14,6 @@ export type DeliveryRow = {
   created_at: DbDate;
 };
 
-/** The `delivery_lines` table. */
 export type DeliveryLineRecord = {
   delivery_id: string;
   item_id: string;

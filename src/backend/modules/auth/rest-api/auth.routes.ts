@@ -6,8 +6,14 @@ import { authController } from './auth.controller';
 
 export const authRoutes = Router();
 
-// Tight limit on the credential endpoints (brute force, sign-up spam). Tests sign up many accounts.
-const credentials = RateLimitWrites({ windowMs: 15 * 60_000, max: env.NODE_ENV === 'test' ? Number.MAX_SAFE_INTEGER : 20 });
+// Tight limit on the credential endpoints (brute force, sign-up spam), counted in the database so it holds across
+// every server instance. Tests sign up many accounts.
+const credentials = RateLimitWrites({
+  name: 'credentials',
+  windowMs: 15 * 60_000,
+  max: env.NODE_ENV === 'test' ? Number.MAX_SAFE_INTEGER : 20,
+  shared: true,
+});
 
 authRoutes.post('/register', credentials, authController.Register);
 authRoutes.post('/login', credentials, authController.Login);

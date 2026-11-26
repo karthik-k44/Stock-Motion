@@ -13,7 +13,6 @@ export const ListDeliveriesQuerySchema = z.object({
   search: z.string().trim().max(80).optional(),
   supplierId: z.string().max(64).optional(),
 });
-export type ListDeliveriesQuery = z.infer<typeof ListDeliveriesQuerySchema>;
 
 export const DeliveryNumberParamSchema = z.object({
   number: z.string().trim().toUpperCase().regex(/^[A-Z]{1,6}-\d{1,9}$/, 'Invalid delivery number'),

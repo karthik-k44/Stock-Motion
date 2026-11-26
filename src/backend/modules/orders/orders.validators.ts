@@ -13,7 +13,6 @@ export const ListOrdersQuerySchema = z.object({
   search: z.string().trim().max(80).optional(),
   customerId: z.string().max(64).optional(),
 });
-export type ListOrdersQuery = z.infer<typeof ListOrdersQuerySchema>;
 
 export const OrderLinesSchema = z
   .array(

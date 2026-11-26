@@ -160,7 +160,7 @@ const main = async () => {
     return { id: il.id, file };
   });
 
-  const { chromium } = await import('playwright-core');
+  const { chromium } = await import('@playwright/test');
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
   const tab = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1 });
   for (const f of files) {

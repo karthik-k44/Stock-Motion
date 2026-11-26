@@ -2,6 +2,7 @@ import { BadRequest, Conflict, NotFound } from '@/backend/common/errors';
 import { RecordActivity, RecordMovement } from '@/backend/common/services/audit';
 import { ToIso, ToIsoOrNull } from '@/backend/common/utils/dates';
 import { Plural } from '@/backend/common/utils/format';
+import { GroupBy } from '@/backend/common/utils/group-by';
 import { db, type Queryable } from '@/backend/db/client';
 import type { OrderLineRow, OrderRow } from '@/backend/db/schema';
 import { businessesRepository } from '@/backend/modules/businesses/businesses.repository';
@@ -59,8 +60,8 @@ const toOrder = ({ row, lines }: LoadedOrderType): OrderResponseType => {
 };
 
 const withLines = async (q: Queryable, rows: OrderRow[]): Promise<LoadedOrderType[]> => {
-  const lines = await ordersRepository.ListLines(q, rows.map((r) => r.id));
-  return rows.map((row) => ({ row, lines: lines.filter((l) => l.order_id === row.id) }));
+  const lines = GroupBy(await ordersRepository.ListLines(q, rows.map((r) => r.id)), (l) => l.order_id);
+  return rows.map((row) => ({ row, lines: lines.get(row.id) ?? [] }));
 };
 
 const find = async (q: Queryable, scope: ScopeType, number: string, lock = false): Promise<LoadedOrderType> => {
@@ -180,14 +181,15 @@ const assertAssignee = async (tx: Queryable, scope: ScopeType, assigneeId: strin
 };
 
 const insertLines = async (tx: Queryable, scope: ScopeType, orderId: string, lines: OrderLinesInput) => {
-  const items = await itemsRepository.ListViewsBySkus(tx, scope.businessId, lines.map((l) => l.sku));
-  for (const [position, line] of lines.entries()) {
-    const item = items.find((i) => i.sku === line.sku);
-    if (!item) throw BadRequest(`Unknown ${scope.template.labels.item.toLowerCase()} ${line.sku}`);
-    await ordersRepository.InsertLine(tx, {
-      orderId, itemId: item.id, position, qty: line.qty, unitPrice: line.unitPrice ?? Number(item.price),
-    });
-  }
+  const items = new Map((await itemsRepository.ListViewsBySkus(tx, scope.businessId, lines.map((l) => l.sku))).map((i) => [i.sku, i]));
+  await ordersRepository.InsertLines(
+    tx,
+    lines.map((line, position) => {
+      const item = items.get(line.sku);
+      if (!item) throw BadRequest(`Unknown ${scope.template.labels.item.toLowerCase()} ${line.sku}`);
+      return { orderId, itemId: item.id, position, qty: line.qty, unitPrice: line.unitPrice ?? Number(item.price) };
+    }),
+  );
 };
 
 const Create = (scope: ScopeType, input: CreateOrderInput): Promise<OrderResponseType> => {

@@ -61,44 +61,60 @@ const ListLines = async (q: Queryable, deliveryIds: string[]): Promise<DeliveryL
 
 const Next = (q: Queryable, businessId: string, prefix: string) => NextNumber(q, 'deliveries', businessId, prefix, 2001);
 
-const Insert = async (
-  q: Queryable,
-  input: {
-    businessId: string;
-    number: string;
-    supplierId: string | null;
-    supplierName: string;
-    vehicle: string;
-    reference: string;
-    expectedAt: DbDate;
-    status: string;
-    receivedAt?: DbDate | null;
-  },): Promise<string> => {
-  const { identifiers } = await deliveries(q).insert({
-    business_id: input.businessId,
-    number: input.number,
-    supplier_id: input.supplierId,
-    supplier_name: input.supplierName,
-    vehicle: input.vehicle,
-    reference: input.reference,
-    expected_at: input.expectedAt,
-    received_at: input.receivedAt ?? null,
-    status: input.status,
-  });
+export type DeliveryInsertType = {
+  /** Set by callers that need the id before the row exists (sample data links lines to it in the same batch) */
+  id?: string;
+  businessId: string;
+  number: string;
+  supplierId: string | null;
+  supplierName: string;
+  vehicle: string;
+  reference: string;
+  expectedAt: DbDate;
+  status: string;
+  receivedAt?: DbDate | null;
+};
+
+export type DeliveryLineInsertType = {
+  deliveryId: string;
+  itemId: string;
+  position: number;
+  expected: number;
+  received?: number | null;
+  unitCost: number;
+};
+
+const toDeliveryRecord = (input: DeliveryInsertType) => ({
+  id: input.id,
+  business_id: input.businessId,
+  number: input.number,
+  supplier_id: input.supplierId,
+  supplier_name: input.supplierName,
+  vehicle: input.vehicle,
+  reference: input.reference,
+  expected_at: input.expectedAt,
+  received_at: input.receivedAt ?? null,
+  status: input.status,
+});
+
+const Insert = async (q: Queryable, input: DeliveryInsertType): Promise<string> => {
+  const { identifiers } = await deliveries(q).insert(toDeliveryRecord(input));
   return identifiers[0].id;
 };
 
-const InsertLine = async (
-  q: Queryable,
-  input: { deliveryId: string; itemId: string; position: number; expected: number; received?: number | null; unitCost: number },): Promise<void> => {
-  await lines(q).insert({
-    delivery_id: input.deliveryId,
-    item_id: input.itemId,
-    position: input.position,
-    expected: input.expected,
-    received: input.received ?? null,
-    unit_cost: input.unitCost,
-  });
+/** Many deliveries in one statement; each must carry its `id`. */
+const InsertMany = async (q: Queryable, rows: (DeliveryInsertType & { id: string })[]): Promise<void> => {
+  if (rows.length) await deliveries(q).insert(rows.map(toDeliveryRecord));
+};
+
+/** Every line in one statement. */
+const InsertLines = async (q: Queryable, rows: DeliveryLineInsertType[]): Promise<void> => {
+  if (!rows.length) return;
+  await lines(q).insert(
+    rows.map((r) => ({
+      delivery_id: r.deliveryId, item_id: r.itemId, position: r.position, expected: r.expected, received: r.received ?? null, unit_cost: r.unitCost,
+    })),
+  );
 };
 
 const SetStatus = async (q: Queryable, id: string, status: string): Promise<void> => {
@@ -129,7 +145,8 @@ export const deliveriesRepository = {
   ListLines,
   Next,
   Insert,
-  InsertLine,
+  InsertMany,
+  InsertLines,
   SetStatus,
   SetLineReceived,
   ListOpenForItem,
