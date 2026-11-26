@@ -1,4 +1,4 @@
-import { CANCELLED_STATUS } from '@/frontend/features/orders/types';
+import { OrderStatusTypeEnum } from '@/frontend/features/orders/types';
 import type { DeliveryResponseType } from '@/frontend/features/deliveries/types';
 import { DayLabel, FormatDateTime, FormatMoney, FormatTime, IsPast } from '@/frontend/utils/format';
 import type { WorldContextType, WorldKpiType } from '../types';
@@ -16,7 +16,7 @@ const NextWhen = (d: DeliveryResponseType): string => {
 export const BuildKpis = (ctx: WorldContextType): WorldKpiType[] => {
   const { kpis, ordersByStatus } = ctx.dashboard;
   const { labels, orderFlow } = ctx.template;
-  const closedStage = orderFlow.find((s) => s.closed && s.status !== CANCELLED_STATUS);
+  const closedStage = orderFlow.find((s) => s.closed && s.status !== OrderStatusTypeEnum.CANCELLED);
   const openStages = orderFlow.filter((s) => !s.closed).map((s) => ({ label: s.label, n: ordersByStatus[s.status] ?? 0 }));
   const busiest = openStages.slice(1).reduce<{ label: string; n: number } | null>((b, s) => (s.n && (!b || s.n > b.n) ? s : b), null);
   const next = ctx.deliveries[0];

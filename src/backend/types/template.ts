@@ -1,3 +1,5 @@
+import type { OrderStatusTypeEnum } from './order';
+
 export const BusinessTypeEnum = {
   RETAIL: 'RETAIL',
   CAFE: 'CAFE',
@@ -7,7 +9,7 @@ export type BusinessTypeEnum = (typeof BusinessTypeEnum)[keyof typeof BusinessTy
 
 /** One stage of a template's order flow. Orders move through the stages in array order. */
 export type OrderStageType = {
-  status: string;
+  status: OrderStatusTypeEnum;
   label: string;
   /** Button that moves an order into this stage; null for the first stage. */
   action: string | null;

@@ -3,8 +3,8 @@ import { AccountOf } from '@/backend/middleware/auth.middleware';
 import { businessesService } from '../businesses.service';
 import {
   AccountIdParamSchema,
+  CreateBusinessesSchema,
   CreateBusinessSchema,
-  ResetDataSchema,
   UpdateBusinessSchema,
   UpdateMemberSchema,
 } from '../businesses.validators';
@@ -17,6 +17,9 @@ export const businessesController = {
   Create: async (req: Request, res: Response) => {
     res.status(201).json(await businessesService.Create(AccountOf(req), CreateBusinessSchema.parse(req.body)));
   },
+  CreateMany: async (req: Request, res: Response) => {
+    res.status(201).json(await businessesService.CreateMany(AccountOf(req), CreateBusinessesSchema.parse(req.body)));
+  },
   Get: async (req: Request, res: Response) => {
     res.json(await businessesService.Get(ScopeOf(req)));
   },
@@ -24,7 +27,7 @@ export const businessesController = {
     res.json(await businessesService.Update(ScopeOf(req), UpdateBusinessSchema.parse(req.body)));
   },
   Reset: async (req: Request, res: Response) => {
-    res.json(await businessesService.Reset(ScopeOf(req), ResetDataSchema.parse(req.body)));
+    res.json(await businessesService.Reset(ScopeOf(req)));
   },
   ListMembers: async (req: Request, res: Response) => {
     res.json(await businessesService.ListMembers(ScopeOf(req)));

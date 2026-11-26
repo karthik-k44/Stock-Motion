@@ -2,6 +2,7 @@ import { BadRequest, Conflict, NotFound } from '@/backend/common/errors';
 import { RecordActivity, RecordMovement } from '@/backend/common/services/audit';
 import { ToIso, ToIsoOrNull } from '@/backend/common/utils/dates';
 import { Plural } from '@/backend/common/utils/format';
+import { GroupBy } from '@/backend/common/utils/group-by';
 import { db, type Queryable } from '@/backend/db/client';
 import type { OrderLineRow, OrderRow } from '@/backend/db/schema';
 import { businessesRepository } from '@/backend/modules/businesses/businesses.repository';
@@ -12,7 +13,7 @@ import { ActivityKindTypeEnum, ActivityRefTypeEnum, type ActivityResponseType } 
 import type { ScopeType } from '@/backend/types/business';
 import { ResourceTypeEnum } from '@/backend/types/dashboard';
 import { ItemKindTypeEnum, MovementTypeEnum } from '@/backend/types/item';
-import type { OrderResponseType } from '@/backend/types/order';
+import { OrderStatusTypeEnum, type OrderResponseType } from '@/backend/types/order';
 import type { OrderStageType } from '@/backend/types/template';
 import { ordersRepository, type OrderFiltersType } from './orders.repository';
 import type {
@@ -23,8 +24,6 @@ import type {
   SetLinesInput,
   UpdateOrderInput,
 } from './orders.validators';
-
-export const CANCELLED_STATUS = 'CANCELLED';
 
 const ALL_RESOURCES = [
   ResourceTypeEnum.ORDERS, ResourceTypeEnum.ITEMS, ResourceTypeEnum.LOCATIONS, ResourceTypeEnum.DASHBOARD,
@@ -59,8 +58,8 @@ const toOrder = ({ row, lines }: LoadedOrderType): OrderResponseType => {
 };
 
 const withLines = async (q: Queryable, rows: OrderRow[]): Promise<LoadedOrderType[]> => {
-  const lines = await ordersRepository.ListLines(q, rows.map((r) => r.id));
-  return rows.map((row) => ({ row, lines: lines.filter((l) => l.order_id === row.id) }));
+  const lines = GroupBy(await ordersRepository.ListLines(q, rows.map((r) => r.id)), (l) => l.order_id);
+  return rows.map((row) => ({ row, lines: lines.get(row.id) ?? [] }));
 };
 
 const find = async (q: Queryable, scope: ScopeType, number: string, lock = false): Promise<LoadedOrderType> => {
@@ -76,7 +75,7 @@ const stageOf = (scope: ScopeType, status: string): OrderStageType | undefined =
 };
 
 const statusLabel = (scope: ScopeType, status: string) =>
-  status === CANCELLED_STATUS ? 'Cancelled' : (stageOf(scope, status)?.label ?? status);
+  status === OrderStatusTypeEnum.CANCELLED ? 'Cancelled' : (stageOf(scope, status)?.label ?? status);
 
 const assertOpen = (scope: ScopeType, order: LoadedOrderType) => {
   if (order.row.closed) {
@@ -180,14 +179,15 @@ const assertAssignee = async (tx: Queryable, scope: ScopeType, assigneeId: strin
 };
 
 const insertLines = async (tx: Queryable, scope: ScopeType, orderId: string, lines: OrderLinesInput) => {
-  const items = await itemsRepository.ListViewsBySkus(tx, scope.businessId, lines.map((l) => l.sku));
-  for (const [position, line] of lines.entries()) {
-    const item = items.find((i) => i.sku === line.sku);
-    if (!item) throw BadRequest(`Unknown ${scope.template.labels.item.toLowerCase()} ${line.sku}`);
-    await ordersRepository.InsertLine(tx, {
-      orderId, itemId: item.id, position, qty: line.qty, unitPrice: line.unitPrice ?? Number(item.price),
-    });
-  }
+  const items = new Map((await itemsRepository.ListViewsBySkus(tx, scope.businessId, lines.map((l) => l.sku))).map((i) => [i.sku, i]));
+  await ordersRepository.InsertLines(
+    tx,
+    lines.map((line, position) => {
+      const item = items.get(line.sku);
+      if (!item) throw BadRequest(`Unknown ${scope.template.labels.item.toLowerCase()} ${line.sku}`);
+      return { orderId, itemId: item.id, position, qty: line.qty, unitPrice: line.unitPrice ?? Number(item.price) };
+    }),
+  );
 };
 
 const Create = (scope: ScopeType, input: CreateOrderInput): Promise<OrderResponseType> => {
@@ -335,11 +335,11 @@ const Cancel = (scope: ScopeType, number: string): Promise<OrderResponseType> =>
   return mutate(scope, () => number, async (tx) => {
     const order = await find(tx, scope, number, true);
     assertOpen(scope, order);
-    await ordersRepository.SetStage(tx, order.row.id, { status: CANCELLED_STATUS, reserves: false, closed: true, cancelled: true });
+    await ordersRepository.SetStage(tx, order.row.id, { status: OrderStatusTypeEnum.CANCELLED, reserves: false, closed: true, cancelled: true });
     return [
       await RecordActivity(tx, scope, {
         kind: ActivityKindTypeEnum.STATUS, message: `Cancelled ${number} for ${order.row.customer_name}`,
-        ref: { type: ActivityRefTypeEnum.ORDER, id: number }, meta: { status: CANCELLED_STATUS },
+        ref: { type: ActivityRefTypeEnum.ORDER, id: number }, meta: { status: OrderStatusTypeEnum.CANCELLED },
       }),
     ];
   });

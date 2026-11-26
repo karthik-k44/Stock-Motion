@@ -10,8 +10,6 @@ type Props = {
   name: string;
   /** Empty until it has been chosen */
   currency: string;
-  /** How it will start, once that is the question */
-  start: string | null;
 };
 
 const CHIP = 'inline-flex items-center rounded-full bg-sunken px-2.5 py-1 text-xs font-medium text-ink-2';
@@ -24,7 +22,7 @@ const Section = ({ title, children }: { title: string; children: ReactNode }) =>
 );
 
 /** What this business will look like, drawn from the real template, so a choice is made seeing what it gives you. */
-export const BusinessPreview = ({ template, name, currency, start }: Props) => {
+export const BusinessPreview = ({ template, name, currency }: Props) => {
   const { labels } = template;
   const title = name.trim() || 'Your business';
   const menu: { icon: IconName; label: string }[] = [
@@ -43,7 +41,6 @@ export const BusinessPreview = ({ template, name, currency, start }: Props) => {
           <p className="m-0 truncate text-[15px] leading-snug font-bold text-ink">{title}</p>
           <p className="m-0 truncate text-xs text-muted-foreground">{[template.name, currency].filter(Boolean).join(' · ')}</p>
         </div>
-        {start && <span className="rounded-full bg-primary-100 px-2.5 py-1 text-xs font-semibold text-primary-800">{start}</span>}
       </div>
 
       {/* Keyed by type, so changing business fades the new one in */}

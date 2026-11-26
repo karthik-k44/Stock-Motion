@@ -1,3 +1,5 @@
+import { DeliveryStatusTypeEnum } from '@/backend/types/delivery';
+import { OrderStatusTypeEnum } from '@/backend/types/order';
 import { BusinessTypeEnum } from '@/backend/types/template';
 import type { TemplateDefinitionType } from './definition-type';
 
@@ -21,10 +23,10 @@ export const TRADES: TemplateDefinitionType = {
     orderPrefix: 'JOB',
     deliveryPrefix: 'PO',
     orderFlow: [
-      { status: 'QUOTED', label: 'Quoted', action: null, reserves: false, consumeLines: false, consumeOnEnter: false, requiresAllDone: false, closed: false },
-      { status: 'SCHEDULED', label: 'Scheduled', action: 'Book job', reserves: true, consumeLines: false, consumeOnEnter: false, requiresAllDone: false, closed: false },
-      { status: 'IN_PROGRESS', label: 'In progress', action: 'Start job', reserves: true, consumeLines: true, consumeOnEnter: false, requiresAllDone: false, closed: false },
-      { status: 'DONE', label: 'Done', action: 'Complete job', reserves: false, consumeLines: false, consumeOnEnter: false, requiresAllDone: false, closed: true },
+      { status: OrderStatusTypeEnum.QUOTED, label: 'Quoted', action: null, reserves: false, consumeLines: false, consumeOnEnter: false, requiresAllDone: false, closed: false },
+      { status: OrderStatusTypeEnum.SCHEDULED, label: 'Scheduled', action: 'Book job', reserves: true, consumeLines: false, consumeOnEnter: false, requiresAllDone: false, closed: false },
+      { status: OrderStatusTypeEnum.IN_PROGRESS, label: 'In progress', action: 'Start job', reserves: true, consumeLines: true, consumeOnEnter: false, requiresAllDone: false, closed: false },
+      { status: OrderStatusTypeEnum.DONE, label: 'Done', action: 'Complete job', reserves: false, consumeLines: false, consumeOnEnter: false, requiresAllDone: false, closed: true },
     ],
     roles: [
       { code: 'OWNER', label: 'Owner' },
@@ -89,25 +91,25 @@ export const TRADES: TemplateDefinitionType = {
       { sku: 'SRV-02', name: 'Call-out fee', category: 'SERVICES', unit: 'ea', kind: 'SERVICE', reorderLevel: 0, cost: 0, price: 65 },
     ],
     orders: [
-      { number: 'JOB-5101', customer: 'Harris Family', status: 'QUOTED', dueDays: 5, dueHour: 9, createdMinsAgo: 600,
+      { number: 'JOB-5101', customer: 'Harris Family', status: OrderStatusTypeEnum.QUOTED, dueDays: 5, dueHour: 9, createdMinsAgo: 600,
         lines: [['KIT-01', 1, 0], ['SRV-01', 2, 0], ['SRV-02', 1, 0]] },
-      { number: 'JOB-5102', customer: 'Bayview Apartments', status: 'SCHEDULED', dueDays: 1, dueHour: 8, createdMinsAgo: 2900,
+      { number: 'JOB-5102', customer: 'Bayview Apartments', status: OrderStatusTypeEnum.SCHEDULED, dueDays: 1, dueHour: 8, createdMinsAgo: 2900,
         lines: [['KIT-02', 4, 0], ['SRV-01', 6, 0]] },
-      { number: 'JOB-5103', customer: 'Greenway Café', status: 'IN_PROGRESS', dueDays: 0, dueHour: 15, createdMinsAgo: 4300,
+      { number: 'JOB-5103', customer: 'Greenway Café', status: OrderStatusTypeEnum.IN_PROGRESS, dueDays: 0, dueHour: 15, createdMinsAgo: 4300,
         lines: [['PLB-101', 12, 8], ['PLB-102', 10, 6], ['PLB-103', 6, 0], ['SRV-01', 5, 0]] },
-      { number: 'JOB-5104', customer: 'Dr. Ortiz Dental', status: 'QUOTED', dueDays: 3, dueHour: 10, createdMinsAgo: 1400,
+      { number: 'JOB-5104', customer: 'Dr. Ortiz Dental', status: OrderStatusTypeEnum.QUOTED, dueDays: 3, dueHour: 10, createdMinsAgo: 1400,
         lines: [['KIT-03', 1, 0], ['SRV-01', 4, 0]] },
-      { number: 'JOB-5100', customer: 'Oakridge Primary School', status: 'DONE', dueDays: -2, dueHour: 9, createdMinsAgo: 7200, closedMinsAgo: 2700,
+      { number: 'JOB-5100', customer: 'Oakridge Primary School', status: OrderStatusTypeEnum.DONE, dueDays: -2, dueHour: 9, createdMinsAgo: 7200, closedMinsAgo: 2700,
         lines: [['ELC-204', 2, 2], ['SRV-01', 6, 6]] },
-      { number: 'JOB-5098', customer: 'Bayview Apartments', status: 'DONE', dueDays: 0, dueHour: 8, createdMinsAgo: 5000, closedMinsAgo: 150,
+      { number: 'JOB-5098', customer: 'Bayview Apartments', status: OrderStatusTypeEnum.DONE, dueDays: 0, dueHour: 8, createdMinsAgo: 5000, closedMinsAgo: 150,
         lines: [['FIX-403', 2, 2], ['SRV-01', 3, 3], ['SRV-02', 1, 1]] },
     ],
     deliveries: [
-      { number: 'PO-7001', supplier: SUPPLIER.electrical, vehicle: 'Courier', reference: 'SPK-44120', dueDays: 0, dueHour: 13, dueMin: 0, status: 'IN_TRANSIT',
+      { number: 'PO-7001', supplier: SUPPLIER.electrical, vehicle: 'Courier', reference: 'SPK-44120', dueDays: 0, dueHour: 13, dueMin: 0, status: DeliveryStatusTypeEnum.IN_TRANSIT,
         lines: [['ELC-203', 48], ['ELC-202', 20]] },
-      { number: 'PO-7002', supplier: SUPPLIER.plumbing, vehicle: 'Pickup · Van 1', reference: 'MPM-9910', dueDays: 1, dueHour: 7, dueMin: 30, status: 'SCHEDULED',
+      { number: 'PO-7002', supplier: SUPPLIER.plumbing, vehicle: 'Pickup · Van 1', reference: 'MPM-9910', dueDays: 1, dueHour: 7, dueMin: 30, status: DeliveryStatusTypeEnum.SCHEDULED,
         lines: [['PLB-103', 40], ['FIX-403', 24]] },
-      { number: 'PO-7000', supplier: SUPPLIER.timber, vehicle: 'Yard truck', reference: 'NT-3301', dueDays: -1, dueHour: 11, dueMin: 0, status: 'RECEIVED',
+      { number: 'PO-7000', supplier: SUPPLIER.timber, vehicle: 'Yard truck', reference: 'NT-3301', dueDays: -1, dueHour: 11, dueMin: 0, status: DeliveryStatusTypeEnum.RECEIVED,
         lines: [['TMB-301', 60]] },
     ],
   },

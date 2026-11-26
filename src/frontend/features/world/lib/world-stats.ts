@@ -75,5 +75,3 @@ export const OrdersTag = (ctx: WorldContextType, statuses?: string[]): WorldTagT
   if (!open.length) return { text: `No open ${ctx.template.labels.orders.toLowerCase()}`, tone: 'neutral' };
   return { text: `${open.length} open`, tone: 'info' };
 };
-
-export const ZoneOf = (ctx: WorldContextType, sku: string) => ctx.locations.find((l) => l.items.some((i) => i.sku === sku))?.zone;

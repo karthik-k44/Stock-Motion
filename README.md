@@ -21,7 +21,7 @@ Inventory and orders for any small business, with a live 3D world of the busines
 - **Optimistic updates.** Stock adjustments, moves, order stage changes, receiving, and edits to items, customers and suppliers show at once. If the server refuses, the screen rolls back and a toast says why.
 - **Live everywhere.** Changes reach every open tab of the same business over socket.io.
 - **Live world.** An isometric drawing of the business made only from its own records: racks coloured bin by bin, trucks at the dock doors or on the road, orders on the packing bench, one person per team member. Every label is live; click anything (or any tracker row) for its details. The tracker tabs — deliveries, orders, stock alerts — each bring their own pins and highlights. Zoom, pan and turn the view in quarter turns.
-- **Marketing pages:** the front page at `/` (pitch, the stock sketch, use cases), plus `/features`, `/how-it-works` (setting up, the daily loop, each business type), `/pricing` (Starter $19, Pro $49 a month, Scale by contact — no billing in the app yet) and `/faq`. Each page opens on a bento hero animated with GSAP; on the front page a hand-drawn sketch of stock moving through a business follows it, inked in with rough.js as it scrolls into view. The footer sets the wordmark behind a rendered skyline of factories and warehouses. Logo files are in `public/brand`. Style: `docs/design/style-reference.md`.
+- **Marketing pages:** the front page at `/` (pitch, the stock sketch, use cases), plus `/features`, `/how-it-works` (setting up, the daily loop, each business type), `/pricing` (Starter ₹299, Pro ₹699 per inventory a month, yearly with two months free, Scale by contact — see Billing) and `/faq`. Each page opens on a bento hero animated with GSAP; on the front page a hand-drawn sketch of stock moving through a business follows it, inked in with rough.js as it scrolls into view. The footer sets the wordmark behind a rendered skyline of factories and warehouses. Logo files are in `public/brand`. Style: `docs/design/style-reference.md`.
 
 ## Run it
 
@@ -32,11 +32,13 @@ npm install
 npm run dev          # http://localhost:3000 — API + frontend (Vite HMR) on one port
 ```
 
-In development an empty database gets a demo login with one sample business of each type:
+To look around without setting anything up, sign in to the shared **demo account** — it is on the login page too, with a one-click button:
 
 ```
-demo@stockmotion.local / stockmotion-demo
+sampledata@gmail.com / sampledata123
 ```
+
+It holds one sample business of each type and is the only account with sample data: every other account starts empty. It is created on its first sign-in in any environment, anyone can change it, and a sign-in after a day reloads it fresh.
 
 Or create your own account at `/signup`.
 
@@ -47,7 +49,7 @@ Settings are read from `.env` in the project root (git-ignored). Real environmen
 ```
 # Leave empty to use the embedded Postgres (PGlite) in .data/pglite instead
 DATABASE_URL=postgres://postgres:YOUR_PASSWORD@localhost:5432/stockmotion
-PGLITE_DIR=.data/pglite
+PGLITE_DIR=.data/pglite     # or :memory: for a database that starts empty and is gone on exit
 DB_POOL_SIZE=10            # PostgreSQL connections per server instance (keep it small on Vercel)
 PORT=3000
 LOG_LEVEL=info              # debug | info | warn | error
@@ -56,9 +58,12 @@ ACCESS_TOKEN_TTL=15m
 REFRESH_TOKEN_DAYS=30
 TRUST_PROXY=loopback        # "1" behind one load balancer (most hosts), "true", or a list of addresses
 SHUTDOWN_TIMEOUT_MS=10000   # grace period for open requests on SIGTERM
+RAZORPAY_KEY_ID=            # rzp_test_… — empty: billing runs in manual mode outside production
+RAZORPAY_KEY_SECRET=
+RAZORPAY_WEBHOOK_SECRET=    # the secret set on the Razorpay webhook (deployed sites)
 ```
 
-- **Your local PostgreSQL:** the database is created on first start and migrations run automatically (TypeORM, recorded in `typeorm_migrations`). A database made by an earlier version is adopted as it is — its data is kept.
+- **Your local PostgreSQL:** the database is created on first start and migrations run automatically (Drizzle, recorded in `drizzle.__drizzle_migrations`). A database made by an earlier version is adopted: its data is kept and its ids renamed (see Structure).
 - **No database install:** leave `DATABASE_URL` empty and an embedded Postgres is stored in `.data/pglite`.
 
 Sessions use a short-lived access token held in memory, plus a rotating, httpOnly refresh cookie. Replaying an already-used refresh token ends every session of that account.
@@ -66,16 +71,40 @@ Sessions use a short-lived access token held in memory, plus a rotating, httpOnl
 | Script | What it does |
 | --- | --- |
 | `npm run dev` | API + Vite dev server with HMR on `PORT` (default 3000) |
-| `npm run build` | Typecheck both projects and build the frontend to `dist/` |
-| `npm start` | Production server: serves `dist/` and the API (needs `JWT_SECRET`) |
+| `npm run build` | Typecheck every project and build the frontend to `dist/` |
+| `npm run build:server` | Compile the backend to `build/server/server.mjs` |
+| `npm start` | Production server (after both builds): serves `dist/` and the API with plain `node` (needs `JWT_SECRET`) |
 | `npm test` | Backend integration tests (in-memory Postgres, one file at a time). Set `TEST_DATABASE_URL` to run them against a real PostgreSQL database whose name contains `test` — it is emptied |
+| `npm run test:e2e` | Build, then drive the real app in Chrome with Playwright (`e2e/`). Uses a fresh in-memory database, never the one in `.env` |
 | `npm run lint` | ESLint: import cycles, frontend/backend boundary, hook rules |
 | `npm run typecheck` | `tsc -b --noEmit` |
 | `npm run vercel-build` | Vercel's build: frontend, migrations, and the backend bundled as one function in `.vercel/output` (needs `DATABASE_URL`) |
 | `npm run illustrations` | Re-render the landing page's scenario illustrations into `public/landing/scenarios/` (uses your installed Chrome) |
-| `npm run db:seed` | Wipe the database and recreate the demo login (refuses in production) |
 | `npm run db:migrate` | Apply pending migrations (the server also does this on start) |
-| `npm run db:migration:create -- Name` | Start a new migration in `src/backend/db/migrations/` |
+| `npm run db:generate -- --name <change>` | Write a migration from changes to `src/backend/db/schema/` (drizzle-kit) |
+
+## Billing
+
+Plans are priced **per inventory**: each business an owner runs is one inventory, and an account can own as many as it pays for. Prices are in rupees (`src/backend/modules/billing/plans.ts`); a year costs ten months, so two are free:
+
+| Plan | Per inventory, monthly | Per inventory, yearly | People per inventory | Reorder low stock in one go |
+| --- | --- | --- | --- | --- |
+| Free trial (14 days) | — | — | 10 | ✓ |
+| Starter | ₹299 | ₹2,990 | 1 | — |
+| Pro | ₹699 | ₹6,990 | 10 | ✓ |
+| Scale | agreed in person | | unlimited (and unlimited inventories) | ✓ |
+
+- **Getting started:** sign-up leads to `/plans` — choose a plan, monthly or yearly, and how many inventories (the total updates live). Then either **Continue to payment** (`/checkout`) or **Start 14-day free trial**. Either way, `/onboarding` then asks for the kind of each inventory, which must add up to exactly the number chosen, and a name for each (renamable later in Settings). Done opens the dashboard.
+- **The free trial** covers as many inventories as were chosen, with Pro's features. The Billing page shows the next bill: the chosen plan × that many inventories, from the day the trial ends. Paying during the trial doesn't cut it short — the paid period starts when it ends.
+- **The payment page** (`/checkout`) confirms the order, takes the name and mobile number, and asks how to pay (UPI, card, net banking, wallet). Razorpay Checkout then opens on that method with the details filled in; card numbers, UPI PINs and bank logins are typed into Razorpay's window only.
+- **When a plan ends** (trial over, payments stopped) the owner's inventories become read-only for the whole team: everything stays visible, nothing can change, nothing is deleted. Choosing a plan unlocks them at once.
+- **Two ways to take payment**, set by `RAZORPAY_BILLING_MODE`:
+  - `ORDERS` (default): each payment is a one-time order for a month or a year. Nothing renews by itself; the owner pays again before it ends, and paying early for the same plan adds the next period on top.
+  - `SUBSCRIPTIONS`: Razorpay renews monthly or yearly by itself (quantity = inventories). Needs **Subscriptions** enabled on the Razorpay account; until then the Plans API answers 401 and checkout says so.
+- **Webhooks** (`order.paid`, `subscription.*`) arrive at `/api/billing/webhook`. In the Razorpay Dashboard (Settings → Webhooks) add `https://<your-site>/api/billing/webhook` with a secret of your choice and set the same secret as `RAZORPAY_WEBHOOK_SECRET`. Locally there are no webhooks: **Refresh from Razorpay** on the Billing page fetches the latest instead.
+- **Test mode:** with `rzp_test_` keys no real money moves; the payment page says so. Use the UPI ID `success@razorpay`, or any bank and **Success**.
+- **Without Razorpay keys**, outside production, paying switches the plan at once (manual mode) so everything works offline.
+- **Scale, or a plan by hand:** `npm run billing:grant -- owner@example.com SCALE` (add a number of months for an end date).
 
 ## Deploy
 
@@ -90,7 +119,7 @@ docker run -p 3000:3000   -e JWT_SECRET="$(openssl rand -hex 48)"   -e DATABASE_
 
 Leave `DATABASE_URL` empty to use the embedded Postgres instead, and mount a volume at `/app/.data` to keep it. The image has a health check on `/api/system/health` and stops gracefully on SIGTERM.
 
-**Without Docker:** `npm ci && npm run build && npm start` with the same environment variables (`.env.example` lists them all).
+**Without Docker:** `npm ci && npm run build && npm run build:server && npm start` with the same environment variables (`.env.example` lists them all).
 
 **On Render** (recommended)
 
@@ -139,16 +168,17 @@ All of these are derived in one place, the `item_views` SQL view (`src/backend/d
 - **Stock under concurrency.** Order, item and delivery rows are locked (`SELECT … FOR UPDATE`, in id order) for every change, so two people can’t reserve the same last unit, close an order twice or receive a delivery twice. `CHECK` constraints keep on-hand and line quantities from going negative.
 - **Stale writes.** A stock count is refused if the count changed since the person started it. Receiving more than a delivery expected takes a manager.
 - **History.** The activity log and stock ledger are append-only: the API has no way to edit them and a database trigger refuses updates.
-- **Sessions.** Short-lived access tokens; rotating, single-use refresh tokens — replaying one ends every session of the account. Credential and invite endpoints are rate-limited.
+- **Sessions.** Short-lived access tokens; rotating, single-use refresh tokens — replaying one ends every session of the account. Credential and invite endpoints are rate-limited, counted in the database so the limit holds across every server instance. A realtime socket is closed when its access token expires, and the client renews it and reconnects.
 
 `src/backend/tests/security.test.ts` checks each of these.
 
 ## Structure
 
 See `docs/STRUCTURE.md`:
-- **Backend** (`src/backend`): Express + PostgreSQL through TypeORM, one folder per domain module. Database access lives only in each module's `*.repository.ts`.
+- **Backend** (`src/backend`): Express + PostgreSQL through Drizzle ORM, one folder per domain module. Database access lives only in each module's `*.repository.ts`, through Drizzle's query builder — no hand-written SQL queries.
+- **Ids** are a readable prefix and a number from 100000: `ACID100000` is the first account, then `BSID` businesses, `ITID` items, `ORID` orders, `DLID` deliveries, `CSID` customers, `SPID` suppliers, `INID` invites, `MVID` stock movements and `ATID` activity (`src/backend/db/schema/ids.ts`). The database assigns them from one sequence per table.
 - **Frontend** (`src/frontend`): React 19 + Vite + React Query, one folder per feature, each with a single service object. Business templates live in `src/backend/modules/templates`; the frontend reads them from the API.
 
 ## Credits
 
-3D icons on the landing page: [3dicons](https://github.com/realvjy/3dicons) by realvjy, CC0. Font: Inter (SIL Open Font License), self-hosted via Fontsource. Data access: [TypeORM](https://typeorm.io) (MIT). Animation: [GSAP](https://gsap.com) (free under its standard license).
+3D icons on the landing page: [3dicons](https://github.com/realvjy/3dicons) by realvjy, CC0. Font: Inter (SIL Open Font License), self-hosted via Fontsource. Data access: [Drizzle ORM](https://orm.drizzle.team) (Apache-2.0). Animation: [GSAP](https://gsap.com) (free under its standard license).

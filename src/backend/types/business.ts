@@ -1,3 +1,4 @@
+import type { BusinessAccessType } from './billing';
 import type { BusinessTypeEnum, TemplateResponseType } from './template';
 
 /** Every business has an owner and managers; staff roles come from the template. */
@@ -21,6 +22,8 @@ export type BusinessResponseType = {
 };
 
 export type BusinessDetailResponseType = BusinessResponseType & {
+  /** Whether it can be changed: its owner's plan decides */
+  access: BusinessAccessType;
   template: TemplateResponseType;
 };
 

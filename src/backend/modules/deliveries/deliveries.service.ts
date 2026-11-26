@@ -1,8 +1,10 @@
 import { BadRequest, Conflict, Forbidden, NotFound } from '@/backend/common/errors';
 import { RecordActivity, RecordMovement } from '@/backend/common/services/audit';
 import { Plural } from '@/backend/common/utils/format';
+import { GroupBy } from '@/backend/common/utils/group-by';
 import { db, type Queryable } from '@/backend/db/client';
 import type { DeliveryRow } from '@/backend/db/schema';
+import { billingService } from '@/backend/modules/billing/billing.service';
 import { itemsRepository } from '@/backend/modules/items/items.repository';
 import { suppliersRepository } from '@/backend/modules/suppliers/suppliers.repository';
 import { BroadcastChange } from '@/backend/realtime/socket';
@@ -28,8 +30,8 @@ const STATUS_LABEL: Record<DeliveryStatusTypeEnum, string> = {
 };
 
 const load = async (q: Queryable, rows: DeliveryRow[]): Promise<DeliveryResponseType[]> => {
-  const lines = await deliveriesRepository.ListLines(q, rows.map((r) => r.id));
-  return rows.map((r) => ToDeliveryResponse(r, lines));
+  const lines = GroupBy(await deliveriesRepository.ListLines(q, rows.map((r) => r.id)), (l) => l.delivery_id);
+  return rows.map((r) => ToDeliveryResponse(r, lines.get(r.id) ?? []));
 };
 
 const find = async (q: Queryable, scope: ScopeType, number: string, lock = false) => {
@@ -68,11 +70,12 @@ const insert = async (tx: Queryable, scope: ScopeType, input: CreateDeliveryInpu
     businessId: scope.businessId, number, supplierId: input.supplierId, supplierName, vehicle: input.vehicle,
     reference: input.reference, expectedAt: input.expectedAt, status: input.status,
   });
-  for (const [position, { item, line }] of resolved.entries()) {
-    await deliveriesRepository.InsertLine(tx, {
+  await deliveriesRepository.InsertLines(
+    tx,
+    resolved.map(({ item, line }, position) => ({
       deliveryId, itemId: item.id, position, expected: line.expected, unitCost: line.unitCost ?? Number(item.cost),
-    });
-  }
+    })),
+  );
   const units = input.lines.reduce((s, l) => s + l.expected, 0);
   const activity = await RecordActivity(tx, scope, {
     kind: ActivityKindTypeEnum.DELIVERY,
@@ -96,6 +99,7 @@ const Create = async (scope: ScopeType, input: CreateDeliveryInput): Promise<Del
  * incoming stock, ordering enough to reach twice the reorder level.
  */
 const Reorder = async (scope: ScopeType, input: ReorderInput): Promise<DeliveryResponseType[]> => {
+  await billingService.AssertReorder(db, scope.businessId);
   const result = await db.transaction(async (tx) => {
     const items = (await itemsRepository.ListViews(tx, scope.businessId, { kind: ItemKindTypeEnum.STOCK }))
       .filter((i) => i.status !== StockStatusTypeEnum.IN_STOCK && i.supplier_id)

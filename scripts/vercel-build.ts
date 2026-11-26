@@ -10,7 +10,7 @@
  */
 import { execSync } from 'node:child_process';
 import { cpSync, rmSync, writeFileSync } from 'node:fs';
-import { build } from 'esbuild';
+import { BundleServer } from './lib/bundle-server';
 
 const OUT = '.vercel/output';
 const FUNCTION = `${OUT}/functions/api.func`;
@@ -48,55 +48,11 @@ run('npm run build');
 run('npm run db:migrate');
 cpSync('dist', `${OUT}/static`, { recursive: true });
 
-await build({
-  entryPoints: ['src/backend/server.ts'],
+await BundleServer({
   outfile: `${FUNCTION}/index.mjs`,
-  bundle: true,
-  platform: 'node',
-  format: 'esm',
-  target: 'node22',
-  tsconfig: 'tsconfig.node.json',
-  sourcemap: true,
-  logLevel: 'warning',
-  // Optional drivers and native add-ons that libraries try to load but this app never uses on Vercel (TypeORM's
-  // other databases, ws's speed-ups, pg's native bindings, the embedded database, the dev server's Vite).
-  external: [
-    '@electric-sql/pglite',
-    'vite',
-    'pg-native',
-    'pg-query-stream',
-    'bufferutil',
-    'utf-8-validate',
-    'mysql',
-    'mysql2',
-    'oracledb',
-    'mssql',
-    'mongodb',
-    'redis',
-    'ioredis',
-    'sql.js',
-    'sqlite3',
-    'better-sqlite3',
-    '@sap/hana-client',
-    'hdb-pool',
-    '@google-cloud/spanner',
-    'typeorm-aurora-data-api-driver',
-    'react-native-sqlite-storage',
-    '@capacitor-community/sqlite',
-    'expo-sqlite',
-    'ts-node',
-  ],
-  // CommonJS dependencies bundled into an ES module still call require() and read __dirname.
-  banner: {
-    js: [
-      "import { createRequire as __createRequire } from 'node:module';",
-      "import { fileURLToPath as __fileURLToPath } from 'node:url';",
-      "import { dirname as __dirnameOf } from 'node:path';",
-      'const require = __createRequire(import.meta.url);',
-      'const __filename = __fileURLToPath(import.meta.url);',
-      'const __dirname = __dirnameOf(__filename);',
-    ].join('\n'),
-  },
+  // Native add-ons and optional modules this app never uses on Vercel: ws's speed-ups, pg's native bindings, the
+  // embedded database (Vercel always has DATABASE_URL) and the dev server's Vite.
+  external: ['@electric-sql/pglite', 'vite', 'pg-native', 'bufferutil', 'utf-8-validate'],
 });
 
 const json = (path: string, value: unknown) => writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`);

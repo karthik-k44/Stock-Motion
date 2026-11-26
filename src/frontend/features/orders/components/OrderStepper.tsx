@@ -1,5 +1,5 @@
 import { businessesService } from '@/frontend/features/businesses/services';
-import { CANCELLED_STATUS } from '../types';
+import { OrderStatusTypeEnum } from '../types';
 
 export const OrderStepper = ({ status }: { status: string }) => {
   const { orderFlow } = businessesService.useBusiness().template;
@@ -8,7 +8,7 @@ export const OrderStepper = ({ status }: { status: string }) => {
   return (
     <ol className="steps steps-lg" aria-label="Progress">
       {orderFlow.map((s, i) => {
-        const state = status === CANCELLED_STATUS ? 'todo' : i < at || finished ? 'done' : i === at ? 'current' : 'todo';
+        const state = status === OrderStatusTypeEnum.CANCELLED ? 'todo' : i < at || finished ? 'done' : i === at ? 'current' : 'todo';
         return (
           <li key={s.status} className={`step step-${state}`} aria-current={i === at ? 'step' : undefined}>
             {s.label}

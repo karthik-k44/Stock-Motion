@@ -1,39 +1,76 @@
-import type { DbDate } from './_shared';
+import { sql } from 'drizzle-orm';
+import { check, foreignKey, index, integer, pgTable, primaryKey, text, unique } from 'drizzle-orm/pg-core';
+import { businesses } from './businesses';
+import { createdAt } from './_shared';
+import { prefixedId } from './ids';
 
-/** Row shapes as returned by the database (snake_case, before mapping). */
-export type LocationRow = {
-  business_id: string;
-  code: string;
-  zone: string;
-  name: string;
-  position: number;
-};
+export const locations = pgTable(
+  'locations',
+  {
+    business_id: text().notNull(),
+    code: text().notNull(),
+    zone: text().notNull(),
+    name: text().notNull(),
+    position: integer().notNull().default(0),
+  },
+  (t) => [
+    primaryKey({ name: 'locations_pkey', columns: [t.business_id, t.code] }),
+    foreignKey({ name: 'locations_business_id_fkey', columns: [t.business_id], foreignColumns: [businesses.id] }).onDelete('cascade'),
+  ],
+);
 
-export type CategoryRow = {
-  business_id: string;
-  code: string;
-  name: string;
-  position: number;
-};
+export const categories = pgTable(
+  'categories',
+  {
+    business_id: text().notNull(),
+    code: text().notNull(),
+    name: text().notNull(),
+    position: integer().notNull().default(0),
+  },
+  (t) => [
+    primaryKey({ name: 'categories_pkey', columns: [t.business_id, t.code] }),
+    foreignKey({ name: 'categories_business_id_fkey', columns: [t.business_id], foreignColumns: [businesses.id] }).onDelete('cascade'),
+  ],
+);
 
-export type SupplierRow = {
-  id: string;
-  business_id: string;
-  name: string;
-  contact: string;
-  email: string;
-  phone: string;
-  lead_days: number;
-  created_at: DbDate;
-};
+export const suppliers = pgTable(
+  'suppliers',
+  {
+    id: prefixedId('suppliers'),
+    business_id: text().notNull(),
+    name: text().notNull(),
+    contact: text().notNull().default(''),
+    email: text().notNull().default(''),
+    phone: text().notNull().default(''),
+    lead_days: integer().notNull().default(2),
+    created_at: createdAt(),
+  },
+  (t) => [
+    check('suppliers_lead_days_check', sql`${t.lead_days} >= 0`),
+    unique('suppliers_business_id_name_key').on(t.business_id, t.name),
+    foreignKey({ name: 'suppliers_business_id_fkey', columns: [t.business_id], foreignColumns: [businesses.id] }).onDelete('cascade'),
+  ],
+);
 
-export type CustomerRow = {
-  id: string;
-  business_id: string;
-  name: string;
-  email: string;
-  phone: string;
-  address: string;
-  notes: string;
-  created_at: DbDate;
-};
+export const customers = pgTable(
+  'customers',
+  {
+    id: prefixedId('customers'),
+    business_id: text().notNull(),
+    name: text().notNull(),
+    email: text().notNull().default(''),
+    phone: text().notNull().default(''),
+    address: text().notNull().default(''),
+    notes: text().notNull().default(''),
+    created_at: createdAt(),
+  },
+  (t) => [
+    foreignKey({ name: 'customers_business_id_fkey', columns: [t.business_id], foreignColumns: [businesses.id] }).onDelete('cascade'),
+    index('customers_business').on(t.business_id, t.name),
+  ],
+);
+
+export type LocationRow = typeof locations.$inferSelect;
+export type CategoryRow = typeof categories.$inferSelect;
+export type SupplierRow = typeof suppliers.$inferSelect;
+export type CustomerRow = typeof customers.$inferSelect;

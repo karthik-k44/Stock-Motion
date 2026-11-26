@@ -9,7 +9,13 @@ import { invitesController } from './invites.controller';
 /** `/api/invites/:token` — public preview, then accept (signed in) or sign up from the link. */
 export const publicInvitesRoutes = Router();
 
-const throttle = RateLimitWrites({ windowMs: 15 * 60_000, max: env.NODE_ENV === 'test' ? Number.MAX_SAFE_INTEGER : 30 });
+// Accepting creates accounts and tries invite tokens, so it is counted across every server instance, like sign-in.
+const throttle = RateLimitWrites({
+  name: 'invites',
+  windowMs: 15 * 60_000,
+  max: env.NODE_ENV === 'test' ? Number.MAX_SAFE_INTEGER : 30,
+  shared: true,
+});
 
 publicInvitesRoutes.get('/:token', invitesController.Preview);
 publicInvitesRoutes.post('/:token/accept', throttle, RequireAuth, invitesController.Accept);

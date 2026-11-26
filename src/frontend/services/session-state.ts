@@ -1,18 +1,30 @@
 /**
- * Which business this browser is working in. Read synchronously by the request helpers (every
- * business-scoped URL starts with it) and by the realtime socket. Remembered per browser.
+ * What this browser remembers between visits: which business it works in (read synchronously by the request helpers,
+ * since every business-scoped URL starts with it, and by the realtime socket), and whether it was signed in.
  */
-const STORAGE_KEY = 'stockmotion:business';
+const BUSINESS_KEY = 'stockmotion:business';
+/** A hint only — never a credential. The session itself lives in the httpOnly refresh cookie. */
+const SIGNED_IN_KEY = 'stockmotion:signed-in';
 
-const read = (): string | null => {
+const read = (key: string): string | null => {
   try {
-    return localStorage.getItem(STORAGE_KEY);
+    return localStorage.getItem(key);
   } catch {
     return null;
   }
 };
 
-let businessId = read();
+const write = (key: string, value: string | null) => {
+  try {
+    if (value) localStorage.setItem(key, value);
+    else localStorage.removeItem(key);
+  } catch {
+    /* private mode — keep it in memory */
+  }
+};
+
+let businessId = read(BUSINESS_KEY);
+let signedIn = read(SIGNED_IN_KEY) === '1';
 const listeners = new Set<() => void>();
 
 export const sessionState = {
@@ -20,12 +32,7 @@ export const sessionState = {
   SetBusinessId: (id: string | null) => {
     if (id === businessId) return;
     businessId = id;
-    try {
-      if (id) localStorage.setItem(STORAGE_KEY, id);
-      else localStorage.removeItem(STORAGE_KEY);
-    } catch {
-      /* private mode — keep it in memory */
-    }
+    write(BUSINESS_KEY, id);
     listeners.forEach((l) => l());
   },
   Subscribe: (fn: () => void) => {
@@ -33,6 +40,12 @@ export const sessionState = {
     return () => {
       listeners.delete(fn);
     };
+  },
+  /** Whether this browser was signed in when last seen: worth checking the session before showing a public page. */
+  WasSignedIn: () => signedIn,
+  SetSignedIn: (value: boolean) => {
+    signedIn = value;
+    write(SIGNED_IN_KEY, value ? '1' : null);
   },
 };
 

@@ -9,6 +9,7 @@ export const businessesRoutes = Router();
 
 businessesRoutes.get('/', RequireAuth, businessesController.ListMine);
 businessesRoutes.post('/', RequireAuth, businessesController.Create);
+businessesRoutes.post('/batch', RequireAuth, businessesController.CreateMany);
 
 /** `/api/businesses/:businessId` — mounted behind RequireAuth + RequireBusinessRole() in app.ts. */
 export const businessRoutes = Router();

@@ -1,19 +1,12 @@
 import { z } from 'zod';
 import { CostSchema, SkuSchema } from '@/backend/modules/items/items.validators';
-import { DeliveryStatusTypeEnum } from '@/backend/types/delivery';
-
-export const DeliveryFilterTypeEnum = {
-  ALL: 'ALL',
-  UPCOMING: 'UPCOMING',
-  RECEIVED: 'RECEIVED',
-} as const;
+import { DeliveryFilterTypeEnum, DeliveryStatusTypeEnum } from '@/backend/types/delivery';
 
 export const ListDeliveriesQuerySchema = z.object({
   view: z.nativeEnum(DeliveryFilterTypeEnum).default(DeliveryFilterTypeEnum.ALL),
   search: z.string().trim().max(80).optional(),
   supplierId: z.string().max(64).optional(),
 });
-export type ListDeliveriesQuery = z.infer<typeof ListDeliveriesQuerySchema>;
 
 export const DeliveryNumberParamSchema = z.object({
   number: z.string().trim().toUpperCase().regex(/^[A-Z]{1,6}-\d{1,9}$/, 'Invalid delivery number'),

@@ -1,3 +1,5 @@
+import type { DeliveryStatusTypeEnum } from '@/backend/types/delivery';
+import type { OrderStatusTypeEnum } from '@/backend/types/order';
 import type { ItemKindTypeEnum } from '@/backend/types/item';
 import type { TemplateResponseType } from '@/backend/types/template';
 
@@ -24,7 +26,7 @@ export type SampleDataType = {
     number: string;
     /** A customer name from `customers`, or a free label like "Table 4" */
     customer: string;
-    status: string;
+    status: OrderStatusTypeEnum;
     dueDays?: number;
     dueHour?: number;
     createdMinsAgo: number;
@@ -40,7 +42,7 @@ export type SampleDataType = {
     dueDays: number;
     dueHour: number;
     dueMin: number;
-    status: string;
+    status: DeliveryStatusTypeEnum;
     /** [sku, expected] */
     lines: [string, number][];
   }[];

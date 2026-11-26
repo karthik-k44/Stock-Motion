@@ -1,24 +1,12 @@
+import { timestamp } from 'drizzle-orm/pg-core';
+
 /**
- * Row types are snake_case, exactly as the columns are named: the TypeORM entities (`db/entities`) use them as their
- * shapes, and raw query rows have the same keys. Timestamps come back as Date; NUMERIC columns as strings.
+ * Tables keep snake_case property names, exactly as the columns are named, so table rows and joined query rows
+ * share one shape. Timestamps come back as Date; NUMERIC columns as strings, to keep every decimal.
+ * Constraint names are the ones PostgreSQL gave them, so `drizzle-kit generate` diffs against the real databases.
  */
 export type DbDate = Date | string;
 export type DbNumeric = number | string;
 
-/** Every table, children first, so a business's rows can be wiped in order. */
-export const BUSINESS_TABLES = [
-  'activity',
-  'movements',
-  'delivery_lines',
-  'deliveries',
-  'order_lines',
-  'orders',
-  'item_components',
-  'items',
-  'customers',
-  'suppliers',
-  'categories',
-  'locations',
-] as const;
-
-export const ALL_TABLES = [...BUSINESS_TABLES, 'invites', 'memberships', 'businesses', 'refresh_tokens', 'accounts'] as const;
+export const timestampTz = () => timestamp({ withTimezone: true, mode: 'date' });
+export const createdAt = () => timestampTz().notNull().defaultNow();

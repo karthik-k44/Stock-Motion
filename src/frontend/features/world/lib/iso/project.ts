@@ -36,11 +36,6 @@ export const RotatePoint = ([x, z]: XZType, turns: number, size: XZType): XZType
 
 export const RotateSize = ([sx, sz]: XZType, turns: number): XZType => (turns % 2 ? [sz, sx] : [sx, sz]);
 
-export const DIRS: DirType[] = ['x+', 'z+', 'x-', 'z-'];
-
-/** The direction a mover heading `dir` is facing once the scene is turned. */
-export const RotateDir = (dir: DirType, turns: number): DirType => DIRS[(TURNS_OF[dir] + turns) % 4];
-
 export type ProjectorType = {
   /** Picture size in SVG units */
   W: number;
@@ -81,15 +76,6 @@ export const Faces = (b: BoxType, pt: ProjectorType['pt']): PolyType[] => {
     { points: str([pt(x + w, z, y), pt(x + w, z + d, y), pt(x + w, z + d, y + h), pt(x + w, z, y + h)]), fill: Shade(c, 0.8), stroke: Shade(c, 0.72) },
     { points: str([pt(x, z, y + h), pt(x + w, z, y + h), pt(x + w, z + d, y + h), pt(x, z + d, y + h)]), fill: Shade(c, 1.02), stroke: Shade(c, 0.9) },
   ];
-};
-
-const EPS = 1e-6;
-
-/** Painter's order for boxes: anything wholly behind on x or z first; on a shared footprint, lower first. */
-export const BehindFirst = (a: BoxType, b: BoxType): number => {
-  if (a.x + a.w <= b.x + EPS || a.z + a.d <= b.z + EPS) return -1;
-  if (b.x + b.w <= a.x + EPS || b.z + b.d <= a.z + EPS) return 1;
-  return a.y - b.y || a.y + a.h - (b.y + b.h);
 };
 
 export type SortedGroupType = IsoGroupType & { key: number; x1: number; z1: number; x2: number; z2: number; tall: number };

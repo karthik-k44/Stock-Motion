@@ -1,3 +1,5 @@
+import { DeliveryStatusTypeEnum } from '@/backend/types/delivery';
+import { OrderStatusTypeEnum } from '@/backend/types/order';
 import { BusinessTypeEnum } from '@/backend/types/template';
 import type { TemplateDefinitionType } from './definition-type';
 
@@ -39,9 +41,9 @@ export const CAFE: TemplateDefinitionType = {
     orderPrefix: 'TKT',
     deliveryPrefix: 'DRP',
     orderFlow: [
-      { status: 'NEW', label: 'New', action: null, reserves: false, consumeLines: false, consumeOnEnter: false, requiresAllDone: false, closed: false },
-      { status: 'PREPARING', label: 'Preparing', action: 'Start preparing', reserves: true, consumeLines: false, consumeOnEnter: false, requiresAllDone: false, closed: false },
-      { status: 'SERVED', label: 'Served', action: 'Mark served', reserves: false, consumeLines: false, consumeOnEnter: true, requiresAllDone: false, closed: true },
+      { status: OrderStatusTypeEnum.NEW, label: 'New', action: null, reserves: false, consumeLines: false, consumeOnEnter: false, requiresAllDone: false, closed: false },
+      { status: OrderStatusTypeEnum.PREPARING, label: 'Preparing', action: 'Start preparing', reserves: true, consumeLines: false, consumeOnEnter: false, requiresAllDone: false, closed: false },
+      { status: OrderStatusTypeEnum.SERVED, label: 'Served', action: 'Mark served', reserves: false, consumeLines: false, consumeOnEnter: true, requiresAllDone: false, closed: true },
     ],
     roles: [
       { code: 'OWNER', label: 'Owner' },
@@ -126,24 +128,24 @@ export const CAFE: TemplateDefinitionType = {
         components: [['PRO-003', 120], ['PRO-002', 80]] },
     ],
     orders: [
-      { number: 'TKT-1041', customer: 'Table 3', status: 'NEW', createdMinsAgo: 6, lines: [['MNU-001', 2, 0], ['MNU-007', 1, 0]] },
-      { number: 'TKT-1042', customer: 'Maya Chen', status: 'PREPARING', createdMinsAgo: 9, lines: [['MNU-002', 1, 0], ['MNU-006', 1, 0]] },
-      { number: 'TKT-1043', customer: 'Takeaway', status: 'PREPARING', createdMinsAgo: 4, lines: [['MNU-005', 3, 0]] },
-      { number: 'TKT-1044', customer: 'Office Hub Co-working', status: 'NEW', dueDays: 1, dueHour: 9, createdMinsAgo: 120,
+      { number: 'TKT-1041', customer: 'Table 3', status: OrderStatusTypeEnum.NEW, createdMinsAgo: 6, lines: [['MNU-001', 2, 0], ['MNU-007', 1, 0]] },
+      { number: 'TKT-1042', customer: 'Maya Chen', status: OrderStatusTypeEnum.PREPARING, createdMinsAgo: 9, lines: [['MNU-002', 1, 0], ['MNU-006', 1, 0]] },
+      { number: 'TKT-1043', customer: 'Takeaway', status: OrderStatusTypeEnum.PREPARING, createdMinsAgo: 4, lines: [['MNU-005', 3, 0]] },
+      { number: 'TKT-1044', customer: 'Office Hub Co-working', status: OrderStatusTypeEnum.NEW, dueDays: 1, dueHour: 9, createdMinsAgo: 120,
         lines: [['MNU-006', 12, 0], ['MNU-005', 12, 0]] },
       ...SERVED.map(([number, customer, minsAgo, lines]) => ({
-        number, customer, status: 'SERVED', createdMinsAgo: minsAgo + 12, closedMinsAgo: minsAgo,
+        number, customer, status: OrderStatusTypeEnum.SERVED, createdMinsAgo: minsAgo + 12, closedMinsAgo: minsAgo,
         lines: lines.map(([sku, qty]) => [sku, qty, qty] as [string, number, number]),
       })),
     ],
     deliveries: [
-      { number: 'DRP-301', supplier: SUPPLIER.dairy, vehicle: 'Dairy van', reference: 'GV-88', dueDays: 0, dueHour: new Date().getHours() + 1, dueMin: 0, status: 'IN_TRANSIT',
+      { number: 'DRP-301', supplier: SUPPLIER.dairy, vehicle: 'Dairy van', reference: 'GV-88', dueDays: 0, dueHour: new Date().getHours() + 1, dueMin: 0, status: DeliveryStatusTypeEnum.IN_TRANSIT,
         lines: [['DAI-002', 12000], ['DAI-001', 20000]] },
-      { number: 'DRP-302', supplier: SUPPLIER.bakery, vehicle: 'Bakery van', reference: 'HB-12', dueDays: 1, dueHour: 6, dueMin: 30, status: 'SCHEDULED',
+      { number: 'DRP-302', supplier: SUPPLIER.bakery, vehicle: 'Bakery van', reference: 'HB-12', dueDays: 1, dueHour: 6, dueMin: 30, status: DeliveryStatusTypeEnum.SCHEDULED,
         lines: [['BAK-003', 24], ['BAK-001', 48], ['BAK-002', 40]] },
-      { number: 'DRP-303', supplier: SUPPLIER.produce, vehicle: 'Produce truck', reference: 'MF-03', dueDays: 1, dueHour: 7, dueMin: 0, status: 'SCHEDULED',
+      { number: 'DRP-303', supplier: SUPPLIER.produce, vehicle: 'Produce truck', reference: 'MF-03', dueDays: 1, dueHour: 7, dueMin: 0, status: DeliveryStatusTypeEnum.SCHEDULED,
         lines: [['PRO-003', 2000], ['PRO-001', 24]] },
-      { number: 'DRP-300', supplier: SUPPLIER.roaster, vehicle: 'Courier', reference: 'RR-5521', dueDays: -1, dueHour: 10, dueMin: 0, status: 'RECEIVED',
+      { number: 'DRP-300', supplier: SUPPLIER.roaster, vehicle: 'Courier', reference: 'RR-5521', dueDays: -1, dueHour: 10, dueMin: 0, status: DeliveryStatusTypeEnum.RECEIVED,
         lines: [['CAF-001', 5000]] },
     ],
   },

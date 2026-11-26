@@ -1,9 +1,13 @@
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { io as connect, type Socket } from 'socket.io-client';
+import express from 'express';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { CloseDb, db } from '@/backend/db/client';
+import { activity, movements, rateLimits } from '@/backend/db/schema';
+import { ErrorHandler } from '@/backend/middleware/error.middleware';
+import { RateLimitWrites } from '@/backend/middleware/rate-limit.middleware';
 import { AttachRealtime, CloseRealtime, SOCKET_PATH } from '@/backend/realtime/socket';
 import { BusinessTypeEnum } from '@/backend/types/template';
 import { app, Client, OwnerWithBusiness, ResetDatabase, SetupDatabase } from './helpers';
@@ -140,10 +144,10 @@ describe('permissions', () => {
   it('history cannot be rewritten, even directly in the database', async () => {
     const { api } = await shop(1);
     await api.post(`/items/${SKU}/adjustments`, { mode: 'ADD', qty: 2, reason: 'FOUND' });
-    await expect(db.query(`UPDATE activity SET message = 'rewritten'`)).rejects.toThrow(/append-only/);
-    await expect(db.query('UPDATE movements SET delta = 99')).rejects.toThrow(/append-only/);
+    await expect(db.update(activity).set({ message: 'rewritten' })).rejects.toMatchObject({ cause: { message: expect.stringMatching(/append-only/) } });
+    await expect(db.update(movements).set({ delta: 99 })).rejects.toMatchObject({ cause: { message: expect.stringMatching(/append-only/) } });
     // Deleting is still possible: an owner can reset a business's data, history included.
-    expect((await api.post('/reset', { sampleData: false })).status).toBe(200);
+    expect((await api.post('/reset')).status).toBe(200);
     expect((await api.get('/activity')).body).toHaveLength(1);
   });
 
@@ -194,5 +198,39 @@ describe('realtime access', () => {
     await settle();
     expect(events).toBe(1);
     expect(await joinBusiness()).toBe(false);
+  });
+});
+
+describe('rate limits', () => {
+  /** One server instance: its own Express app and its own limiter, as on a serverless host. */
+  const instance = (shared: boolean) => {
+    const app = express();
+    app.post('/login', RateLimitWrites({ name: 'test-login', windowMs: 60_000, max: 3, shared }), (_req, res) => {
+      res.json({ ok: true });
+    });
+    app.use(ErrorHandler);
+    return app;
+  };
+
+  it('counts sign-in attempts across every server instance when shared', async () => {
+    const instances = [instance(true), instance(true), instance(true)];
+    const statuses: number[] = [];
+    for (let i = 0; i < 4; i++) statuses.push((await request(instances[i % 3]).post('/login')).status);
+    expect(statuses).toEqual([200, 200, 200, 429]);
+  });
+
+  it('starts a fresh window once the old one has passed', async () => {
+    const app = instance(true);
+    for (let i = 0; i < 3; i++) await request(app).post('/login');
+    expect((await request(app).post('/login')).status).toBe(429);
+    await db.update(rateLimits).set({ reset_at: new Date(Date.now() - 1000) });
+    expect((await request(app).post('/login')).status).toBe(200);
+  });
+
+  it('only counts within one instance when kept in memory', async () => {
+    const [a, b] = [instance(false), instance(false)];
+    for (let i = 0; i < 3; i++) expect((await request(a).post('/login')).status).toBe(200);
+    expect((await request(a).post('/login')).status).toBe(429);
+    expect((await request(b).post('/login')).status).toBe(200);
   });
 });

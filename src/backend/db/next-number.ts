@@ -1,20 +1,25 @@
+import { and, desc, eq, like, sql } from 'drizzle-orm';
 import type { Queryable } from '@/backend/db/client';
+import { businesses, type deliveries, type orders } from '@/backend/db/schema';
 
 /**
- * Next human-facing number for a business, e.g. SO-10239 or TKT-1045. Takes a transaction-scoped
- * advisory lock first so two concurrent creates can't pick the same number.
+ * Next human-facing number for a business, e.g. SO-10239 or TKT-1045. Locks the business row first (in the caller's
+ * transaction), so two concurrent creates can't pick the same number.
  */
 export const NextNumber = async (
   tx: Queryable,
-  table: 'orders' | 'deliveries',
+  table: typeof orders | typeof deliveries,
   businessId: string,
   prefix: string,
   start: number,): Promise<string> => {
-  await tx.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`${table}:${businessId}`]);
-  const rows: { n: number | null }[] = await tx.query(
-    `SELECT MAX(NULLIF(regexp_replace(number, '\\D', '', 'g'), '')::int) AS n
-     FROM ${table} WHERE business_id = $1 AND number LIKE $2`,
-    [businessId, `${prefix}-%`],
-  );
-  return `${prefix}-${(rows[0]?.n ?? start - 1) + 1}`;
+  await tx.select({ id: businesses.id }).from(businesses).where(eq(businesses.id, businessId)).for('update');
+  // Longest first, then highest: SO-10000 sorts after SO-9999.
+  const [last] = await tx
+    .select({ number: table.number })
+    .from(table)
+    .where(and(eq(table.business_id, businessId), like(table.number, `${prefix}-%`)))
+    .orderBy(desc(sql`length(${table.number})`), desc(table.number))
+    .limit(1);
+  const current = last ? Number(last.number.slice(prefix.length + 1)) : NaN;
+  return `${prefix}-${(Number.isInteger(current) ? current : start - 1) + 1}`;
 };

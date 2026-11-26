@@ -4,7 +4,7 @@ import { PatchWhere, useOptimisticMutation } from '@/frontend/services/optimisti
 import { Biz } from '@/frontend/services/request';
 import { PredictAdvance, PredictConsume } from '../lib/order-flow';
 import {
-  CANCELLED_STATUS,
+  OrderStatusTypeEnum,
   type ListOrdersParams,
   type NewOrderInput,
   type OrderLineInput,
@@ -95,7 +95,7 @@ const useCancelOrder = () =>
   useOptimisticMutation({
     mutationFn: (number: string): Promise<OrderResponseType> => Biz.Post(`${path(number)}/cancel`),
     optimistic: (number) =>
-      patchOrder(number, (o) => ({ ...o, status: CANCELLED_STATUS, cancelled: true, closed: true, reserves: false })),
+      patchOrder(number, (o) => ({ ...o, status: OrderStatusTypeEnum.CANCELLED, cancelled: true, closed: true, reserves: false })),
     invalidate: ORDER_KEYS,
     errorTitle: 'Not cancelled',
     successToast: (o) => ({ title: `${o.number} cancelled`, message: 'Reserved stock was released' }),

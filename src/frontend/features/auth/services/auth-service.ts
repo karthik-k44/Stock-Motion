@@ -17,8 +17,11 @@ const authKeys = {
 /** Restore the session from the refresh cookie on page load; null when signed out. */
 const Restore = async (): Promise<AccountResponseType | null> => {
   try {
-    return (await RefreshAccessToken()).account;
+    const { account } = await RefreshAccessToken();
+    sessionState.SetSignedIn(true);
+    return account;
   } catch {
+    sessionState.SetSignedIn(false);
     return null;
   }
 };
@@ -27,6 +30,7 @@ const Restore = async (): Promise<AccountResponseType | null> => {
 const StartSession = (qc: QueryClient, session: AuthSessionResponseType) => {
   tokenStore.Advance();
   tokenStore.Set(session.accessToken);
+  sessionState.SetSignedIn(true);
   qc.clear();
   qc.setQueryData(authKeys.session(), session.account);
   realtime.Disconnect();
@@ -37,6 +41,7 @@ const EndSession = (qc: QueryClient) => {
   tokenStore.Advance();
   tokenStore.Set(null);
   sessionState.SetBusinessId(null);
+  sessionState.SetSignedIn(false);
   realtime.Disconnect();
   qc.clear();
   qc.setQueryData(authKeys.session(), null);

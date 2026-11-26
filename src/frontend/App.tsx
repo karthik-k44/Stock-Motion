@@ -17,6 +17,8 @@ const Signup = lazyPage(() => import('./features/auth/Signup'), 'Signup');
 const AcceptInvite = lazyPage(() => import('./features/auth/AcceptInvite'), 'AcceptInvite');
 
 const Onboarding = lazyPage(() => import('./features/onboarding/Onboarding'), 'Onboarding');
+const Plans = lazyPage(() => import('./features/billing/Plans'), 'Plans');
+const Checkout = lazyPage(() => import('./features/billing/Checkout'), 'Checkout');
 
 const MarketingLayout = lazyPage(() => import('./features/landing/MarketingLayout'), 'MarketingLayout');
 const Landing = lazyPage(() => import('./features/landing/Landing'), 'Landing');
@@ -48,6 +50,9 @@ const Settings = lazyPage(() => import('./features/settings/Settings'), 'Setting
 
 const Activity = lazyPage(() => import('./features/activity/Activity'), 'Activity');
 
+const Billing = lazyPage(() => import('./features/billing/Billing'), 'Billing');
+const Invoices = lazyPage(() => import('./features/billing/Invoices'), 'Invoices');
+
 /** Built from elements, not rendered as <Routes>: the loading line, scroll restoration and RouteError all need a data router. */
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -57,7 +62,9 @@ const router = createBrowserRouter(
       <Route path={paths.signup} lazy={Signup} errorElement={<RouteError />} />
       <Route path="/invite/:token" lazy={AcceptInvite} errorElement={<RouteError />} />
 
-      {/* Signed in, choosing or creating a business. */}
+      {/* Signed in, getting started: choosing a plan, paying for it, then setting up the inventories. */}
+      <Route path={paths.plans} lazy={Plans} errorElement={<RouteError />} />
+      <Route path="/checkout" lazy={Checkout} errorElement={<RouteError />} />
       <Route path={paths.onboarding} lazy={Onboarding} errorElement={<RouteError />} />
 
       {/* The public marketing pages, under one layout (the navbar and footer stay mounted between them). */}
@@ -93,6 +100,10 @@ const router = createBrowserRouter(
         <Route path="settings" lazy={Settings} />
 
         <Route path="activity" lazy={Activity} />
+
+        <Route path="billing" lazy={Billing} />
+
+        <Route path="invoices/:id?" lazy={Invoices} />
 
         <Route path="*" element={<NotFound />} />
       </Route>

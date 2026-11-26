@@ -6,14 +6,20 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import { createTypeScriptImportResolver } from 'eslint-import-resolver-typescript';
 
 export default tseslint.config(
-  { ignores: ['dist', 'node_modules', '.data'] },
+  { ignores: ['dist', 'build', 'node_modules', '.data', '.vercel', 'test-results', 'playwright-report'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    files: ['src/**/*.{ts,tsx}'],
+    files: ['src/**/*.{ts,tsx}', 'e2e/**/*.ts', 'scripts/**/*.ts', '*.config.ts'],
     plugins: { 'import-x': importX },
     settings: {
-      'import-x/resolver-next': [createTypeScriptImportResolver({ project: ['tsconfig.app.json', 'tsconfig.node.json'] })],
+      // Several projects on purpose (browser, server and tooling code get different libs).
+      'import-x/resolver-next': [
+        createTypeScriptImportResolver({
+          project: ['tsconfig.app.json', 'tsconfig.node.json', 'tsconfig.tools.json'],
+          noWarnOnMultipleProjects: true,
+        }),
+      ],
     },
     rules: {
       'import-x/no-cycle': 'error',
@@ -42,7 +48,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['src/backend/**/*.ts', '*.config.{js,ts}'],
+    files: ['src/backend/**/*.ts', 'e2e/**/*.ts', 'scripts/**/*.ts', '*.config.{js,ts}'],
     languageOptions: { globals: globals.node },
   },
 );

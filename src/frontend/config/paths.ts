@@ -3,6 +3,10 @@ export const paths = {
   signup: '/signup',
   invite: (token: string) => `/invite/${token}`,
   onboarding: '/onboarding',
+  /** Choosing a plan and how many inventories: right after signing up, or to change plan later */
+  plans: '/plans',
+  /** Our payment page, for the plan, interval and inventories in the query (see billing/lib/plan-choice.ts) */
+  checkout: (query: string) => `/checkout?${query}`,
   /** The public front page */
   landing: '/',
   features: '/features',
@@ -27,6 +31,9 @@ export const paths = {
   suppliers: '/suppliers',
   team: '/team',
   settings: '/settings',
+  billing: '/billing',
+  invoices: '/invoices',
+  invoice: (id: string) => `/invoices/${encodeURIComponent(id)}`,
   activity: '/activity',
   /** The 3D world, focused on the object that holds an item (its shelf / zone). */
   locateItem: (sku: string) => `/world?focus=${encodeURIComponent(sku)}`,

@@ -1,4 +1,4 @@
-import { isAxiosError, isCancel } from 'axios';
+import { isAxiosError } from 'axios';
 import type { ApiErrorBody } from './type';
 
 export class ApiError extends Error {
@@ -28,12 +28,11 @@ export const ToApiError = (err: unknown): ApiError => {
   if (isAxiosError<ApiErrorBody>(err)) {
     const body = err.response?.data;
     if (body?.error) return new ApiError(err.response?.status ?? 0, body.error.code, body.error.message, body.error.details);
-    if (!err.response) return new ApiError(0, 'NETWORK', 'Can’t reach the server — check that it is running');
+    if (err.code === 'ECONNABORTED' || err.code === 'ETIMEDOUT') {
+      return new ApiError(0, 'TIMEOUT', 'The server is taking too long to answer — please try again in a moment');
+    }
+    if (!err.response) return new ApiError(0, 'NETWORK', 'Can’t reach the server — check your connection and try again');
     return new ApiError(err.response.status, 'HTTP_ERROR', `Request failed (${err.response.status})`);
   }
   return new ApiError(0, 'UNKNOWN', err instanceof Error ? err.message : 'Something went wrong');
-};
-
-export const IsCanceled = (err: unknown): boolean => {
-  return isCancel(err);
 };

@@ -80,7 +80,7 @@ export const PRICING_ART: HeroArtType = {
   taglineAccent: ['all', 'three'],
   object: {
     src: '/landing/hero/tag.webp',
-    caption: 'Priced per month',
+    caption: 'Priced per inventory',
     pills: [
       { text: 'Starter', left: '6%', top: '20%' },
       { text: 'Pro', left: '66%', top: '32%' },
