@@ -11,11 +11,11 @@ src/
 │   ├── server.ts           # entry point: db, migrations, socket.io, Vite (dev) or dist/ (prod); on Vercel, the function
 │   ├── common/             # errors/, services/audit.ts (activity + stock ledger), types/, utils/ (jwt, crypto, csv, cookies …)
 │   ├── config/             # env.ts (zod-validated), logger.ts
-│   ├── db/                 # client.ts (Drizzle `db`: PostgreSQL or PGlite), schema/ (the tables; ids.ts holds the id prefixes),
+│   ├── db/                 # client.ts (Drizzle `db`: PostgreSQL or PGlite), schema/ (the tables; ids.ts: id prefixes; enums.ts: enum types),
 │   │                       # migrations/ (drizzle-kit SQL + meta/), migrate.ts, next-number.ts, cli/ (`db:migrate`)
 │   ├── middleware/         # auth, rate-limit, error, not-found — each `<name>.middleware.ts`
 │   ├── modules/<domain>/   # auth, businesses, invites, templates, items, categories, locations, suppliers, customers,
-│   │                       # orders, deliveries, imports, activity, dashboard, system, rate-limits, demo
+│   │                       # orders, deliveries, imports, activity, dashboard, system, rate-limits, demo, billing
 │   ├── realtime/           # socket.io server: token-authenticated, one room per business
 │   ├── tests/              # vitest integration tests (in-memory Postgres)
 │   └── types/              # backend domain types, one file per domain

@@ -1,10 +1,12 @@
 import { sql } from 'drizzle-orm';
 import { boolean, check, foreignKey, index, integer, numeric, pgTable, primaryKey, text, unique } from 'drizzle-orm/pg-core';
+import type { ItemKindTypeEnum } from '@/backend/types/item';
 import { accounts } from './accounts';
 import { businesses } from './businesses';
 import { customers } from './catalog';
 import { items } from './items';
 import { createdAt, timestampTz, type DbNumeric } from './_shared';
+import { orderStatusEnum } from './enums';
 import { prefixedId } from './ids';
 
 /**
@@ -19,7 +21,7 @@ export const orders = pgTable(
     number: text().notNull(),
     customer_id: text(),
     customer_name: text().notNull(),
-    status: text().notNull(),
+    status: orderStatusEnum().notNull(),
     reserves: boolean().notNull().default(false),
     closed: boolean().notNull().default(false),
     cancelled: boolean().notNull().default(false),
@@ -70,7 +72,7 @@ export type OrderLineRow = {
   item_id: string;
   sku: string;
   name: string;
-  kind: string;
+  kind: ItemKindTypeEnum;
   unit: string;
   location: string | null;
   qty: number;

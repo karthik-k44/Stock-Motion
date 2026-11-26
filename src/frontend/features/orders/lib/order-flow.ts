@@ -1,7 +1,7 @@
 import type { BadgeTone } from '@/frontend/components/badge';
 import type { IconName } from '@/frontend/components/icon';
 import type { OrderStageType } from '@/frontend/features/businesses/types';
-import { CANCELLED_STATUS, type OrderResponseType, type OrderShortageType } from '../types';
+import { OrderStatusTypeEnum, type OrderResponseType, type OrderShortageType } from '../types';
 
 export const StageOf = (flow: OrderStageType[], status: string) => flow.find((s) => s.status === status);
 
@@ -9,13 +9,13 @@ export const NextStage = (flow: OrderStageType[], status: string): OrderStageTyp
   flow[flow.findIndex((s) => s.status === status) + 1];
 
 export const StatusLabel = (flow: OrderStageType[], status: string): string => {
-  if (status === CANCELLED_STATUS) return 'Cancelled';
+  if (status === OrderStatusTypeEnum.CANCELLED) return 'Cancelled';
   return StageOf(flow, status)?.label ?? status;
 };
 
 /** Badge tone and icon derived from what the stage does, so every template reads the same way. */
 export const StatusLook = (flow: OrderStageType[], status: string): { tone: BadgeTone; icon: IconName } => {
-  if (status === CANCELLED_STATUS) return { tone: 'neutral', icon: 'x' };
+  if (status === OrderStatusTypeEnum.CANCELLED) return { tone: 'neutral', icon: 'x' };
   const stage = StageOf(flow, status);
   if (!stage) return { tone: 'neutral', icon: 'orders' };
   if (stage.closed) return { tone: 'good', icon: 'check' };

@@ -15,8 +15,10 @@ import {
   type ItemViewRow,
   type MovementRow,
 } from '@/backend/db/schema';
+import { DeliveryStatusTypeEnum } from '@/backend/types/delivery';
+import { ItemKindTypeEnum, type MovementTypeEnum } from '@/backend/types/item';
 
-export type ItemLockRow = { id: string; sku: string; name: string; kind: string; on_hand: number; location: string | null };
+export type ItemLockRow = { id: string; sku: string; name: string; kind: ItemKindTypeEnum; on_hand: number; location: string | null };
 
 export type ComponentViewRow = {
   parent_id: string;
@@ -33,7 +35,7 @@ export type ItemFiltersType = {
   search?: string;
   category?: string;
   zone?: string;
-  kind?: string;
+  kind?: ItemKindTypeEnum;
   /** IN_STOCK / LOW / OUT, or RESERVED / INCOMING */
   status?: string;
 };
@@ -48,14 +50,14 @@ export type ItemWriteType = {
   supplierId: string | null;
 };
 
-export type ItemInsertType = ItemWriteType & { sku: string; kind: string; onHand: number; location: string | null };
+export type ItemInsertType = ItemWriteType & { sku: string; kind: ItemKindTypeEnum; onHand: number; location: string | null };
 
 /** A past ledger row (sample data only). */
 export type HistoryMovementType = {
   businessId: string;
   itemId: string;
   at: Date;
-  type: string;
+  type: MovementTypeEnum;
   delta: number;
   balance: number;
   accountId: string;
@@ -73,7 +75,7 @@ const FindView = async (q: Queryable, businessId: string, sku: string): Promise<
 const statusFilter = (status: string | undefined) => {
   if (status === 'RESERVED') return gt(itemViews.reserved, 0);
   if (status === 'INCOMING') return gt(itemViews.incoming, 0);
-  if (status) return and(eq(itemViews.status, status), ne(itemViews.kind, 'SERVICE'));
+  if (status) return and(eq(itemViews.status, status), ne(itemViews.kind, ItemKindTypeEnum.SERVICE));
   return undefined;
 };
 
@@ -243,7 +245,7 @@ const ListUsedIn = (q: Queryable, componentId: string): Promise<{ sku: string; n
 
 const InsertMovement = async (
   q: Queryable,
-  input: { businessId: string; itemId: string; type: string; delta: number; balance: number; ref?: string | null; accountId: string; note: string },): Promise<void> => {
+  input: { businessId: string; itemId: string; type: MovementTypeEnum; delta: number; balance: number; ref?: string | null; accountId: string; note: string },): Promise<void> => {
   await q.insert(movements).values({
     business_id: input.businessId,
     item_id: input.itemId,
@@ -300,7 +302,7 @@ const CountOpenUses = async (q: Queryable, itemId: string): Promise<{ orders: nu
       .select({ id: deliveryLines.delivery_id })
       .from(deliveryLines)
       .innerJoin(deliveries, eq(deliveries.id, deliveryLines.delivery_id))
-      .where(and(eq(deliveryLines.item_id, itemId), ne(deliveries.status, 'RECEIVED'))),
+      .where(and(eq(deliveryLines.item_id, itemId), ne(deliveries.status, DeliveryStatusTypeEnum.RECEIVED))),
     q
       .select({ id: itemComponents.parent_id })
       .from(itemComponents)

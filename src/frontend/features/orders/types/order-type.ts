@@ -1,6 +1,20 @@
 import { z } from 'zod';
 
-export const CANCELLED_STATUS = 'CANCELLED';
+/** Mirrors backend types/order.ts: every template's order stages, plus CANCELLED. */
+export const OrderStatusTypeEnum = {
+  NEW: 'NEW',
+  PICKING: 'PICKING',
+  PACKED: 'PACKED',
+  SHIPPED: 'SHIPPED',
+  PREPARING: 'PREPARING',
+  SERVED: 'SERVED',
+  QUOTED: 'QUOTED',
+  SCHEDULED: 'SCHEDULED',
+  IN_PROGRESS: 'IN_PROGRESS',
+  DONE: 'DONE',
+  CANCELLED: 'CANCELLED',
+} as const;
+export type OrderStatusTypeEnum = (typeof OrderStatusTypeEnum)[keyof typeof OrderStatusTypeEnum];
 
 export type OrderLineResponseType = {
   sku: string;
@@ -17,7 +31,7 @@ export type OrderResponseType = {
   number: string;
   customerId: string | null;
   customerName: string;
-  status: string;
+  status: OrderStatusTypeEnum;
   reserves: boolean;
   closed: boolean;
   cancelled: boolean;

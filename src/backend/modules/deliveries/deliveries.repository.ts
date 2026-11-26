@@ -2,10 +2,11 @@ import { and, asc, eq, ilike, inArray, ne, or, sql } from 'drizzle-orm';
 import type { Queryable } from '@/backend/db/client';
 import { NextNumber } from '@/backend/db/next-number';
 import { deliveries, deliveryLines, items, type DbDate, type DeliveryLineRow, type DeliveryRow } from '@/backend/db/schema';
+import { DeliveryFilterTypeEnum, DeliveryStatusTypeEnum } from '@/backend/types/delivery';
 
 export type DeliveryFiltersType = {
   /** UPCOMING: not received yet · RECEIVED */
-  view?: 'ALL' | 'UPCOMING' | 'RECEIVED';
+  view?: DeliveryFilterTypeEnum;
   search?: string;
   supplierId?: string;
   limit?: number;
@@ -19,7 +20,7 @@ export type DeliveryInsertType = {
   vehicle: string;
   reference: string;
   expectedAt: DbDate;
-  status: string;
+  status: DeliveryStatusTypeEnum;
   receivedAt?: DbDate | null;
 };
 
@@ -34,15 +35,15 @@ export type DeliveryLineInsertType = {
 
 const List = (q: Queryable, businessId: string, filters: DeliveryFiltersType = {}): Promise<DeliveryRow[]> => {
   const like = filters.search ? `%${filters.search}%` : undefined;
-  const received = eq(deliveries.status, 'RECEIVED');
+  const received = eq(deliveries.status, DeliveryStatusTypeEnum.RECEIVED);
   return q
     .select()
     .from(deliveries)
     .where(
       and(
         eq(deliveries.business_id, businessId),
-        filters.view === 'UPCOMING' ? ne(deliveries.status, 'RECEIVED') : undefined,
-        filters.view === 'RECEIVED' ? received : undefined,
+        filters.view === DeliveryFilterTypeEnum.UPCOMING ? ne(deliveries.status, DeliveryStatusTypeEnum.RECEIVED) : undefined,
+        filters.view === DeliveryFilterTypeEnum.RECEIVED ? received : undefined,
         filters.supplierId ? eq(deliveries.supplier_id, filters.supplierId) : undefined,
         like
           ? or(ilike(deliveries.number, like), ilike(deliveries.supplier_name, like), ilike(deliveries.vehicle, like), ilike(deliveries.reference, like))
@@ -128,10 +129,10 @@ const InsertLines = async (q: Queryable, rows: DeliveryLineInsertType[]): Promis
   );
 };
 
-const SetStatus = async (q: Queryable, id: string, status: string): Promise<void> => {
+const SetStatus = async (q: Queryable, id: string, status: DeliveryStatusTypeEnum): Promise<void> => {
   await q
     .update(deliveries)
-    .set({ status, ...(status === 'RECEIVED' && { received_at: new Date() }) })
+    .set({ status, ...(status === DeliveryStatusTypeEnum.RECEIVED && { received_at: new Date() }) })
     .where(eq(deliveries.id, id));
 };
 
@@ -147,7 +148,7 @@ const ListOpenForItem = (
     .select({ number: deliveries.number, supplier_name: deliveries.supplier_name, expected_at: deliveries.expected_at, expected: deliveryLines.expected })
     .from(deliveryLines)
     .innerJoin(deliveries, eq(deliveries.id, deliveryLines.delivery_id))
-    .where(and(eq(deliveryLines.item_id, itemId), ne(deliveries.status, 'RECEIVED')))
+    .where(and(eq(deliveryLines.item_id, itemId), ne(deliveries.status, DeliveryStatusTypeEnum.RECEIVED)))
     .orderBy(asc(deliveries.expected_at));
 };
 

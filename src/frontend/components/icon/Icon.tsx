@@ -39,6 +39,8 @@ const PATHS = {
   rotateLeft: 'M4 11a8 8 0 112.3 5.7M4 4v7h7',
   rotateRight: 'M20 11a8 8 0 10-2.3 5.7M20 4v7h-7',
   layers: 'M12 3l9 5-9 5-9-5zM3 13l9 5 9-5',
+  download: 'M12 4v11M7 10l5 5 5-5M5 20h14',
+  receipt: 'M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6M9 16h3',
   money: 'M12 3v18M17 7.5c0-1.9-2.2-3-5-3s-5 1.1-5 3 2.2 2.6 5 3 5 1.1 5 3-2.2 3-5 3-5-1.1-5-3',
   arrowUpRight: 'M7 17L17 7M8 7h9v9',
   bell: 'M6 10a6 6 0 1112 0c0 5 2 6.5 2 6.5H4s2-1.5 2-6.5zM10 20a2.2 2.2 0 004 0',

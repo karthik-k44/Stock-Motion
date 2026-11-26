@@ -3,6 +3,7 @@ import { AppLayout, MotionToggle } from '@/frontend/components/layout';
 import { ConfirmHost } from '@/frontend/components/modal';
 import { Toaster } from '@/frontend/components/toast';
 import { BuildNavigation } from '@/frontend/config/navigation';
+import { BillingBanner } from '@/frontend/features/billing/components/BillingBanner';
 import { BusinessSwitcher } from '@/frontend/features/businesses/components/BusinessSwitcher';
 import { businessesService } from '@/frontend/features/businesses/services';
 import { IsManagementRole } from '@/frontend/features/businesses/types';
@@ -52,6 +53,7 @@ const Frame = () => {
           </>
         }
       >
+        <BillingBanner />
         <Outlet />
       </AppLayout>
       <ItemDrawer />

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { MAX_INVENTORIES } from '@/backend/modules/billing/plans';
 import { BusinessTypeEnum } from '@/backend/types/template';
 
 export const CurrencySchema = z
@@ -13,6 +14,16 @@ export const CreateBusinessSchema = z.object({
   currency: CurrencySchema.default('USD'),
 });
 export type CreateBusinessInput = z.infer<typeof CreateBusinessSchema>;
+
+/** Several inventories at once, right after choosing a plan: one per inventory paid for, all in one currency. */
+export const CreateBusinessesSchema = z.object({
+  currency: CurrencySchema.default('USD'),
+  inventories: z
+    .array(CreateBusinessSchema.pick({ name: true, type: true }))
+    .min(1, 'Add at least one inventory')
+    .max(MAX_INVENTORIES),
+});
+export type CreateBusinessesInput = z.infer<typeof CreateBusinessesSchema>;
 
 export const UpdateBusinessSchema = z
   .object({

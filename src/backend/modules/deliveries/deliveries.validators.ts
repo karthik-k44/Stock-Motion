@@ -1,12 +1,6 @@
 import { z } from 'zod';
 import { CostSchema, SkuSchema } from '@/backend/modules/items/items.validators';
-import { DeliveryStatusTypeEnum } from '@/backend/types/delivery';
-
-export const DeliveryFilterTypeEnum = {
-  ALL: 'ALL',
-  UPCOMING: 'UPCOMING',
-  RECEIVED: 'RECEIVED',
-} as const;
+import { DeliveryFilterTypeEnum, DeliveryStatusTypeEnum } from '@/backend/types/delivery';
 
 export const ListDeliveriesQuerySchema = z.object({
   view: z.nativeEnum(DeliveryFilterTypeEnum).default(DeliveryFilterTypeEnum.ALL),

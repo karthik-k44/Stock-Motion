@@ -1,6 +1,7 @@
 import { and, asc, eq, ilike, isNull, ne, or, sql } from 'drizzle-orm';
 import type { Queryable } from '@/backend/db/client';
 import { deliveries, items, suppliers, type SupplierRow } from '@/backend/db/schema';
+import { DeliveryStatusTypeEnum } from '@/backend/types/delivery';
 
 export type SupplierListRow = SupplierRow & { item_count: number; open_deliveries: number };
 
@@ -19,7 +20,7 @@ const selectWithCounts = (q: Queryable) =>
       lead_days: suppliers.lead_days,
       created_at: suppliers.created_at,
       item_count: q.$count(items, and(eq(items.supplier_id, suppliers.id), isNull(items.archived_at))),
-      open_deliveries: q.$count(deliveries, and(eq(deliveries.supplier_id, suppliers.id), ne(deliveries.status, 'RECEIVED'))),
+      open_deliveries: q.$count(deliveries, and(eq(deliveries.supplier_id, suppliers.id), ne(deliveries.status, DeliveryStatusTypeEnum.RECEIVED))),
     })
     .from(suppliers);
 

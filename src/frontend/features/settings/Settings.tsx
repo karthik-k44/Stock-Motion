@@ -9,6 +9,7 @@ import { BaseRoleTypeEnum, IsManagementRole } from '@/frontend/features/business
 import { useDocumentTitle } from '@/frontend/hooks/use-document-title';
 import { BusinessDetailsCard } from './components/BusinessDetailsCard';
 import { CategoriesCard } from './components/CategoriesCard';
+import { InventoriesCard } from './components/InventoriesCard';
 import { LocationsCard } from './components/LocationsCard';
 
 export const Settings = () => {
@@ -32,6 +33,7 @@ export const Settings = () => {
       <PageHeader title="Settings" description={`How ${business.name} is set up.`} />
       <div className="grid-2">
         <BusinessDetailsCard />
+        <InventoriesCard />
         <CategoriesCard />
         <LocationsCard />
         {business.role === BaseRoleTypeEnum.OWNER && (

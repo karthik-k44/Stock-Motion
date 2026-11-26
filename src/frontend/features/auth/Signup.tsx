@@ -12,15 +12,16 @@ export const Signup = () => {
   const [params] = useSearchParams();
   const session = authService.useGetSession();
   const register = authService.useRegister();
-  // A brand-new account has no business yet: set one up, unless they came from an invite link.
-  const next = params.get('next') ? SafeNext(params.get('next')) : paths.onboarding;
+  // A brand-new account chooses its plan first, unless they came from an invite link or a plan on the pricing page.
+  const next = params.get('next') ? SafeNext(params.get('next')) : paths.plans;
 
-  if (session.data) return <Navigate to={paths.home} replace />;
+  // Already signed in when they arrived. (Not after registering here: that session goes to `next` instead.)
+  if (session.data && register.isIdle) return <Navigate to={paths.home} replace />;
 
   return (
     <AuthSplitLayout
       title="Create your account"
-      subtitle="Then pick your kind of business — retail, café or trades — and you're set up in a minute."
+      subtitle="Then choose your plan — or start a 14-day free trial — and set up your inventories in a minute."
       tab={{ active: 'signup', search: params.get('next') ? `?next=${encodeURIComponent(next)}` : '' }}
     >
       <AccountForm

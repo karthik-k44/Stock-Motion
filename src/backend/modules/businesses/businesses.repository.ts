@@ -19,6 +19,7 @@ import {
   type BusinessRow,
   type MembershipRow,
 } from '@/backend/db/schema';
+import type { BusinessTypeEnum } from '@/backend/types/template';
 
 export type BusinessWithRoleRow = BusinessRow & { role: string };
 export type MemberRow = MembershipRow & { name: string; email: string };
@@ -61,7 +62,7 @@ const ListCreatedBy = (q: Queryable, accountId: string): Promise<BusinessRow[]> 
   return q.select().from(businesses).where(eq(businesses.created_by, accountId)).orderBy(asc(businesses.created_at));
 };
 
-const Insert = async (q: Queryable, input: { name: string; type: string; currency: string; createdBy: string }): Promise<BusinessRow> => {
+const Insert = async (q: Queryable, input: { name: string; type: BusinessTypeEnum; currency: string; createdBy: string }): Promise<BusinessRow> => {
   const [row] = await q
     .insert(businesses)
     .values({ name: input.name, type: input.type, currency: input.currency, created_by: input.createdBy })

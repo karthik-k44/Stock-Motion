@@ -4,6 +4,7 @@ import { businesses } from './businesses';
 import { suppliers } from './catalog';
 import { items } from './items';
 import { createdAt, timestampTz, type DbNumeric } from './_shared';
+import { deliveryStatusEnum } from './enums';
 import { prefixedId } from './ids';
 
 export const deliveries = pgTable(
@@ -18,11 +19,10 @@ export const deliveries = pgTable(
     reference: text().notNull().default(''),
     expected_at: timestampTz().notNull(),
     received_at: timestampTz(),
-    status: text().notNull(),
+    status: deliveryStatusEnum().notNull(),
     created_at: createdAt(),
   },
   (t) => [
-    check('deliveries_status_check', sql`${t.status} IN ('SCHEDULED','IN_TRANSIT','ARRIVED','RECEIVED')`),
     unique('deliveries_business_id_number_key').on(t.business_id, t.number),
     foreignKey({ name: 'deliveries_business_id_fkey', columns: [t.business_id], foreignColumns: [businesses.id] }).onDelete('cascade'),
     foreignKey({ name: 'deliveries_supplier_id_fkey', columns: [t.supplier_id], foreignColumns: [suppliers.id] }).onDelete('set null'),

@@ -2,9 +2,10 @@ import { and, asc, eq, getTableColumns, ilike, inArray, not, or, sql } from 'dri
 import type { Queryable } from '@/backend/db/client';
 import { NextNumber } from '@/backend/db/next-number';
 import { accounts, items, orderLines, orders, type DbDate, type OrderLineRow, type OrderRow } from '@/backend/db/schema';
+import type { OrderStatusTypeEnum } from '@/backend/types/order';
 
 export type OrderFiltersType = {
-  status?: string;
+  status?: OrderStatusTypeEnum;
   /** true: open only · false: closed only */
   open?: boolean;
   search?: string;
@@ -17,7 +18,7 @@ export type OrderInsertType = {
   number: string;
   customerId: string | null;
   customerName: string;
-  status: string;
+  status: OrderStatusTypeEnum;
   reserves: boolean;
   closed: boolean;
   dueAt: DbDate | null;
@@ -137,7 +138,7 @@ const DeleteLines = async (q: Queryable, orderId: string): Promise<void> => {
 const SetStage = async (
   q: Queryable,
   id: string,
-  stage: { status: string; reserves: boolean; closed: boolean; cancelled?: boolean },): Promise<void> => {
+  stage: { status: OrderStatusTypeEnum; reserves: boolean; closed: boolean; cancelled?: boolean },): Promise<void> => {
   await q
     .update(orders)
     .set({

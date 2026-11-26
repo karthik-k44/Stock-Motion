@@ -1,3 +1,5 @@
+import type { BusinessAccessType } from '@/frontend/features/billing/types';
+import type { OrderStatusTypeEnum } from '@/frontend/features/orders/types';
 import { z } from 'zod';
 
 export const BusinessTypeEnum = {
@@ -17,7 +19,7 @@ export const IsManagementRole = (role: string) => role === BaseRoleTypeEnum.OWNE
 
 /** One stage of a template's order flow (mirrors the backend template). */
 export type OrderStageType = {
-  status: string;
+  status: OrderStatusTypeEnum;
   label: string;
   action: string | null;
   reserves: boolean;
@@ -73,7 +75,8 @@ export type BusinessResponseType = {
   createdAt: string;
 };
 
-export type BusinessDetailResponseType = BusinessResponseType & { template: TemplateResponseType };
+/** `access`: whether it can be changed right now — its owner's plan decides. */
+export type BusinessDetailResponseType = BusinessResponseType & { access: BusinessAccessType; template: TemplateResponseType };
 
 export const CreateBusinessSchema = z.object({
   name: z.string().trim().min(1, 'Name your business').max(80),
@@ -81,5 +84,8 @@ export const CreateBusinessSchema = z.object({
   currency: z.string().trim().toUpperCase().regex(/^[A-Z]{3}$/, 'Use a 3-letter code, e.g. USD'),
 });
 export type CreateBusinessInput = z.infer<typeof CreateBusinessSchema>;
+
+/** Several inventories at once, right after choosing a plan: one per inventory paid for, all in one currency. */
+export type CreateBusinessesInput = { currency: string; inventories: { name: string; type: BusinessTypeEnum }[] };
 
 export type UpdateBusinessInput = { name?: string; currency?: string };

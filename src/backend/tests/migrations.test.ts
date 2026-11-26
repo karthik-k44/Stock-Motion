@@ -7,7 +7,7 @@ import { CloseDb, ConnectDb, db } from '@/backend/db/client';
 import { RunMigrations } from '@/backend/db/migrate';
 import { accounts, activity, businesses, items, memberships } from '@/backend/db/schema';
 
-const ALL = ['0000_initial_schema', '0001_append_only_ledgers', '0002_rate_limits', '0003_remove_sample_data', '0004_prefixed_ids'];
+const ALL = ['0000_initial_schema', '0001_append_only_ledgers', '0002_rate_limits', '0003_remove_sample_data', '0004_prefixed_ids', '0005_billing', '0006_enum_types', '0007_pending_orders', '0008_inventory_pricing', '0009_invoices'];
 
 /** The SQL of a migration file, statement by statement. */
 const statements = (tag: string) =>

@@ -3,6 +3,7 @@ import { AccountOf } from '@/backend/middleware/auth.middleware';
 import { businessesService } from '../businesses.service';
 import {
   AccountIdParamSchema,
+  CreateBusinessesSchema,
   CreateBusinessSchema,
   UpdateBusinessSchema,
   UpdateMemberSchema,
@@ -15,6 +16,9 @@ export const businessesController = {
   },
   Create: async (req: Request, res: Response) => {
     res.status(201).json(await businessesService.Create(AccountOf(req), CreateBusinessSchema.parse(req.body)));
+  },
+  CreateMany: async (req: Request, res: Response) => {
+    res.status(201).json(await businessesService.CreateMany(AccountOf(req), CreateBusinessesSchema.parse(req.body)));
   },
   Get: async (req: Request, res: Response) => {
     res.json(await businessesService.Get(ScopeOf(req)));

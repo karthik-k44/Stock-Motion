@@ -6,7 +6,9 @@ import type { BusinessRow } from '@/backend/db/schema';
 import { authRepository } from '@/backend/modules/auth/auth.repository';
 import { LoadSampleData } from '@/backend/modules/businesses/business-setup.service';
 import { businessesRepository } from '@/backend/modules/businesses/businesses.repository';
+import { billingService } from '@/backend/modules/billing/billing.service';
 import { businessesService } from '@/backend/modules/businesses/businesses.service';
+import { PlanCodeEnum } from '@/backend/types/billing';
 import { BusinessTypeEnum } from '@/backend/types/template';
 
 /**
@@ -32,6 +34,8 @@ const isFresh = (owned: BusinessRow[]): boolean =>
 /** Replace everything the demo account created with one freshly loaded business per template. */
 const reload = async (tx: Queryable, accountId: string, owned: BusinessRow[]): Promise<void> => {
   for (const business of owned) await businessesRepository.Delete(tx, business.id);
+  // Never limited or billed: everyone shares it.
+  await billingService.Grant(accountId, PlanCodeEnum.SCALE, null, tx);
   for (const input of DEMO_BUSINESSES) {
     const business = await businessesService.CreateIn(tx, accountId, input);
     await LoadSampleData(tx, business, accountId);

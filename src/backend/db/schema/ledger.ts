@@ -1,9 +1,10 @@
-import { sql } from 'drizzle-orm';
-import { check, foreignKey, index, integer, jsonb, pgTable, text } from 'drizzle-orm/pg-core';
+import { foreignKey, index, integer, jsonb, pgTable, text } from 'drizzle-orm/pg-core';
+import type { MovementTypeEnum } from '@/backend/types/item';
 import { accounts } from './accounts';
 import { businesses } from './businesses';
 import { items } from './items';
 import { timestampTz, type DbDate } from './_shared';
+import { activityKindEnum, activityRefTypeEnum, movementTypeEnum } from './enums';
 import { prefixedId } from './ids';
 
 /** The stock ledger: one row per change to an item's on-hand count. Append-only (a trigger refuses updates). */
@@ -14,7 +15,7 @@ export const movements = pgTable(
     business_id: text().notNull(),
     at: timestampTz().notNull().defaultNow(),
     item_id: text().notNull(),
-    type: text().notNull(),
+    type: movementTypeEnum().notNull(),
     delta: integer().notNull(),
     balance: integer().notNull(),
     ref: text(),
@@ -22,7 +23,6 @@ export const movements = pgTable(
     note: text().notNull().default(''),
   },
   (t) => [
-    check('movements_type_check', sql`${t.type} IN ('RECEIPT','CONSUME','ADJUSTMENT','RELOCATION')`),
     foreignKey({ name: 'movements_business_id_fkey', columns: [t.business_id], foreignColumns: [businesses.id] }).onDelete('cascade'),
     foreignKey({ name: 'movements_item_id_fkey', columns: [t.item_id], foreignColumns: [items.id] }).onDelete('cascade'),
     foreignKey({ name: 'movements_account_id_fkey', columns: [t.account_id], foreignColumns: [accounts.id] }).onDelete('set null'),
@@ -37,19 +37,14 @@ export const activity = pgTable(
     id: prefixedId('activity'),
     business_id: text().notNull(),
     at: timestampTz().notNull().defaultNow(),
-    kind: text().notNull(),
+    kind: activityKindEnum().notNull(),
     account_id: text(),
     message: text().notNull(),
-    ref_type: text(),
+    ref_type: activityRefTypeEnum(),
     ref_id: text(),
     meta: jsonb().notNull().default({}),
   },
   (t) => [
-    check(
-      'activity_kind_check',
-      sql`${t.kind} IN ('DELIVERY','ADJUSTMENT','ALLOCATION','CONSUME','STATUS','RELOCATION','CATALOG','TEAM','SYSTEM')`,
-    ),
-    check('activity_ref_type_check', sql`${t.ref_type} IN ('ORDER','DELIVERY','ITEM','CUSTOMER','SUPPLIER')`),
     foreignKey({ name: 'activity_business_id_fkey', columns: [t.business_id], foreignColumns: [businesses.id] }).onDelete('cascade'),
     foreignKey({ name: 'activity_account_id_fkey', columns: [t.account_id], foreignColumns: [accounts.id] }).onDelete('set null'),
     index('activity_business_at').on(t.business_id, t.at.desc().nullsFirst()),
@@ -64,7 +59,7 @@ export type MovementRow = {
   id: string;
   at: DbDate;
   sku: string;
-  type: string;
+  type: MovementTypeEnum;
   delta: number;
   balance: number;
   ref: string | null;

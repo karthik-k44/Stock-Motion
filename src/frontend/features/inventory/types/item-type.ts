@@ -1,3 +1,4 @@
+import type { OrderStatusTypeEnum } from '@/frontend/features/orders/types';
 import { z } from 'zod';
 
 export const ItemKindTypeEnum = { STOCK: 'STOCK', MADE: 'MADE', SERVICE: 'SERVICE' } as const;
@@ -65,7 +66,7 @@ export type ItemDetailResponseType = ItemResponseType & {
   components: ComponentResponseType[];
   usedIn: { sku: string; name: string; qty: number }[];
   movements: MovementResponseType[];
-  openOrders: { number: string; customerName: string; status: string; qty: number; done: number }[];
+  openOrders: { number: string; customerName: string; status: OrderStatusTypeEnum; qty: number; done: number }[];
   incomingDeliveries: { number: string; supplierName: string; expectedAt: string; expected: number }[];
 };
 

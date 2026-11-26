@@ -3,6 +3,7 @@ import { RecordActivity } from '@/backend/common/services/audit';
 import { ToIso } from '@/backend/common/utils/dates';
 import { db, type Queryable } from '@/backend/db/client';
 import type { BusinessRow } from '@/backend/db/schema';
+import { billingService } from '@/backend/modules/billing/billing.service';
 import { ordersRepository } from '@/backend/modules/orders/orders.repository';
 import { templatesService } from '@/backend/modules/templates/templates.service';
 import { BroadcastChange, RevokeRealtimeAccess } from '@/backend/realtime/socket';
@@ -19,7 +20,7 @@ import { ResourceTypeEnum } from '@/backend/types/dashboard';
 import type { BusinessTypeEnum } from '@/backend/types/template';
 import { SetupBusiness } from './business-setup.service';
 import { businessesRepository, type BusinessWithRoleRow } from './businesses.repository';
-import type { CreateBusinessInput, UpdateBusinessInput, UpdateMemberInput } from './businesses.validators';
+import type { CreateBusinessesInput, CreateBusinessInput, UpdateBusinessInput, UpdateMemberInput } from './businesses.validators';
 
 /** Avatar / character colours handed out to members in join order. */
 const MEMBER_COLORS = ['#2b4c7e', '#e86b2c', '#2f9e6d', '#d9b21c', '#3a7bd5', '#b5487a', '#6b5bd2', '#1f8a8a'];
@@ -53,7 +54,7 @@ const FindMembership = async (businessId: string, accountId: string, q: Queryabl
 const detail = async (q: Queryable, businessId: string, accountId: string): Promise<BusinessDetailResponseType> => {
   const row = await businessesRepository.FindForAccount(q, businessId, accountId);
   if (!row) throw NotFound('Business', businessId);
-  return { ...toBusiness(row), template: templatesService.Get(row.type) };
+  return { ...toBusiness(row), access: await billingService.BusinessAccess(q, businessId, accountId), template: templatesService.Get(row.type) };
 };
 
 const AddMember = async (q: Queryable, businessId: string, accountId: string, role: string): Promise<void> => {
@@ -70,7 +71,19 @@ const CreateIn = async (tx: Queryable, accountId: string, input: CreateBusinessI
 };
 
 const Create = (account: AccountResponseType, input: CreateBusinessInput): Promise<BusinessDetailResponseType> => {
-  return db.transaction(async (tx) => detail(tx, (await CreateIn(tx, account.id, input)).id, account.id));
+  return db.transaction(async (tx) => {
+    await billingService.AssertCanCreateBusiness(tx, account.id);
+    return detail(tx, (await CreateIn(tx, account.id, input)).id, account.id);
+  });
+};
+
+/** Create several inventories in one go; the plan must cover all of them, or none is created. */
+const CreateMany = async (account: AccountResponseType, input: CreateBusinessesInput): Promise<BusinessResponseType[]> => {
+  await db.transaction(async (tx) => {
+    await billingService.AssertCanCreateBusiness(tx, account.id, input.inventories.length);
+    for (const inventory of input.inventories) await CreateIn(tx, account.id, { ...inventory, currency: input.currency });
+  });
+  return ListMine(account.id);
 };
 
 const Get = (scope: ScopeType) => detail(db, scope.businessId, scope.actor.id);
@@ -159,6 +172,7 @@ export const businessesService = {
   FindMembership,
   AddMember,
   Create,
+  CreateMany,
   Get,
   Update,
   Reset,

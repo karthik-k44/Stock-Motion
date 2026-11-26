@@ -2,6 +2,7 @@ import { and, count, desc, eq, gte, isNull, not, or, sql, type SQL } from 'drizz
 import { StartOfUtcDay, StartOfUtcMonth, UtcDayKey } from '@/backend/common/utils/dates';
 import type { Queryable } from '@/backend/db/client';
 import { customers, items, memberships, movements, orderLines, orders } from '@/backend/db/schema';
+import { ItemKindTypeEnum } from '@/backend/types/item';
 
 export type SalesSummaryRow = {
   orders_today: number;
@@ -92,7 +93,7 @@ const DailyStockChange = async (q: Queryable, businessId: string, days: number):
     .from(items)
     .innerJoin(movements, eq(movements.item_id, items.id))
     .where(
-      and(eq(items.business_id, businessId), eq(items.kind, 'STOCK'), isNull(items.archived_at), gte(movements.at, StartOfUtcDay(1 - days))),
+      and(eq(items.business_id, businessId), eq(items.kind, ItemKindTypeEnum.STOCK), isNull(items.archived_at), gte(movements.at, StartOfUtcDay(1 - days))),
     )
     .groupBy(day);
   return fillDays(totals, days);

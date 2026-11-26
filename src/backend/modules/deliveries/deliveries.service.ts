@@ -4,6 +4,7 @@ import { Plural } from '@/backend/common/utils/format';
 import { GroupBy } from '@/backend/common/utils/group-by';
 import { db, type Queryable } from '@/backend/db/client';
 import type { DeliveryRow } from '@/backend/db/schema';
+import { billingService } from '@/backend/modules/billing/billing.service';
 import { itemsRepository } from '@/backend/modules/items/items.repository';
 import { suppliersRepository } from '@/backend/modules/suppliers/suppliers.repository';
 import { BroadcastChange } from '@/backend/realtime/socket';
@@ -98,6 +99,7 @@ const Create = async (scope: ScopeType, input: CreateDeliveryInput): Promise<Del
  * incoming stock, ordering enough to reach twice the reorder level.
  */
 const Reorder = async (scope: ScopeType, input: ReorderInput): Promise<DeliveryResponseType[]> => {
+  await billingService.AssertReorder(db, scope.businessId);
   const result = await db.transaction(async (tx) => {
     const items = (await itemsRepository.ListViews(tx, scope.businessId, { kind: ItemKindTypeEnum.STOCK }))
       .filter((i) => i.status !== StockStatusTypeEnum.IN_STOCK && i.supplier_id)

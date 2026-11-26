@@ -1,7 +1,7 @@
-import { sql } from 'drizzle-orm';
-import { check, foreignKey, index, pgTable, primaryKey, text } from 'drizzle-orm/pg-core';
+import { foreignKey, index, pgTable, primaryKey, text } from 'drizzle-orm/pg-core';
 import { accounts } from './accounts';
 import { createdAt, timestampTz } from './_shared';
+import { businessTypeEnum } from './enums';
 import { prefixedId } from './ids';
 
 export const businesses = pgTable(
@@ -9,13 +9,12 @@ export const businesses = pgTable(
   {
     id: prefixedId('businesses'),
     name: text().notNull(),
-    type: text().notNull(),
+    type: businessTypeEnum().notNull(),
     currency: text().notNull().default('USD'),
     created_by: text(),
     created_at: createdAt(),
   },
   (t) => [
-    check('businesses_type_check', sql`${t.type} IN ('RETAIL','CAFE','TRADES')`),
     foreignKey({ name: 'businesses_created_by_fkey', columns: [t.created_by], foreignColumns: [accounts.id] }).onDelete('set null'),
   ],
 );

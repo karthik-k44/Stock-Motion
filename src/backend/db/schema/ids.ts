@@ -17,6 +17,8 @@ export const ID_PREFIXES = {
   deliveries: 'DLID',
   movements: 'MVID',
   activity: 'ATID',
+  subscriptions: 'SBID',
+  invoices: 'IVID',
 } as const;
 
 export const ID_START = 100000;
@@ -35,6 +37,8 @@ export const ordersIdSeq = sequence('orders');
 export const deliveriesIdSeq = sequence('deliveries');
 export const movementsIdSeq = sequence('movements');
 export const activityIdSeq = sequence('activity');
+export const subscriptionsIdSeq = sequence('subscriptions');
+export const invoicesIdSeq = sequence('invoices');
 
 /**
  * Newest first by id, for a stable tie-break among rows with the same timestamp. Ids compare as text, so the longer

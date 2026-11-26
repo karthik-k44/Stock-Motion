@@ -112,8 +112,12 @@ const ALL_TABLES = [
   schema.memberships,
   schema.businesses,
   schema.refreshTokens,
+  schema.invoices,
+  schema.subscriptions,
   schema.accounts,
   schema.rateLimits,
+  schema.razorpayPlans,
+  schema.billingEvents,
 ];
 
 /** Empty every table (tests). Never used on a production database. */

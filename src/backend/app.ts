@@ -9,6 +9,8 @@ import { RateLimitWrites } from './middleware/rate-limit.middleware';
 import { SecurityHeaders } from './middleware/security.middleware';
 import { activityRoutes } from './modules/activity/rest-api/activity.routes';
 import { authRoutes } from './modules/auth/rest-api/auth.routes';
+import { RequireWritableBusiness } from './modules/billing/rest-api/billing.middleware';
+import { billingRoutes, billingWebhookRoutes } from './modules/billing/rest-api/billing.routes';
 import { RequireBusinessRole } from './modules/businesses/rest-api/businesses.middleware';
 import { businessesRoutes, businessRoutes } from './modules/businesses/rest-api/businesses.routes';
 import { categoriesRoutes } from './modules/categories/rest-api/categories.routes';
@@ -31,6 +33,8 @@ export const CreateApp = (): Express => {
   app.set('trust proxy', env.TRUST_PROXY);
   app.use(SecurityHeaders());
   app.use(compression());
+  // Razorpay signs the exact bytes it sends, so its webhook reads the raw body: mounted before the JSON parser.
+  app.use('/api/billing/webhook', billingWebhookRoutes, ErrorHandler);
   app.use(express.json({ limit: '2mb' }));
   app.use(cookieParser());
 
@@ -40,10 +44,12 @@ export const CreateApp = (): Express => {
   api.use('/auth', authRoutes);
   api.use('/templates', templatesRoutes);
   api.use('/invites', publicInvitesRoutes);
+  api.use('/billing', billingRoutes);
 
-  // Everything inside a business: the caller must be a member; req.scope says which business and role.
+  // Everything inside a business: the caller must be a member; req.scope says which business and role. Writes also
+  // need the owner's plan to be active.
   const business = express.Router({ mergeParams: true });
-  business.use(RequireAuth, RequireBusinessRole());
+  business.use(RequireAuth, RequireBusinessRole(), RequireWritableBusiness);
   business.use('/', businessRoutes);
   business.use('/items', itemsRoutes);
   business.use('/categories', categoriesRoutes);
@@ -56,8 +62,9 @@ export const CreateApp = (): Express => {
   business.use('/dashboard', dashboardRoutes);
   business.use('/invites', invitesRoutes);
   business.use('/imports', importsRoutes);
-  api.use('/businesses/:businessId', business);
+  // The account-level routes first, so '/businesses/batch' isn't read as a business id.
   api.use('/businesses', businessesRoutes);
+  api.use('/businesses/:businessId', business);
 
   api.use(NotFoundHandler);
   api.use(ErrorHandler);

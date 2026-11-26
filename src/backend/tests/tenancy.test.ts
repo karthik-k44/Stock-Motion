@@ -33,6 +33,7 @@ describe('business isolation', () => {
 
   it('gives each business its own template, numbering and sample data', async () => {
     const owner = await SignUp();
+    await request(app).post('/api/billing/trial').set('authorization', `Bearer ${owner.token}`).send({ plan: 'PRO', interval: 'MONTHLY', quantity: 2 });
     const cafe = await CreateBusiness(owner, BusinessTypeEnum.CAFE);
     const trades = await CreateBusiness(owner, BusinessTypeEnum.TRADES, false);
     expect(cafe.template.orderFlow.map((s) => s.status)).toEqual(['NEW', 'PREPARING', 'SERVED']);

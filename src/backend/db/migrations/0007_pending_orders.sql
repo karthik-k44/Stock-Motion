@@ -1,0 +1,1 @@
+ALTER TABLE "subscriptions" ADD COLUMN "pending_order_id" text;

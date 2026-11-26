@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { z } from 'zod';
+import { RazorpayModeTypeEnum } from '@/backend/types/billing';
 
 // Local settings live in `.env` (git-ignored; options listed in README.md). Real environment variables win.
 // Tests and servers started with ENV_FILE=none (the end-to-end tests) skip it, so they never reach its database.
@@ -38,10 +39,26 @@ const EnvSchema = z
       .transform((v): boolean | number | string => (v === 'true' ? true : v === 'false' ? false : /^\d+$/.test(v) ? Number(v) : v)),
     /** How long open requests and sockets get to finish when the host stops the server */
     SHUTDOWN_TIMEOUT_MS: z.coerce.number().int().positive().default(10_000),
+    /**
+     * Razorpay API keys (Dashboard → Account & Settings → API Keys; rzp_test_… in test mode). Without them, billing runs
+     * in manual mode outside production: choosing a plan activates it at once, with no payment.
+     */
+    RAZORPAY_KEY_ID: z.preprocess(emptyToUndefined, z.string().regex(/^rzp_(test|live)_\w+$/, 'RAZORPAY_KEY_ID starts with rzp_test_ or rzp_live_').optional()),
+    RAZORPAY_KEY_SECRET: z.preprocess(emptyToUndefined, z.string().min(1).optional()),
+    /** The secret set on the Razorpay webhook (Dashboard → Settings → Webhooks), used to verify every delivery. */
+    RAZORPAY_WEBHOOK_SECRET: z.preprocess(emptyToUndefined, z.string().min(1).optional()),
+    /**
+     * ORDERS: each month is a one-time payment (works on any Razorpay account). SUBSCRIPTIONS: renews by itself, once
+     * Razorpay has enabled Subscriptions on the account.
+     */
+    RAZORPAY_BILLING_MODE: z.nativeEnum(RazorpayModeTypeEnum).default(RazorpayModeTypeEnum.ORDERS),
   })
   .superRefine((v, ctx) => {
     if (v.NODE_ENV === 'production' && !v.JWT_SECRET) {
       ctx.addIssue({ code: 'custom', path: ['JWT_SECRET'], message: 'JWT_SECRET is required in production' });
+    }
+    if (Boolean(v.RAZORPAY_KEY_ID) !== Boolean(v.RAZORPAY_KEY_SECRET)) {
+      ctx.addIssue({ code: 'custom', path: ['RAZORPAY_KEY_SECRET'], message: 'Set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET together' });
     }
   })
   .transform((v) => ({ ...v, JWT_SECRET: v.JWT_SECRET ?? randomBytes(48).toString('hex') }));

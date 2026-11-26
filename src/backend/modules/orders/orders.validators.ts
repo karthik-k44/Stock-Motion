@@ -1,3 +1,4 @@
+import { OrderStatusTypeEnum } from '@/backend/types/order';
 import { z } from 'zod';
 import { PriceSchema, SkuSchema } from '@/backend/modules/items/items.validators';
 
@@ -8,7 +9,7 @@ export const OrderNumberParamSchema = z.object({
 });
 
 export const ListOrdersQuerySchema = z.object({
-  status: z.string().max(30).optional(),
+  status: z.nativeEnum(OrderStatusTypeEnum).optional(),
   open: QueryBoolean.optional(),
   search: z.string().trim().max(80).optional(),
   customerId: z.string().max(64).optional(),
@@ -56,7 +57,7 @@ export const SetLinesSchema = z.object({ lines: OrderLinesSchema });
 export type SetLinesInput = z.infer<typeof SetLinesSchema>;
 
 /** The stage the client expects to move to — a stale screen gets a 409 instead of skipping a stage. */
-export const AdvanceOrderSchema = z.object({ to: z.string().min(1).max(30) });
+export const AdvanceOrderSchema = z.object({ to: z.nativeEnum(OrderStatusTypeEnum, { errorMap: () => ({ message: 'Unknown stage' }) }) });
 export type AdvanceOrderInput = z.infer<typeof AdvanceOrderSchema>;
 
 export const ConsumeSchema = z.object({

@@ -1,13 +1,14 @@
 import { and, desc, eq, ilike, or } from 'drizzle-orm';
 import type { Queryable } from '@/backend/db/client';
 import { accounts, activity, NewestIdFirst, type ActivityRow, type DbDate } from '@/backend/db/schema';
+import type { ActivityKindTypeEnum, ActivityRefTypeEnum } from '@/backend/types/activity';
 
 export type InsertActivityType = {
   businessId: string;
-  kind: string;
+  kind: ActivityKindTypeEnum;
   accountId: string | null;
   message: string;
-  refType?: string | null;
+  refType?: ActivityRefTypeEnum | null;
   refId?: string | null;
   meta?: object;
   /** Defaults to now; sample data backdates its history. */
@@ -50,7 +51,7 @@ const InsertMany = async (q: Queryable, rows: InsertActivityType[]): Promise<voi
 const List = (
   q: Queryable,
   businessId: string,
-  filters: { kind?: string; accountId?: string; search?: string; refType?: string; refId?: string; limit: number },): Promise<ActivityRow[]> => {
+  filters: { kind?: ActivityKindTypeEnum; accountId?: string; search?: string; refType?: ActivityRefTypeEnum; refId?: string; limit: number },): Promise<ActivityRow[]> => {
   const search = filters.search ? `%${filters.search}%` : undefined;
   return q
     .select({ ...COLUMNS, actor_name: accounts.name })

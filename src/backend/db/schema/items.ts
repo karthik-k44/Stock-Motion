@@ -2,7 +2,9 @@ import { sql } from 'drizzle-orm';
 import { check, foreignKey, index, integer, numeric, pgTable, pgView, primaryKey, text, unique } from 'drizzle-orm/pg-core';
 import { businesses } from './businesses';
 import { locations, suppliers } from './catalog';
+import { ItemKindTypeEnum } from '@/backend/types/item';
 import { createdAt, timestampTz } from './_shared';
+import { itemKindEnum } from './enums';
 import { prefixedId } from './ids';
 
 /**
@@ -19,7 +21,7 @@ export const items = pgTable(
     name: text().notNull(),
     category: text().notNull(),
     unit: text().notNull(),
-    kind: text().notNull().default('STOCK'),
+    kind: itemKindEnum().notNull().default(ItemKindTypeEnum.STOCK),
     on_hand: integer().notNull().default(0),
     reorder_level: integer().notNull().default(0),
     cost: numeric({ precision: 12, scale: 4 }).notNull().default(sql`0`),
@@ -30,7 +32,6 @@ export const items = pgTable(
     created_at: createdAt(),
   },
   (t) => [
-    check('items_kind_check', sql`${t.kind} IN ('STOCK','MADE','SERVICE')`),
     check('items_on_hand_check', sql`${t.on_hand} >= 0`),
     check('items_reorder_level_check', sql`${t.reorder_level} >= 0`),
     check('items_cost_check', sql`${t.cost} >= 0`),
@@ -76,7 +77,7 @@ export const itemViews = pgView('item_views', {
   name: text().notNull(),
   category: text().notNull(),
   unit: text().notNull(),
-  kind: text().notNull(),
+  kind: itemKindEnum().notNull(),
   on_hand: integer().notNull(),
   reorder_level: integer().notNull(),
   cost: numeric({ precision: 12, scale: 4 }).notNull(),

@@ -1,14 +1,14 @@
 import { Boxes, Building2, Package, Store, Users, Warehouse, Waypoints, type LucideIcon } from 'lucide-react';
 
 /**
- * The pricing page's plans. Prices are the owner's decision (Starter $19, Pro $49 a month, USD; Scale is agreed in
- * person). The app doesn't bill or enforce plan limits yet: the paid plans start sign-up, Scale opens an email, and
- * the features listed are how the plans are packaged — review them before launch.
+ * The pricing page's plans. Prices are per inventory (each business an owner runs): Starter ₹299 and Pro ₹699 a
+ * month, or ten months' price for a year — the same the backend charges (backend modules/billing/plans.ts). Scale is
+ * agreed in person. The paid plans start sign-up, which leads to choosing a plan; Scale opens an email.
  */
 export type PlanType = {
   id: 'starter' | 'pro' | 'scale';
   name: string;
-  /** USD per month; null when it is agreed in person */
+  /** Rupees per inventory per month (the backend charges the same through Razorpay); null when it is agreed in person */
   price: number | null;
   pitch: string;
   icon: LucideIcon;
@@ -24,11 +24,11 @@ export const PLANS: Record<PlanType['id'], PlanType> = {
   starter: {
     id: 'starter',
     name: 'Starter',
-    price: 19,
-    pitch: 'For one business getting its stock in order.',
+    price: 299,
+    pitch: 'For owners running their stock on their own.',
     icon: Package,
     highlights: [
-      { icon: Store, lead: '1', rest: 'business' },
+      { icon: Store, lead: 'Per inventory', rest: '— add as many as you run' },
       { icon: Waypoints, lead: 'The live world', rest: 'of your business' },
     ],
     builds: 'Includes',
@@ -38,11 +38,11 @@ export const PLANS: Record<PlanType['id'], PlanType> = {
   pro: {
     id: 'pro',
     name: 'Pro',
-    price: 49,
+    price: 699,
     pitch: 'Run every business and every team from one live view.',
     icon: Boxes,
     highlights: [
-      { icon: Building2, lead: 'Several', rest: 'businesses under one login' },
+      { icon: Building2, lead: 'Every inventory', rest: 'under one login' },
       { icon: Users, lead: 'Your team', rest: 'invited with roles' },
     ],
     builds: 'Starter +',
@@ -65,4 +65,16 @@ export const PLANS: Record<PlanType['id'], PlanType> = {
   },
 };
 
-export const PRICE = (plan: PlanType) => (plan.price === null ? 'Contact us' : `$${plan.price}/month`);
+/** The pricing page's calculator: how often to pay, and for how many inventories. */
+export type PricingIntervalType = 'MONTHLY' | 'YEARLY';
+/** A year costs this many months (two free), as the backend charges. */
+export const MONTHS_PAID_PER_YEAR = 10;
+/** The most inventories the calculator (and checkout) goes up to; more is a Scale conversation. */
+export const MAX_PRICED_INVENTORIES = 50;
+
+/** Rupees for one inventory for the interval; null when the plan is agreed in person. */
+export const PricePerInventory = (plan: PlanType, interval: PricingIntervalType): number | null =>
+  plan.price === null ? null : interval === 'YEARLY' ? plan.price * MONTHS_PAID_PER_YEAR : plan.price;
+
+export const Rupees = (amount: number): string =>
+  new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);

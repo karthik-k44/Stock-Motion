@@ -1,3 +1,4 @@
+import { ItemKindTypeEnum } from '@/frontend/features/inventory/types';
 import { useState } from 'react';
 import { Button } from '@/frontend/components/button';
 import { Field, Select } from '@/frontend/components/form';
@@ -14,7 +15,7 @@ export const OrderLinesEditor = ({ lines, onChange, error }: Props) => {
   const business = businessesService.useBusiness();
   const { data: items = [] } = inventoryService.useGetItems();
   const [adding, setAdding] = useState('');
-  const sellable = items.filter((i) => i.kind !== 'STOCK' || i.price > 0);
+  const sellable = items.filter((i) => i.kind !== ItemKindTypeEnum.STOCK || i.price > 0);
   const priceOf = (sku: string) => items.find((i) => i.sku === sku)?.price ?? 0;
   const total = lines.reduce((s, l) => s + priceOf(l.sku) * (Number(l.qty) || 0), 0);
 

@@ -6,6 +6,7 @@ import { db, type Queryable } from '@/backend/db/client';
 import type { BusinessRow, InviteRow } from '@/backend/db/schema';
 import { authService, type IssuedSessionType } from '@/backend/modules/auth/auth.service';
 import type { RegisterInput } from '@/backend/modules/auth/auth.validators';
+import { billingService } from '@/backend/modules/billing/billing.service';
 import { businessesRepository } from '@/backend/modules/businesses/businesses.repository';
 import { businessesService } from '@/backend/modules/businesses/businesses.service';
 import { templatesService } from '@/backend/modules/templates/templates.service';
@@ -36,6 +37,12 @@ const Create = async (scope: ScopeType, input: CreateInviteInput): Promise<Creat
   if (input.role === BaseRoleTypeEnum.OWNER && scope.actor.role !== BaseRoleTypeEnum.OWNER) {
     throw Forbidden('Only an owner can invite another owner');
   }
+  // Pending invites count too, so a plan's team limit can't be passed by sending many links at once.
+  const [members, pending] = await Promise.all([
+    businessesRepository.CountMembers(db, scope.businessId),
+    invitesRepository.ListPending(db, scope.businessId),
+  ]);
+  await billingService.AssertRoomForMember(db, scope.businessId, members + pending.length);
   const token = GenerateOpaqueToken();
   const row = await invitesRepository.Insert(db, {
     tokenHash: HashOpaqueToken(token), businessId: scope.businessId, role: input.role, createdBy: scope.actor.id, days: input.days,
@@ -79,6 +86,7 @@ const join = async (tx: Queryable, token: string, account: AccountResponseType) 
   if (await businessesService.FindMembership(business.id, account.id, tx)) {
     throw Conflict(`You are already on the ${business.name} team`);
   }
+  await billingService.AssertRoomForMember(tx, business.id, await businessesRepository.CountMembers(tx, business.id));
   await businessesService.AddMember(tx, business.id, account.id, invite.role);
   await invitesRepository.MarkAccepted(tx, invite.id, account.id);
   const template = templatesService.Get(business.type);

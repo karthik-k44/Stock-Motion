@@ -21,7 +21,7 @@ Inventory and orders for any small business, with a live 3D world of the busines
 - **Optimistic updates.** Stock adjustments, moves, order stage changes, receiving, and edits to items, customers and suppliers show at once. If the server refuses, the screen rolls back and a toast says why.
 - **Live everywhere.** Changes reach every open tab of the same business over socket.io.
 - **Live world.** An isometric drawing of the business made only from its own records: racks coloured bin by bin, trucks at the dock doors or on the road, orders on the packing bench, one person per team member. Every label is live; click anything (or any tracker row) for its details. The tracker tabs — deliveries, orders, stock alerts — each bring their own pins and highlights. Zoom, pan and turn the view in quarter turns.
-- **Marketing pages:** the front page at `/` (pitch, the stock sketch, use cases), plus `/features`, `/how-it-works` (setting up, the daily loop, each business type), `/pricing` (Starter $19, Pro $49 a month, Scale by contact — no billing in the app yet) and `/faq`. Each page opens on a bento hero animated with GSAP; on the front page a hand-drawn sketch of stock moving through a business follows it, inked in with rough.js as it scrolls into view. The footer sets the wordmark behind a rendered skyline of factories and warehouses. Logo files are in `public/brand`. Style: `docs/design/style-reference.md`.
+- **Marketing pages:** the front page at `/` (pitch, the stock sketch, use cases), plus `/features`, `/how-it-works` (setting up, the daily loop, each business type), `/pricing` (Starter ₹299, Pro ₹699 per inventory a month, yearly with two months free, Scale by contact — see Billing) and `/faq`. Each page opens on a bento hero animated with GSAP; on the front page a hand-drawn sketch of stock moving through a business follows it, inked in with rough.js as it scrolls into view. The footer sets the wordmark behind a rendered skyline of factories and warehouses. Logo files are in `public/brand`. Style: `docs/design/style-reference.md`.
 
 ## Run it
 
@@ -58,6 +58,9 @@ ACCESS_TOKEN_TTL=15m
 REFRESH_TOKEN_DAYS=30
 TRUST_PROXY=loopback        # "1" behind one load balancer (most hosts), "true", or a list of addresses
 SHUTDOWN_TIMEOUT_MS=10000   # grace period for open requests on SIGTERM
+RAZORPAY_KEY_ID=            # rzp_test_… — empty: billing runs in manual mode outside production
+RAZORPAY_KEY_SECRET=
+RAZORPAY_WEBHOOK_SECRET=    # the secret set on the Razorpay webhook (deployed sites)
 ```
 
 - **Your local PostgreSQL:** the database is created on first start and migrations run automatically (Drizzle, recorded in `drizzle.__drizzle_migrations`). A database made by an earlier version is adopted: its data is kept and its ids renamed (see Structure).
@@ -79,6 +82,29 @@ Sessions use a short-lived access token held in memory, plus a rotating, httpOnl
 | `npm run illustrations` | Re-render the landing page's scenario illustrations into `public/landing/scenarios/` (uses your installed Chrome) |
 | `npm run db:migrate` | Apply pending migrations (the server also does this on start) |
 | `npm run db:generate -- --name <change>` | Write a migration from changes to `src/backend/db/schema/` (drizzle-kit) |
+
+## Billing
+
+Plans are priced **per inventory**: each business an owner runs is one inventory, and an account can own as many as it pays for. Prices are in rupees (`src/backend/modules/billing/plans.ts`); a year costs ten months, so two are free:
+
+| Plan | Per inventory, monthly | Per inventory, yearly | People per inventory | Reorder low stock in one go |
+| --- | --- | --- | --- | --- |
+| Free trial (14 days) | — | — | 10 | ✓ |
+| Starter | ₹299 | ₹2,990 | 1 | — |
+| Pro | ₹699 | ₹6,990 | 10 | ✓ |
+| Scale | agreed in person | | unlimited (and unlimited inventories) | ✓ |
+
+- **Getting started:** sign-up leads to `/plans` — choose a plan, monthly or yearly, and how many inventories (the total updates live). Then either **Continue to payment** (`/checkout`) or **Start 14-day free trial**. Either way, `/onboarding` then asks for the kind of each inventory, which must add up to exactly the number chosen, and a name for each (renamable later in Settings). Done opens the dashboard.
+- **The free trial** covers as many inventories as were chosen, with Pro's features. The Billing page shows the next bill: the chosen plan × that many inventories, from the day the trial ends. Paying during the trial doesn't cut it short — the paid period starts when it ends.
+- **The payment page** (`/checkout`) confirms the order, takes the name and mobile number, and asks how to pay (UPI, card, net banking, wallet). Razorpay Checkout then opens on that method with the details filled in; card numbers, UPI PINs and bank logins are typed into Razorpay's window only.
+- **When a plan ends** (trial over, payments stopped) the owner's inventories become read-only for the whole team: everything stays visible, nothing can change, nothing is deleted. Choosing a plan unlocks them at once.
+- **Two ways to take payment**, set by `RAZORPAY_BILLING_MODE`:
+  - `ORDERS` (default): each payment is a one-time order for a month or a year. Nothing renews by itself; the owner pays again before it ends, and paying early for the same plan adds the next period on top.
+  - `SUBSCRIPTIONS`: Razorpay renews monthly or yearly by itself (quantity = inventories). Needs **Subscriptions** enabled on the Razorpay account; until then the Plans API answers 401 and checkout says so.
+- **Webhooks** (`order.paid`, `subscription.*`) arrive at `/api/billing/webhook`. In the Razorpay Dashboard (Settings → Webhooks) add `https://<your-site>/api/billing/webhook` with a secret of your choice and set the same secret as `RAZORPAY_WEBHOOK_SECRET`. Locally there are no webhooks: **Refresh from Razorpay** on the Billing page fetches the latest instead.
+- **Test mode:** with `rzp_test_` keys no real money moves; the payment page says so. Use the UPI ID `success@razorpay`, or any bank and **Success**.
+- **Without Razorpay keys**, outside production, paying switches the plan at once (manual mode) so everything works offline.
+- **Scale, or a plan by hand:** `npm run billing:grant -- owner@example.com SCALE` (add a number of months for an end date).
 
 ## Deploy
 
