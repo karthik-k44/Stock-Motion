@@ -45,7 +45,7 @@ export const LANDING_ART: HeroArtType = {
 };
 
 export const FEATURES_ART: HeroArtType = {
-  image: '/landing/scenarios/picking.jpg',
+  image: '/landing/hero/features.webp',
   tagline: 'Every shelf, truck and ticket, in one place',
   taglineAccent: ['one', 'place'],
   object: {
@@ -60,7 +60,7 @@ export const FEATURES_ART: HeroArtType = {
 };
 
 export const HOW_ART: HeroArtType = {
-  image: '/landing/scenarios/receiving.jpg',
+  image: '/landing/hero/how.webp',
   tagline: 'Set up once, then stay in sync',
   taglineAccent: ['in', 'sync'],
   object: {
@@ -75,7 +75,7 @@ export const HOW_ART: HeroArtType = {
 };
 
 export const PRICING_ART: HeroArtType = {
-  image: '/landing/scenarios/today.jpg',
+  image: '/landing/hero/pricing.webp',
   tagline: 'Every plan includes all three set-ups',
   taglineAccent: ['all', 'three'],
   object: {
@@ -90,7 +90,7 @@ export const PRICING_ART: HeroArtType = {
 };
 
 export const FAQ_ART: HeroArtType = {
-  image: '/landing/scenarios/history.jpg',
+  image: '/landing/hero/faq.webp',
   tagline: 'Straight answers, before you sign up',
   taglineAccent: ['Straight'],
   object: {

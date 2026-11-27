@@ -20,12 +20,12 @@ export const Contact = () => {
       <section className="mx-auto grid max-w-300 gap-4 px-4 pt-[124px] pb-20 sm:px-6 lg:grid-cols-2" aria-label="Contact us">
         <div data-reveal className="grid gap-4 lg:grid-rows-[minmax(0,1fr)_auto]">
           <img
-            src="/landing/scenarios/receiving.jpg"
-            alt="Illustration: a delivery truck at the dock door while a pallet is brought in and checked with a scanner."
+            src="/landing/scenarios/contact.jpg"
+            alt="The StockMotion support team at their desks, one of them smiling on a headset call."
             width={1600}
             height={1000}
             decoding="async"
-            className="block aspect-[16/10] h-auto w-full rounded-xl border border-line object-cover object-[46%_center] lg:aspect-auto lg:h-full"
+            className="block aspect-[16/10] h-auto w-full rounded-xl border border-line object-cover object-[32%_center] lg:aspect-auto lg:h-full"
           />
           <ul className="m-0 grid list-none gap-5 rounded-xl border border-line bg-white p-5 sm:p-6">
             {DETAILS.map((d) => {
