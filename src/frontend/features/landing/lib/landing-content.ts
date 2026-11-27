@@ -170,7 +170,7 @@ export const FOOTER_COLUMNS: FooterColumnType[] = [
   { title: 'Built for', links: USE_CASES.slice(0, 4).map((u) => ({ label: u.title.replace(/^For /, ''), href: `/#${u.id}` })) },
 ];
 
-/** Illustrated moments (scripts/illustrations), each an everyday problem StockMotion handles: the hero's carousel and the features page. */
+/** Illustrated moments (public/landing/scenarios), each an everyday problem StockMotion handles: the hero's carousel and the features page. */
 export type ScenarioType = { image: string; area: string; title: string; text: string; alt: string };
 
 export const SCENARIOS: ScenarioType[] = [

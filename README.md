@@ -79,7 +79,6 @@ Sessions use a short-lived access token held in memory, plus a rotating, httpOnl
 | `npm run lint` | ESLint: import cycles, frontend/backend boundary, hook rules |
 | `npm run typecheck` | `tsc -b --noEmit` |
 | `npm run vercel-build` | Vercel's build: frontend, migrations, and the backend bundled as one function in `.vercel/output` (needs `DATABASE_URL`) |
-| `npm run illustrations` | Re-render the landing page's scenario illustrations into `public/landing/scenarios/` (uses your installed Chrome) |
 | `npm run db:migrate` | Apply pending migrations (the server also does this on start) |
 | `npm run db:generate -- --name <change>` | Write a migration from changes to `src/backend/db/schema/` (drizzle-kit) |
 
